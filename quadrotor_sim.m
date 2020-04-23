@@ -6,6 +6,18 @@
 %-- "Quadrotors and Accelerometers: State Estimation with an Improved Dynamic Model"
 %-- "Nonlinear Dynamic Modeling for High Performance Control of a Quadrotor"
 
+% Important papers:
+% Quadrotor Dynamics and Control rev 0.1
+% Design and control of an indoor micro quadrotor
+% Attitude control of a quadrotor with optimized PID controller
+% Multirotor aerial vehicles: modeling, estimation, and control of
+% quadrotor
+% Quadrotors and accelerometers: state estimation with an improved dynamic
+% model
+% Nonlinear dynamic modeling for high performance control of a quadrotor
+% Nonlinear control of quadrotor for point tracking: actual implementation 
+% and experimental tests
+
 %% Initialisation
 clc;
 clear;
