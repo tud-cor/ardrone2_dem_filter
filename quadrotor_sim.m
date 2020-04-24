@@ -15,7 +15,7 @@
 % Quadrotors and accelerometers: state estimation with an improved dynamic
 % model
 % Nonlinear dynamic modeling for high performance control of a quadrotor
-% Nonlinear control of quadrotor for point tracking: actual implementation 
+% Nonlinear control of quadrotor for point tracking: actual implementation
 % and experimental tests
 
 %% Initialisation
