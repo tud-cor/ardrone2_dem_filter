@@ -41,44 +41,68 @@ if topics.modelStates
 end
 
 
-%% Plot data
-figure('Name', 'Force plots');
+%% Interpolate data
+data.time = modelInputTime;
+data.value = force;
+intForce = interpolate(0.001, data);
 
 subplot(3,1,1);
-plot(modelInputTime, force(1,:), 'LineStyle', '-', 'Marker', '.');
-title('f_x');
-xlabel('Time (s)');
-ylabel('Force (N?)');
-
+plot(modelInputTime, force(3,:), 'Marker', 'o');
+xlim([8.8 8.9]);
+ylim([0 30]);
 subplot(3,1,2);
-plot(modelInputTime, force(2,:), 'LineStyle', '-', 'Marker', '.');
-title('f_y');
-xlabel('Time (s)');
-ylabel('Force (N?)');
-
+plot(intForce.time, intForce.value(3,:), 'Marker', 'o', 'Color', 'r');
+xlim([8.8 8.9]);
+ylim([0 30]);
 subplot(3,1,3);
-plot(modelInputTime, force(3,:), 'LineStyle', '-', 'Marker', '.');
-title('f_z');
-xlabel('Time (s)');
-ylabel('Force (N?)');
+plot(modelInputTime, force(3,:), 'Marker', 'o');
+xlim([8.8 8.9]);
+ylim([0 30]);
+hold on;
+plot(intForce.time, intForce.value(3,:), 'Marker', 'o');
+hold off;
+legend('Original data', 'Interpolated data');
 
 
-figure('Name', 'Torque plots');
 
-subplot(3,1,1);
-plot(modelInputTime, torque(1,:), 'LineStyle', '-', 'Marker', '.');
-title('\tau_x');
-xlabel('Time (s)');
-ylabel('Torque (Nm?)');
-
-subplot(3,1,2);
-plot(modelInputTime, torque(2,:), 'LineStyle', '-', 'Marker', '.');
-title('\tau_y');
-xlabel('Time (s)');
-ylabel('Torque (Nm?)');
-
-subplot(3,1,3);
-plot(modelInputTime, torque(3,:), 'LineStyle', '-', 'Marker', '.');
-title('\tau_z');
-xlabel('Time (s)');
-ylabel('Torque (Nm?)');
+% %% Plot data
+% figure('Name', 'Force plots');
+% 
+% subplot(3,1,1);
+% plot(modelInputTime, force(1,:), 'LineStyle', '-', 'Marker', '.');
+% title('f_x');
+% xlabel('Time (s)');
+% ylabel('Force (N?)');
+% 
+% subplot(3,1,2);
+% plot(modelInputTime, force(2,:), 'LineStyle', '-', 'Marker', '.');
+% title('f_y');
+% xlabel('Time (s)');
+% ylabel('Force (N?)');
+% 
+% subplot(3,1,3);
+% plot(modelInputTime, force(3,:), 'LineStyle', '-', 'Marker', '.');
+% title('f_z');
+% xlabel('Time (s)');
+% ylabel('Force (N?)');
+% 
+% 
+% figure('Name', 'Torque plots');
+% 
+% subplot(3,1,1);
+% plot(modelInputTime, torque(1,:), 'LineStyle', '-', 'Marker', '.');
+% title('\tau_x');
+% xlabel('Time (s)');
+% ylabel('Torque (Nm?)');
+% 
+% subplot(3,1,2);
+% plot(modelInputTime, torque(2,:), 'LineStyle', '-', 'Marker', '.');
+% title('\tau_y');
+% xlabel('Time (s)');
+% ylabel('Torque (Nm?)');
+% 
+% subplot(3,1,3);
+% plot(modelInputTime, torque(3,:), 'LineStyle', '-', 'Marker', '.');
+% title('\tau_z');
+% xlabel('Time (s)');
+% ylabel('Torque (Nm?)');
