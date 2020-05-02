@@ -8,14 +8,15 @@ dupsInfo = countDups(input);
 if isfield(dupsInfo, 'dups1')
     nDups1 = length(dupsInfo.dups1);
     if nDups1 < 4
-        error('fixDups:TooFewUnique', 'The input contains less %s', ...
-              'than 4 unique numbers. Unable to perform fix.');
+        error('fixDups:TooFewUnique', ...
+              'The input contains less than 4 unique numbers. %s', ...
+              'Unable to perform fix.');
     end
     avgDelta = (input(dupsInfo.dups1(ceil(nDups1/2))) - input(1))/...
                (dupsInfo.dups1(ceil(nDups1/2)) - 1);
 else
-    error('fixDups:NoUnique', 'The input contains no unique %s.', ...
-          'numbers. Unable to perform fix.');
+    error('fixDups:NoUnique', ...
+          'The input contains no unique numbers. Unable to perform fix.');
 end
 
 

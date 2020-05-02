@@ -1,4 +1,4 @@
-%% TODO
+% TODO
 %1. Derive linear system and implement
 
 %2. Potentially add drag, see:
@@ -31,7 +31,8 @@ close all;
 %% System parameters
 % Environmental constants
 param.g             = 9.81;     %m/s^2
-param.densityAir    = 1.2;      %kg/m^3 (for room temperature ~20 degree Celcius)
+param.densityAir    = 1.2;      %kg/m^3 (for room temperature 
+                                %        ~20 degree Celcius)
 
 % Mass and inertia
 %                   |ixx        ixy         ixz         |

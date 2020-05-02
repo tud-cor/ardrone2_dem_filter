@@ -13,6 +13,7 @@ end
 if ~failedFlag
     fprintf('\nAll tests passed!\n');
 else
-    fprintf('\nNot all tests passed! Please take a look at the failure summary.\n');
+    fprintf('\nNot all tests passed! %s', ...
+            'Please take a look at the failure summary.\n');
 end
 end

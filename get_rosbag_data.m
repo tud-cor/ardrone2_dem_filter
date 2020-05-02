@@ -10,10 +10,12 @@ cd ~/.ros;
 bag = rosbag("force_torque_meas_2020-04-29-13-37-20.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
+% Select topics that need to be stored
 topics.cmdVel = 1;
 topics.modelInput = 1;
 topics.modelStates = 1;
 
+% Set time interval with respect to start of rosbag recording
 time = [3, 10];
 
 

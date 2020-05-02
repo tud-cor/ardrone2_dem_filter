@@ -1,8 +1,8 @@
 function output = countDups(input)
 % Check input
 if length(input) <= 1
-    error('countDups:TooShortInput', 'Input should have at least %s.', ...
-        'a length of 2.');
+    error('countDups:TooShortInput', ...
+          'Input should have at least a length of 2.');
 end
 
 % Initialise output
@@ -73,7 +73,8 @@ for i = 1:l
     totElCnt = totElCnt + output.count(i,1)*output.count(i,2);
 end
 if totElCnt ~= n
-    error('countDups:UnmatchedResult', 'Amount of elements in %s.', ...
-        'result does not equal amount of elements in the input array');
+    error('countDups:UnmatchedResult', ...
+          'Amount of elements in result does not equal amount of %s', ...
+          'elements in the input array.');
 end
 end
