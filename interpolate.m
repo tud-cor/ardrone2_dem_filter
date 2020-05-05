@@ -3,19 +3,28 @@ function [intData] = interpolate(ref, data, time)
 %reference signal given by ref
 %   
 %   Author: Dennis Benders, TU Delft
-%   Last edited: 02.05.2020
+%   Last edited: 05.05.2020
 %
 %   Input:	ref:        either a sample time (single number) or a reference
 %                       time signal
 %           data:       struct with time and value sequence that needs to
 %                       be interpolated
-%           time (opt):      
+%           time (opt): offset interval with respect to data.time in which
+%                       the signal needs to be interpolated
 %
 %   Output: intData:    struct with interpolated time and value sequence
 %
-%   For usage, see TODO
-%   TODO: introduce a time input argument indicating the start and stop
-%   time of the interpolated data (with warnings, errors, etc.)
+%   For usage, see getSimData.m
+
+
+%------------------------------ Parameters --------------------------------
+% Minimum interpolation time
+minIntTime = 1;     %s
+
+% Time difference accuracy for interpolation
+timeThres = 1e-10;  %s
+%--------------------------------------------------------------------------
+
 
 %------------------------ Process input arguments -------------------------
 nRef = length(ref);
@@ -26,105 +35,145 @@ if nargin < 2
           'Please specify two or three input arguments.');
 end
 
+%------------------------
+% Multiple ROS messages recorded with rosbag record may contain the same
+% timestamp, while the simulated model can not handle different values at
+% one moment in time.
+% The following sequence occurs: t = [0.001, 0.002, 0.002, 0.004].
+% This should be changed into:   t = [0.001, 0.002, 0.003, 0.004].
+if nRef > 1
+    ref = fixDups(ref);
+end
+data.time = fixDups(data.time);
+%------------------------
+
 if nargin == 3
     if time(1) < 0 || time(2) < 0
         error('interpolate:TimeNegative', ...
-              'Please specify a positive time vector');
+              'Please specify a positive time vector.');
     end
 
-    if time(2) < time(1) + 1
+    if time(2) < time(1) + minIntTime
         error('interpolate:TooShortTimeInterval', ...
-              'Please specify a larger time interval to interpolate on');
+              'Please specify a larger time interval to interpolate on.');
     end
 
-    if nRef > 1 && ref(1) + time(1) > ref(end)
+    if nRef > 1 && data.time(1) + time(1) > ref(end) - minIntTime
         error('interpolate:TimeOutOfRange', ...
-              'Please specify a lower time bound that falls within %s', ...
-              'the reference time interval');
-    elseif data.time(1) + time(1) > data.time(end)
+              'Please specify a lower time bound that %s %s', ...
+              'sufficiently falls within the reference time interval ', ...
+              '(at least minIntTime s).');
+    elseif data.time(1) + time(1) > data.time(end) - minIntTime
         error('interpolate:TimeOutOfRange', ...
-              'Please specify a lower time bound that falls within %s', ...
-              'the recorded time interval');
+              'Please specify a lower time bound that %s %s', ...
+              'sufficiently falls within the recorded time interval ', ...
+              '(at least minIntTime s).');
     end
 
     if nRef > 1 && ref(1) + time(2) > ref(end)
         warning('interpolate:TimeOutOfRange', ...
-                'The provided upper time bound falls outside the %s %s', ...
-                'reference time interval. The interpolated signal will', ...
-                'be truncated at the end of the reference time sequence');
-    elseif data.time(1) + time(2) > data.time(end) && data.time(end) < ref(end)
+                'The provided upper time bound falls outside %s %s %s', ...
+                'the reference time interval.', ...
+                'The reference signal will be truncated at the end ', ...
+                'of the reference time sequence.');
+    elseif data.time(1) + time(2) > data.time(end) && ...
+           data.time(end) < ref(end)
         warning('interpolate:TimeOutOfRange', ...
-                'The provided upper time bound falls outside the %s %s', ...
-                'recorded time interval. The interpolated signal will', ...
-                'be truncated at the end of the data.time sequence');
+                'The provided upper time bound falls outside %s %s %s', ...
+                'the recorded time interval.', ...
+                'The interpolated signal will be truncated at the ', ...
+                'end of the data.time sequence.');
     end
 end
 %--------------------------------------------------------------------------
-% Determine start and end time of interval in which to interpolate recorded
-% data
+
+
+%------------- Determine start and end time of interpolation --------------
 if nargin == 2
-    startTime = data.time(1);
-    endTime = data.time(end);
+    if nRef == 1
+        startTime = data.time(1);
+        endTime = data.time(end);
+    else
+        startTime = max(ref(1),data.time(1));
+        endTime = min(ref(end),data.time(end));
+    end
 elseif nargin == 3
     startTime = data.time(1) + time(1);
-    endTime = data.time(2) + time(2);
-    if nRef > 1 && ref(1) + time(2) > ref(end)
-        endTime = ref(end);
-    end
-    if data.time(1) + time(2) > data.time(end) && data.time(end) < ref(end)
+    endTime = data.time(1) + time(2);
+    if endTime > data.time(end)
         endTime = data.time(end);
     end
+    if nRef > 1 && endTime > ref(end)
+        endTime = ref(end);
+    end
 end
+%--------------------------------------------------------------------------
 
-% Fix duplicated times in data.time
-data.time = fixDups(data.time);
 
-% nRef = 0 indicates a sampling time, which is expanded from the start time
-% until the end time of the data signal
-% TODO: start at start time given by time array (input)
+%----------- Construct a reference signal from a sampling time ------------
+% Ensure proper interpolation
+% (only interpolate on times that are contained in data):
+% 1. intData.time(1)   >= startTime
+% 2. intData.time(end) <= endTime
+%
+% In case of nRef == 1 (sampling time): construct time sequence within
+% interval [startTime, endTime].
+% In case of nRef > 1 (time sequence): constrain to interval [startTime,
+% endTime].
+
 intData.time = ref;
 if nRef == 1
     sampleTime = ref;
-    nTime = ceil((endTime - startTime)/ref);
+    
+    % Determine amount of samples, while taking floating-point inaccuracies
+    % into account
+    tempAmount = (endTime - startTime)/ref;
+    tempDiff = abs(tempAmount - floor(tempAmount));
+    if tempDiff > 1 - timeThres
+        nTime = floor(tempAmount) + 2;
+    else
+        nTime = floor(tempAmount) + 1;
+    end
+    
     intData.time = zeros(1,nTime);
     intData.time(1) = startTime;
     for i = 2:nTime
         intData.time(i) = intData.time(i-1) + sampleTime;
     end
-end
-
-% Ensure proper interpolation
-% (only interpolate on times that are contained in data):
-% 1. data.time(1) <= intData.time(1)
-% 2. data.time(end) >= intData.time(end)
-% 1.
-if data.time(1) > intData.time(1)
-    i = 2;
-    while data.time(1) > intData.time(i)
-        i = i + 1;
+else
+    if intData.time(1) < startTime
+        i = 2;
+        while (startTime - intData.time(i)) > timeThres
+            i = i + 1;
+        end
+        intData.time = intData.time(i:end);
     end
-    intData.time = intData.time(i:end);
-end
-% 2.
-if data.time(end) < intData.time(end)
-    i = length(intData.time) - 1;
-    while data.time(end) < intData.time(i)
-        i = i - 1;
+    if intData.time(end) > endTime
+        i = length(intData.time) - 1;
+        while (intData.time(i) - endTime) > timeThres
+            i = i - 1;
+        end
+        intData.time = intData.time(1:i);
     end
-    intData.time = intData.time(1:i);
 end
+%--------------------------------------------------------------------------
 
-% Interpolate
+
+%------------------------------ Interpolate -------------------------------
 nRef = length(intData.time);
+nData = length(data.time);
 dataIdx = 1;
 for refIdx = 1:nRef
     % Get next time index where data.time >= ref
     while data.time(dataIdx) < intData.time(refIdx)
+        if dataIdx == nData
+            break;
+        end
         dataIdx = dataIdx + 1;
     end
     
     % If data.time == ref: no interpolation needed, just use that sample
-    if abs(data.time(dataIdx) - intData.time(refIdx)) < 1e-10
+    if abs(data.time(dataIdx) - intData.time(refIdx)) < timeThres
         intData.value(:,refIdx) = data.value(:,dataIdx);
         
     % If data.time > ref: interpolate using data.value(dataIdx) and
@@ -135,4 +184,7 @@ for refIdx = 1:nRef
             (data.time(dataIdx) - data.time(dataIdx-1))* ...
             (intData.time(refIdx) - data.time(dataIdx-1));
     end
+end
+%--------------------------------------------------------------------------
+
 end

@@ -49,7 +49,7 @@ exp = output;
 verifyEqual(testCase,act,exp);
 end
 
-function testFirstRandomA(testCase)
+function testFirstArbitraryA(testCase)
 a = [1.0,1.0,1.0,2.0,3.0,4.0,4.0,5.0];
 act = countDups(a);
 output.count = [1,3;2,1;3,1];
@@ -60,7 +60,7 @@ exp = output;
 verifyEqual(testCase,act,exp);
 end
 
-function testSecondRandomA(testCase)
+function testSecondArbitraryA(testCase)
 a = [1.0,1.0,1.0,2.0,3.0,4.0,4.0,5.0,5.0];
 act = countDups(a);
 output.count = [1,2;2,2;3,1];

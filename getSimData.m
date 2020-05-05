@@ -16,7 +16,7 @@ topics.modelInput = 1;
 topics.modelStates = 1;
 
 % Set time interval with respect to start of rosbag recording
-time = [3, 10];
+time = [0, 10];
 
 
 %% Get data

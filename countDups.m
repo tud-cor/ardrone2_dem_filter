@@ -1,4 +1,10 @@
 function output = countDups(input)
+%------------------------------ Parameters --------------------------------
+% Time difference accuracy for interpolation
+timeThres = 1e-10;  %s
+%--------------------------------------------------------------------------
+
+
 % Check input
 if length(input) <= 1
     error('countDups:TooShortInput', ...
@@ -18,7 +24,7 @@ while i <= n
     j = 1;
     
     % Set i to index after a sequence of the same numbers in an array
-    while abs(input(i) - input(i-1)) < 1e-10
+    while abs(input(i) - input(i-1)) < timeThres
         j = j + 1;
         if i == n
             i = i + 1;
@@ -53,7 +59,7 @@ while i <= n
     
     % If the last number is not a sequence, but a single occurring number,
     % take this one also into account (while loop ends hereafter)
-    if i == n && abs(input(i) - input(i-1)) > 1e-10
+    if i == n && abs(input(i) - input(i-1)) > timeThres
         output.count(1,2) = output.count(1,2) + 1;
         if isfield(output, 'dups1')
             output.dups1 = [output.dups1; n];
