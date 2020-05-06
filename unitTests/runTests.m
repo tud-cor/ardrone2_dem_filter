@@ -1,6 +1,7 @@
 function runTests()
 results(1).test = runtests('countDupsTest.m');
 results(2).test = runtests('fixDupsTest.m');
+results(3).test = runtests('interpolateTest.m');
 
 failedFlag = 0;
 for i = 1:length(results)
