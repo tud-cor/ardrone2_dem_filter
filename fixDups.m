@@ -1,9 +1,26 @@
 function output = fixDups(input)
-% Initialise output
+% FIXDUPS Resolve the duplicated numbers in the input array by assuming
+% linearly increasing numbers (because input is often a time array). The
+% input array should contain at least 4 unique numbers to have a proper
+% calculation of the increment size.
+%
+%   Author: Dennis Benders
+%   Last edited: 08.05.2020
+%
+%   Input:  input   array containing duplications, which need to be
+%                   resolved
+%
+%   Output: output  array with resolved duplications (only unique numbers)
+%
+%   For usage, see interpolate.m.
+
+
+%---------------------------- Initialise output ---------------------------
 output = input;
+%--------------------------------------------------------------------------
 
 
-% Get average distance between samples (this only applies to a time signal)
+%------------------ Get average distance between samples ------------------
 dupsInfo = countDups(input);
 if isfield(dupsInfo, 'dups1')
     nDups1 = length(dupsInfo.dups1);
@@ -18,8 +35,10 @@ else
     error('fixDups:NoUnique', ...
           'The input contains no unique numbers. Unable to perform fix.');
 end
+%--------------------------------------------------------------------------
 
 
+% -------------------------- Resolve duplications -------------------------
 % Add the average distance to the duplicated samples with respect to the
 % start of their sequence in order to equalise the data
 
@@ -42,4 +61,5 @@ for i = 2:nDupsTot
         end
     end
 end
+%--------------------------------------------------------------------------
 end

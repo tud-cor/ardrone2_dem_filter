@@ -1,18 +1,22 @@
 function [intData] = interpolate(ref, data, time)
-%INTERPOLATE Interpolates data argument depending on sampling time or
-%reference signal given by ref
+% INTERPOLATE Linearly interpolate data argument based on single sampling
+% time/sampling time array indicating the time stamps on which the data
+% needs to be interpolated. Optionally, a time vector can be provided
+% containing the interval on which the data will be interpolated (provided
+% that this interval is covered by the data and reference sampling time
+% array).
 %   
-%   Author: Dennis Benders, TU Delft
-%   Last edited: 05.05.2020
+%   Author: Dennis Benders
+%   Last edited: 08.05.2020
 %
-%   Input:	ref:        either a sample time (single number) or a reference
-%                       time signal
-%           data:       struct with time and value sequence that needs to
-%                       be interpolated
+%   Input:  ref:        either a sample time (single number) or a reference
+%                       time signal (array)
+%           data:       struct with time and value arrays that need to be
+%                       interpolated
 %           time (opt): offset interval with respect to data.time in which
 %                       the signal needs to be interpolated
 %
-%   Output: intData:    struct with interpolated time and value sequence
+%   Output: intData:    struct with interpolated time and value arrays
 %
 %   For usage, see getSimData.m
 
@@ -186,5 +190,4 @@ for refIdx = 1:nRef
     end
 end
 %--------------------------------------------------------------------------
-
 end

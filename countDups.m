@@ -1,22 +1,44 @@
 function output = countDups(input)
+% COUNDUPS Count how much duplicated numbers are present on consecutive
+% indices in the input array and provide the indices of the first number of
+% the duplicated sequence per number of successive duplications.
+%
+%   Author: Dennis Benders, TU Delft
+%   Last edited: 08.05.2020
+%
+%   Input:  input   array (often containing time indices) with possible
+%                   duplications on consecutive places, which needs to be
+%                   analysed
+%
+%   Output: output  struct with count member (giving the amount of
+%                   occurences per number of successive duplications) and
+%                   dupsn members (giving the starting indices of the
+%                   duplication sequences, where n indicates the amount of
+%                   duplications)
+%
+%   For usage, see fixDups.m.
+
+
 %------------------------------ Parameters --------------------------------
 % Time difference accuracy for interpolation
 timeThres = 1e-10;  %s
 %--------------------------------------------------------------------------
 
 
-% Check input
+%------------------------------- Check input ------------------------------
 if length(input) <= 1
     error('countDups:TooShortInput', ...
           'Input should have at least a length of 2.');
 end
+%--------------------------------------------------------------------------
 
-% Initialise output
+
+%--------------------------- Count duplications ---------------------------
 output.count = zeros(1,2);
 output.count(1,1) = 1;
 l = size(output.count,1);
 
-% Iterate through all input array elements to detect duplicates (sequences 
+% Iterate through all input array elements to detect duplicates (sequences
 % of the same numbers)
 n = length(input);
 i = 2;
@@ -72,8 +94,10 @@ while i <= n
 end
 
 output = orderfields(output);
+%--------------------------------------------------------------------------
 
-% Check result, otherwise display warning
+
+%------------------------------ Check result ------------------------------
 totElCnt = 0;
 for i = 1:l
     totElCnt = totElCnt + output.count(i,1)*output.count(i,2);
@@ -83,4 +107,5 @@ if totElCnt ~= n
           'Amount of elements in result does not equal amount of %s', ...
           'elements in the input array.');
 end
+%--------------------------------------------------------------------------
 end

@@ -1,14 +1,14 @@
 function [topicsOut] = storeBagdata(bag, topics, time)
-% STOREBAGDATA Store data of a rosbag in Matlab matrices
+% STOREBAGDATA Store data of a rosbag in Matlab matrices.
 %
-%   Author: Dennis Benders, TU Delft
-%   Last edited: 29.04.2020
+%   Author: Dennis Benders
+%   Last edited: 08.05.2020
 %
 %   Input:	bagname:    string with name of bag (excluding ".bag")
-%           topics:     struct with selection of the data you want to be 
+%           topics:     struct with selection of the data you want to be
 %                       stored
-%           time:       double array: 1st index is starting time, 2nd index 
-%                       is stoptime, until maximum of the total recorded 
+%           time:       double array: 1st index is starting time, 2nd index
+%                       is stoptime, until maximum of the total recorded
 %                       time is hit
 %
 %   Output: topicsOut: struct containing all (row) arrays as specified in
