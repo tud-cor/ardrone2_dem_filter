@@ -84,13 +84,18 @@ if topics.modelInput
     topicsOut.modelInput.torque = zeros(3, lenModelInput);
 
     for i = 1:lenModelInput
-        topicsOut.modelInput.time(i) = msgsModelInput{i}.Header.Stamp.Sec + msgsModelInput{i}.Header.Stamp.Nsec/1000000000;
+        topicsOut.modelInput.time(i) = ...
+            msgsModelInput{i}.Header.Stamp.Sec + ...
+            msgsModelInput{i}.Header.Stamp.Nsec/1000000000;
         topicsOut.modelInput.force(1,i) = msgsModelInput{i}.Wrench.Force.X;
         topicsOut.modelInput.force(2,i) = msgsModelInput{i}.Wrench.Force.Y;
         topicsOut.modelInput.force(3,i) = msgsModelInput{i}.Wrench.Force.Z;
-        topicsOut.modelInput.torque(1,i) = msgsModelInput{i}.Wrench.Torque.X;
-        topicsOut.modelInput.torque(2,i) = msgsModelInput{i}.Wrench.Torque.Y;
-        topicsOut.modelInput.torque(3,i) = msgsModelInput{i}.Wrench.Torque.Z;
+        topicsOut.modelInput.torque(1,i) = ...
+            msgsModelInput{i}.Wrench.Torque.X;
+        topicsOut.modelInput.torque(2,i) = ...
+            msgsModelInput{i}.Wrench.Torque.Y;
+        topicsOut.modelInput.torque(3,i) = ...
+            msgsModelInput{i}.Wrench.Torque.Z;
     end
     
     % Remove unncessary data for later on in this function to save memory
@@ -117,19 +122,32 @@ if topics.modelStates
 
     for i = 1:lenModelStates
         topicsOut.modelStates.time(i) = bagModelStates.MessageList.Time(i);
-        topicsOut.modelStates.pos(1,i) = msgsModelStates{i}.Pose(2).Position.X;
-        topicsOut.modelStates.pos(2,i) = msgsModelStates{i}.Pose(2).Position.Y;
-        topicsOut.modelStates.pos(3,i) = msgsModelStates{i}.Pose(2).Position.Z;
-        topicsOut.modelStates.orient(1,i) = msgsModelStates{i}.Pose(2).Orientation.X;
-        topicsOut.modelStates.orient(2,i) = msgsModelStates{i}.Pose(2).Orientation.Y;
-        topicsOut.modelStates.orient(3,i) = msgsModelStates{i}.Pose(2).Orientation.Z;
-        topicsOut.modelStates.orient(4,i) = msgsModelStates{i}.Pose(2).Orientation.W;
-        topicsOut.modelStates.vLin(1,i) = msgsModelStates{i}.Twist(2).Linear.X;
-        topicsOut.modelStates.vLin(2,i) = msgsModelStates{i}.Twist(2).Linear.Y;
-        topicsOut.modelStates.vLin(3,i) = msgsModelStates{i}.Twist(2).Linear.Z;
-        topicsOut.modelStates.vAng(1,i) = msgsModelStates{i}.Twist(2).Angular.X;
-        topicsOut.modelStates.vAng(2,i) = msgsModelStates{i}.Twist(2).Angular.Y;
-        topicsOut.modelStates.vAng(3,i) = msgsModelStates{i}.Twist(2).Angular.Z;
+        topicsOut.modelStates.pos(1,i) = ...
+            msgsModelStates{i}.Pose(2).Position.X;
+        topicsOut.modelStates.pos(2,i) = ...
+            msgsModelStates{i}.Pose(2).Position.Y;
+        topicsOut.modelStates.pos(3,i) = ...
+            msgsModelStates{i}.Pose(2).Position.Z;
+        topicsOut.modelStates.orient(1,i) = ...
+            msgsModelStates{i}.Pose(2).Orientation.X;
+        topicsOut.modelStates.orient(2,i) = ...
+            msgsModelStates{i}.Pose(2).Orientation.Y;
+        topicsOut.modelStates.orient(3,i) = ...
+            msgsModelStates{i}.Pose(2).Orientation.Z;
+        topicsOut.modelStates.orient(4,i) = ...
+            msgsModelStates{i}.Pose(2).Orientation.W;
+        topicsOut.modelStates.vLin(1,i) = ...
+            msgsModelStates{i}.Twist(2).Linear.X;
+        topicsOut.modelStates.vLin(2,i) = ...
+            msgsModelStates{i}.Twist(2).Linear.Y;
+        topicsOut.modelStates.vLin(3,i) = ...
+            msgsModelStates{i}.Twist(2).Linear.Z;
+        topicsOut.modelStates.vAng(1,i) = ...
+            msgsModelStates{i}.Twist(2).Angular.X;
+        topicsOut.modelStates.vAng(2,i) = ...
+            msgsModelStates{i}.Twist(2).Angular.Y;
+        topicsOut.modelStates.vAng(3,i) = ...
+            msgsModelStates{i}.Twist(2).Angular.Z;
     end
     
     % Remove unncessary data for later on in this function to save memory
