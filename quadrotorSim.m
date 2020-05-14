@@ -119,18 +119,30 @@ state   = qrsimpleltisim(time,x0,u,param);
 
 %% Plot results
 % Determine plot limits
-xMin = min(min(state(1,startSample:endSample)), ...
-           min(gazSim.state.pos(1,startSample:endSample)));
-xMax = max(max(state(1,startSample:endSample)), ...
-           max(gazSim.state.pos(1,startSample:endSample)));
-yMin = min(min(state(2,startSample:endSample)), ...
-           min(gazSim.state.pos(2,startSample:endSample)));
-yMax = max(max(state(2,startSample:endSample)), ...
-           max(gazSim.state.pos(2,startSample:endSample)));
-zMin = min(min(state(3,startSample:endSample)), ...
-           min(gazSim.state.pos(3,startSample:endSample)));
-zMax = max(max(state(3,startSample:endSample)), ...
-           max(gazSim.state.pos(3,startSample:endSample)));
+xMin        = min(min(state(1,startSample:endSample)), ...
+                  min(gazSim.state.pos(1,startSample:endSample)));
+xMax        = max(max(state(1,startSample:endSample)), ...
+                  max(gazSim.state.pos(1,startSample:endSample)));
+yMin        = min(min(state(2,startSample:endSample)), ...
+                  min(gazSim.state.pos(2,startSample:endSample)));
+yMax        = max(max(state(2,startSample:endSample)), ...
+                  max(gazSim.state.pos(2,startSample:endSample)));
+zMin        = min(min(state(3,startSample:endSample)), ...
+                  min(gazSim.state.pos(3,startSample:endSample)));
+zMax        = max(max(state(3,startSample:endSample)), ...
+                  max(gazSim.state.pos(3,startSample:endSample)));
+phiMin      = min(min(state(7,startSample:endSample)), ...
+                  min(gazSim.state.orient(1,startSample:endSample)));
+phiMax      = max(max(state(7,startSample:endSample)), ...
+                  max(gazSim.state.orient(1,startSample:endSample)));
+thetaMin    = min(min(state(8,startSample:endSample)), ...
+                  min(gazSim.state.orient(2,startSample:endSample)));
+thetaMax    = max(max(state(8,startSample:endSample)), ...
+                  max(gazSim.state.orient(2,startSample:endSample)));
+psiMin      = min(min(state(9,startSample:endSample)), ...
+                  min(gazSim.state.orient(3,startSample:endSample)));
+psiMax      = max(max(state(9,startSample:endSample)), ...
+                  max(gazSim.state.orient(3,startSample:endSample)));
 
 % Plot position
 figure('Name', 'Position in simulation plots (inertial frame)');
@@ -144,7 +156,7 @@ ylabel('x_{matlab} (m)');
 subplot(3,2,2);
 plot(gazSim.state.time,gazSim.state.pos(1,:));
 xlim([time(1),time(end)]);
-ylim([xMin xMax]);
+% ylim([xMin xMax]);
 xlabel('Time (s)');
 ylabel('x_{gazebo} (m)');
 
@@ -157,7 +169,7 @@ ylabel('y_{matlab} (m)');
 subplot(3,2,4);
 plot(gazSim.state.time,gazSim.state.pos(2,:));
 xlim([time(1),time(end)]);
-ylim([yMin,yMax]);
+% ylim([yMin,yMax]);
 xlabel('Time (s)');
 ylabel('y_{gazebo} (m)');
 
@@ -170,7 +182,7 @@ ylabel('z_{matlab} (m)');
 subplot(3,2,6);
 plot(gazSim.state.time,gazSim.state.pos(3,:));
 xlim([time(1),time(end)]);
-ylim([zMin,zMax]);
+% ylim([zMin,zMax]);
 xlabel('Time (s)');
 ylabel('z_{gazebo} (m)');
 
@@ -178,28 +190,40 @@ ylabel('z_{gazebo} (m)');
 figure('Name', 'Angle plots (XYZ fixed/ZYX Euler)');
 subplot(3,2,1);
 plot(time,state(4,:));
+xlim([time(1),time(end)]);
+ylim([phiMin,phiMax]);
 xlabel('Time (s)');
 ylabel('\phi_{matlab} (rad)');
 subplot(3,2,2);
 plot(gazSim.state.time,gazSim.state.orient(1,:));
+xlim([time(1),time(end)]);
+% ylim([phiMin,phiMax]);
 xlabel('Time (s)');
 ylabel('\phi_{gazebo} (rad)');
 
 subplot(3,2,3);
 plot(time,state(5,:));
+xlim([time(1),time(end)]);
+ylim([thetaMin,thetaMax]);
 xlabel('Time (s)');
 ylabel('\theta (rad)');
 subplot(3,2,4);
 plot(gazSim.state.time,gazSim.state.orient(2,:));
+xlim([time(1),time(end)]);
+% ylim([thetaMin,thetaMax]);
 xlabel('Time (s)');
 ylabel('\theta_{gazebo} (rad)');
 
 subplot(3,2,5);
 plot(time,state(6,:));
+xlim([time(1),time(end)]);
+ylim([psiMin,psiMax]);
 xlabel('Time (s)');
 ylabel('\psi (rad)');
 subplot(3,2,6);
 plot(gazSim.state.time,gazSim.state.orient(3,:));
+xlim([time(1),time(end)]);
+% ylim([psiMin,psiMax]);
 xlabel('Time (s)');
 ylabel('\psi_{gazebo} (rad)');
 

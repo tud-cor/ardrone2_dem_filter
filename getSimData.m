@@ -48,15 +48,32 @@ orientQuat = orientQuat';
 orient = zeros(size(orientQuat,1),3);
 for i = 1:size(orientQuat,1)
     orient(i,:) = quat2eul(orientQuat(i,:));
-    for j = 1:3
-        if orient(i,j) >= 2*pi
-            orient(i,j) = orient(i,j) - 2*pi;
-        elseif orient(i,j) < 0
-            orient(i,j) = orient(i,j) + 2*pi;
+end
+orient = orient';
+
+for i = 1:3
+    % Check for jumps between ~0 and ~2*pi and center angles around 0.
+    % If amount of jumps is at least equal to 50, the data will be edited
+    cnt = 0;
+    for j = 2:size(orient,2)
+        if abs(orient(i,j) - orient(i,j-1)) > 6
+            cnt = cnt + 1;
+        end
+    end
+    if cnt >= 50
+        orient(i,:) = orient(i,:) + 2*pi;
+        orient(i,:) = mod(orient(i,:),2*pi);
+        avg = mean(orient(i,:));
+        orient(i,:) = orient(i,:) - avg;
+        for j = 1:size(orient,2)
+            if orient(i,j) < -0.75
+                orient(i,j) = 0;
+            elseif orient(i,j) > 0.75
+                orient(i,j) = 0;
+            end
         end
     end
 end
-orient = orient';
 
 
 %% Interpolate input data
@@ -103,20 +120,6 @@ tmp = interpolate(gazSim.input.time, data);
 gazSim.state.orient = tmp.value;
 
 
-%% Edit phi data (wrong average angle)
-gazSim.state.orient(1,:) = gazSim.state.orient(1,:) + 2*pi;
-gazSim.state.orient(1,:) = mod(gazSim.state.orient(1,:),2*pi);
-avg = mean(gazSim.state.orient(1,:));
-gazSim.state.orient(1,:) = gazSim.state.orient(1,:) - avg;
-for i = 1:size(gazSim.state.orient,2)
-    if gazSim.state.orient(1,i) < -0.75
-        gazSim.state.orient(1,i) = 0;
-    elseif gazSim.state.orient(1,i) > 0.75
-        gazSim.state.orient(1,i) = 0;
-    end
-end
-
-
 %% Set start to 0, sample frequency = 1000
 gazSim.input.time = gazSim.input.time - gazSim.input.time(1);
 gazSim.state.time = gazSim.state.time - gazSim.state.time(1);
@@ -125,42 +128,42 @@ gazSim.sampleTime = 0.001;
 
 
 %% Plot input data
-figure('Name', 'Force plots');
+figure('Name', 'Input plots');
 
-subplot(3,1,1);
+subplot(3,2,1);
 plot(gazSim.input.time, gazSim.input.force(1,:), 'LineStyle', '-', ...
      'Marker', '.');
+title('Force');
 xlabel('Time (s)');
 ylabel('f_x (N?)');
 
-subplot(3,1,2);
+subplot(3,2,3);
 plot(gazSim.input.time, gazSim.input.force(2,:), 'LineStyle', '-', ...
      'Marker', '.');
 xlabel('Time (s)');
 ylabel('f_y (N?)');
 
-subplot(3,1,3);
+subplot(3,2,5);
 plot(gazSim.input.time, gazSim.input.force(3,:), 'LineStyle', '-', ...
      'Marker', '.');
 xlabel('Time (s)');
 ylabel('f_z (N?)');
 
 
-figure('Name', 'Torque plots');
-
-subplot(3,1,1);
+subplot(3,2,2);
 plot(gazSim.input.time, gazSim.input.torque(1,:), 'LineStyle', '-', ...
      'Marker', '.');
+title('Torque');
 xlabel('Time (s)');
 ylabel('\tau_x (Nm?)');
 
-subplot(3,1,2);
+subplot(3,2,4);
 plot(gazSim.input.time, gazSim.input.torque(2,:), 'LineStyle', '-', ...
      'Marker', '.');
 xlabel('Time (s)');
 ylabel('\tau_y (Nm?)');
 
-subplot(3,1,3);
+subplot(3,2,6);
 plot(gazSim.input.time, gazSim.input.torque(3,:), 'LineStyle', '-', ...
      'Marker', '.');
 xlabel('Time (s)');
@@ -168,26 +171,46 @@ ylabel('\tau_z (Nm?)');
 
 
 %% Plot state data
-figure('Name', 'Position (inertial frame)');
+figure('Name', 'State plots');
 
-subplot(3,1,1);
+subplot(3,2,1);
 plot(gazSim.state.time, gazSim.state.pos(1,:), 'LineStyle', '-', ...
      'Marker', '.');
+title('Position (inertial frame)');
 xlabel('Time (s)');
 ylabel('x (m)');
 
-subplot(3,1,2);
+subplot(3,2,3);
 plot(gazSim.state.time, gazSim.state.pos(2,:), 'LineStyle', '-', ...
      'Marker', '.');
 xlabel('Time (s)');
 ylabel('y (m)');
 
-subplot(3,1,3);
+subplot(3,2,5);
 plot(gazSim.state.time, gazSim.state.pos(3,:), 'LineStyle', '-', ...
      'Marker', '.');
 xlabel('Time (s)');
 ylabel('z (m)');
 
+
+subplot(3,2,2);
+plot(gazSim.state.time, gazSim.state.orient(1,:), 'LineStyle', '-', ...
+     'Marker', '.');
+title('XYZ fixed/ZYX Euler angles');
+xlabel('Time (s)');
+ylabel('\phi (rad)');
+
+subplot(3,2,4);
+plot(gazSim.state.time, gazSim.state.orient(2,:), 'LineStyle', '-', ...
+     'Marker', '.');
+xlabel('Time (s)');
+ylabel('\theta (rad)');
+
+subplot(3,2,6);
+plot(gazSim.state.time, gazSim.state.orient(3,:), 'LineStyle', '-', ...
+     'Marker', '.');
+xlabel('Time (s)');
+ylabel('\psi (rad)');
 
 %% Save gazSim data
 save('gazSim.mat', 'gazSim');
