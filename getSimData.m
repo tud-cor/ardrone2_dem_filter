@@ -7,7 +7,7 @@ clc;
 %% Set variables
 % Retrieve bag file
 cd ~/.ros;
-bag = rosbag("force_torque_meas_2020-04-29-13-37-20.bag");
+bag = rosbag("force_torque_meas_2020-05-13-09-08-59.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
@@ -16,7 +16,7 @@ topics.modelInput = 1;
 topics.modelStates = 1;
 
 % Set time interval with respect to start of rosbag recording
-time = [8, 18];
+time = [18, 38];
 
 
 %% Get data
@@ -37,10 +37,26 @@ end
 if topics.modelStates
     modelStatesTime = topicsOut.modelStates.time;
     pos = topicsOut.modelStates.pos;
-    orient = topicsOut.modelStates.orient;
+    orientQuat = topicsOut.modelStates.orient;
     vLin = topicsOut.modelStates.vLin;
     vAng = topicsOut.modelStates.vAng;
 end
+
+
+%% Convert quaternions to ZYX Euler angles
+orientQuat = orientQuat';
+orient = zeros(size(orientQuat,1),3);
+for i = 1:size(orientQuat,1)
+    orient(i,:) = quat2eul(orientQuat(i,:));
+    for j = 1:3
+        if orient(i,j) >= 2*pi
+            orient(i,j) = orient(i,j) - 2*pi;
+        elseif orient(i,j) < 0
+            orient(i,j) = orient(i,j) + 2*pi;
+        end
+    end
+end
+orient = orient';
 
 
 %% Interpolate input data
@@ -85,6 +101,20 @@ gazSim.state.pos = tmp.value;
 data.value = orient;
 tmp = interpolate(gazSim.input.time, data);
 gazSim.state.orient = tmp.value;
+
+
+%% Edit phi data (wrong average angle)
+gazSim.state.orient(1,:) = gazSim.state.orient(1,:) + 2*pi;
+gazSim.state.orient(1,:) = mod(gazSim.state.orient(1,:),2*pi);
+avg = mean(gazSim.state.orient(1,:));
+gazSim.state.orient(1,:) = gazSim.state.orient(1,:) - avg;
+for i = 1:size(gazSim.state.orient,2)
+    if gazSim.state.orient(1,i) < -0.75
+        gazSim.state.orient(1,i) = 0;
+    elseif gazSim.state.orient(1,i) > 0.75
+        gazSim.state.orient(1,i) = 0;
+    end
+end
 
 
 %% Set start to 0, sample frequency = 1000

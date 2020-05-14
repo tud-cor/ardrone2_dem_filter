@@ -6,7 +6,7 @@
 % to compare with Gazebo simulation data
 %
 % Author: Dennis Benders
-% Last edited: 12.05.2020
+% Last edited: 13.05.2020
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -23,7 +23,7 @@ load gazSim.mat gazSim;
 
 % Select time samples to use
 startSample = 1;
-endSample   = 10001;
+endSample   = 20000;
 
 
 %% System parameters
@@ -32,6 +32,9 @@ param.timeThres     = 1e-10;
 
 % Position at the ground accuracy
 param.groundThres   = 1e-3;
+
+% Recorded data accuracy
+param.sampleTime    = 1e-3;
 
 % Environmental constants
 param.g             = 9.81;     %m/s^2
@@ -82,11 +85,11 @@ param.cQ            = param.CQ*param.densityAir*param.areaBlade^2* ...
 % simulation
 time    = gazSim.input.time(startSample:endSample);
 x0      = zeros(12,1);
-x0(4:6) = gazSim.state.pos(:,startSample);
-%TODO put here the initialisation of the quadrotor Euler angles (translate
-%in MATLAB from quaternion to Euler angles)
+x0(1:3) = gazSim.state.pos(:,startSample);
+x0(7:9) = gazSim.state.orient(:,startSample);
 u       = [gazSim.input.force(3,startSample:endSample); ...
            gazSim.input.torque(1:3,startSample:endSample)];
+
 state   = qrsimpleltisim(time,x0,u,param);
 
 
@@ -173,18 +176,32 @@ ylabel('z_{gazebo} (m)');
 
 % Plot XYZ fixed angles/ZYX Euler angles
 figure('Name', 'Angle plots (XYZ fixed/ZYX Euler)');
-subplot(3,1,1);
+subplot(3,2,1);
 plot(time,state(4,:));
 xlabel('Time (s)');
-ylabel('\phi (rad)');
-subplot(3,1,2);
+ylabel('\phi_{matlab} (rad)');
+subplot(3,2,2);
+plot(gazSim.state.time,gazSim.state.orient(1,:));
+xlabel('Time (s)');
+ylabel('\phi_{gazebo} (rad)');
+
+subplot(3,2,3);
 plot(time,state(5,:));
 xlabel('Time (s)');
 ylabel('\theta (rad)');
-subplot(3,1,3);
+subplot(3,2,4);
+plot(gazSim.state.time,gazSim.state.orient(2,:));
+xlabel('Time (s)');
+ylabel('\theta_{gazebo} (rad)');
+
+subplot(3,2,5);
 plot(time,state(6,:));
 xlabel('Time (s)');
 ylabel('\psi (rad)');
+subplot(3,2,6);
+plot(gazSim.state.time,gazSim.state.orient(3,:));
+xlabel('Time (s)');
+ylabel('\psi_{gazebo} (rad)');
 
 
 %% Function definitions
@@ -329,10 +346,6 @@ dxdt = [R(1,1)*u + R(1,2)*v + R(1,3)*w;...
 end
 
 function x = qrsimpleltisim(t,x0,u,param)
-% Get timing properties: sampling time and simulation duration
-dur         = length(t);
-sampleTime  = (t(end) - t(1))/dur;
-
 % Translate operating point to origin of state-input space
 n = length(x0);
 l = size(u,1);
@@ -368,14 +381,16 @@ B = [0        , 0          , 0          , 0;
      0        , 0          , 0          , 1/param.izz];
 C = eye(n);
 D = zeros(n,l);
+
 sysc = ss(A,B,C,D);
 
 % Construct discrete-time linearised state space system
-sysd = c2d(sysc,sampleTime);
+sysd = c2d(sysc,param.sampleTime);
 
 % Simulate system on every time step
-x = zeros(n,dur);
-x(:,1) = x0;
+dur     = length(t);
+x       = zeros(n,dur);
+x(:,1)  = x0;
 for i = 1:dur-1
     x(:,i+1) = sysd.A*x(:,i) + sysd.B*u(:,i);
 end
