@@ -51,29 +51,29 @@ for i = 1:size(orientQuat,1)
 end
 orient = orient';
 
-for i = 1:3
-    % Check for jumps between ~0 and ~2*pi and center angles around 0.
-    % If amount of jumps is at least equal to 50, the data will be edited
-    cnt = 0;
-    for j = 2:size(orient,2)
-        if abs(orient(i,j) - orient(i,j-1)) > 6
-            cnt = cnt + 1;
-        end
-    end
-    if cnt >= 50
-        orient(i,:) = orient(i,:) + 2*pi;
-        orient(i,:) = mod(orient(i,:),2*pi);
-        avg = mean(orient(i,:));
-        orient(i,:) = orient(i,:) - avg;
-        for j = 1:size(orient,2)
-            if orient(i,j) < -0.75
-                orient(i,j) = 0;
-            elseif orient(i,j) > 0.75
-                orient(i,j) = 0;
-            end
-        end
-    end
-end
+% for i = 1:3
+%     % Check for jumps between ~0 and ~2*pi and center angles around 0.
+%     % If amount of jumps is at least equal to 50, the data will be edited
+%     cnt = 0;
+%     for j = 2:size(orient,2)
+%         if abs(orient(i,j) - orient(i,j-1)) > 6
+%             cnt = cnt + 1;
+%         end
+%     end
+%     if cnt >= 50
+%         orient(i,:) = orient(i,:) + 2*pi;
+%         orient(i,:) = mod(orient(i,:),2*pi);
+%         avg = mean(orient(i,:));
+%         orient(i,:) = orient(i,:) - avg;
+%         for j = 1:size(orient,2)
+%             if orient(i,j) < -0.75
+%                 orient(i,j) = 0;
+%             elseif orient(i,j) > 0.75
+%                 orient(i,j) = 0;
+%             end
+%         end
+%     end
+% end
 
 
 %% Interpolate input data
@@ -213,4 +213,4 @@ xlabel('Time (s)');
 ylabel('\psi (rad)');
 
 %% Save gazSim data
-save('gazSim.mat', 'gazSim');
+save('gazSimUnmodAngles.mat', 'gazSim');

@@ -19,7 +19,7 @@ close all;
 
 %% Select simulation data
 % Load pre-processed simulation data file
-load gazSim.mat gazSim;
+load gazSimUnmodAngles.mat gazSim;
 
 % Select time samples to use
 startSample = 1;
@@ -413,6 +413,9 @@ sysd = c2d(sysc,param.sampleTime);
 
 % Simulate system on every time step
 dur     = length(t);
+
+u       = kron(ones(1,dur),[0.001; 0; 0; 0]);
+
 x       = zeros(n,dur);
 x(:,1)  = x0;
 for i = 1:dur-1
