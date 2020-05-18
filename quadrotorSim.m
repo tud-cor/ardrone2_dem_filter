@@ -19,7 +19,7 @@ close all;
 
 %% Select simulation data
 % Load pre-processed simulation data file
-load gazSimUnmodAngles.mat gazSim;
+load gazSim.mat gazSim;
 
 % Select time samples to use
 startSample = 1;
@@ -382,8 +382,8 @@ u = u - inputOperatingPoint;
 A = [0, 0, 0, 1, 0, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 1, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 1, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 1, 0, 0, 0       , param.g, 0, 0, 0, 0;
-     0, 0, 0, 1, 0, 0, -param.g, 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , param.g, 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, -param.g, 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 1       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0       , 1      , 0, 0, 0, 0;
@@ -414,7 +414,7 @@ sysd = c2d(sysc,param.sampleTime);
 % Simulate system on every time step
 dur     = length(t);
 
-u       = kron(ones(1,dur),[0.001; 0; 0; 0]);
+u       = kron(ones(1,dur),[0; 0; 0; 0]);
 
 x       = zeros(n,dur);
 x(:,1)  = x0;
