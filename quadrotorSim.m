@@ -23,7 +23,7 @@ load gazSim.mat gazSim;
 
 % Select time samples to use
 startSample = 1;
-endSample   = 20000;
+endSample   = 6000;
 
 
 %% System parameters
@@ -31,10 +31,10 @@ endSample   = 20000;
 param.timeThres     = 1e-10;
 
 % Position at the ground accuracy
-param.groundThres   = 1e-3;
+param.groundThres   = 1e-3;     %m
 
 % Recorded data accuracy
-param.sampleTime    = 1e-3;
+param.sampleTime    = 1e-3;     %s
 
 % Environmental constants
 param.g             = 9.81;     %m/s^2
@@ -85,15 +85,18 @@ param.cQ            = param.CQ*param.densityAir*param.areaBlade^2* ...
 % simulation
 time    = gazSim.input.time(startSample:endSample);
 x0      = zeros(12,1);
-x0(1:3) = gazSim.state.pos(:,startSample);
-x0(7:9) = gazSim.state.orient(:,startSample);
-u       = [gazSim.input.force(3,startSample:endSample); ...
-           gazSim.input.torque(1:3,startSample:endSample)];
+% x0(1)   = 0.1;
+% x0(1:3) = gazSim.state.pos(:,startSample);
+% x0(7:9) = gazSim.state.orient(:,startSample);
+u       = kron(ones(1,endSample-startSample+1),[param.m*param.g; 0; 0; 0]);
+% u       = [gazSim.input.force(3,startSample:endSample); ...
+%            gazSim.input.torque(1:3,startSample:endSample)];
 
 state   = qrsimpleltisim(time,x0,u,param);
 
 
 %% Nonlinear (non-working) simulations
+% TODO: not correct yet!
 % (Nonlinear) ODE45 simulation
 % States are based on "Design and control of an indoor micro quadrotor" -
 % not anymore
@@ -106,6 +109,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 
 
 % Gazebo simulation comparison
+% TODO: not correct yet!
 % States are based on "Design and control of an indoor micro quadrotor" -
 % not anymore
 % endSample   = 200;
@@ -117,115 +121,189 @@ state   = qrsimpleltisim(time,x0,u,param);
 % [t,xNonlin] = ode45(@(t,xNonlin) qrgazodefcn(t,xNonlin,param),time,x0Nonlin,opt);
 
 
-%% Plot results
-% Determine plot limits
-xMin        = min(min(state(1,startSample:endSample)), ...
-                  min(gazSim.state.pos(1,startSample:endSample)));
-xMax        = max(max(state(1,startSample:endSample)), ...
-                  max(gazSim.state.pos(1,startSample:endSample)));
-yMin        = min(min(state(2,startSample:endSample)), ...
-                  min(gazSim.state.pos(2,startSample:endSample)));
-yMax        = max(max(state(2,startSample:endSample)), ...
-                  max(gazSim.state.pos(2,startSample:endSample)));
-zMin        = min(min(state(3,startSample:endSample)), ...
-                  min(gazSim.state.pos(3,startSample:endSample)));
-zMax        = max(max(state(3,startSample:endSample)), ...
-                  max(gazSim.state.pos(3,startSample:endSample)));
-phiMin      = min(min(state(7,startSample:endSample)), ...
-                  min(gazSim.state.orient(1,startSample:endSample)));
-phiMax      = max(max(state(7,startSample:endSample)), ...
-                  max(gazSim.state.orient(1,startSample:endSample)));
-thetaMin    = min(min(state(8,startSample:endSample)), ...
-                  min(gazSim.state.orient(2,startSample:endSample)));
-thetaMax    = max(max(state(8,startSample:endSample)), ...
-                  max(gazSim.state.orient(2,startSample:endSample)));
-psiMin      = min(min(state(9,startSample:endSample)), ...
-                  min(gazSim.state.orient(3,startSample:endSample)));
-psiMax      = max(max(state(9,startSample:endSample)), ...
-                  max(gazSim.state.orient(3,startSample:endSample)));
+% %% Plot results
+% % Determine plot limits
+% xMin        = min(min(state(1,startSample:endSample)), ...
+%                   min(gazSim.state.pos(1,startSample:endSample)));
+% xMax        = max(max(state(1,startSample:endSample)), ...
+%                   max(gazSim.state.pos(1,startSample:endSample)));
+% yMin        = min(min(state(2,startSample:endSample)), ...
+%                   min(gazSim.state.pos(2,startSample:endSample)));
+% yMax        = max(max(state(2,startSample:endSample)), ...
+%                   max(gazSim.state.pos(2,startSample:endSample)));
+% zMin        = min(min(state(3,startSample:endSample)), ...
+%                   min(gazSim.state.pos(3,startSample:endSample)));
+% zMax        = max(max(state(3,startSample:endSample)), ...
+%                   max(gazSim.state.pos(3,startSample:endSample)));
+% phiMin      = min(min(state(7,startSample:endSample)), ...
+%                   min(gazSim.state.orient(1,startSample:endSample)));
+% phiMax      = max(max(state(7,startSample:endSample)), ...
+%                   max(gazSim.state.orient(1,startSample:endSample)));
+% thetaMin    = min(min(state(8,startSample:endSample)), ...
+%                   min(gazSim.state.orient(2,startSample:endSample)));
+% thetaMax    = max(max(state(8,startSample:endSample)), ...
+%                   max(gazSim.state.orient(2,startSample:endSample)));
+% psiMin      = min(min(state(9,startSample:endSample)), ...
+%                   min(gazSim.state.orient(3,startSample:endSample)));
+% psiMax      = max(max(state(9,startSample:endSample)), ...
+%                   max(gazSim.state.orient(3,startSample:endSample)));
+% 
+% % Plot position
+% figure('Name', 'Position in simulation plots (inertial frame)');
+% 
+% subplot(3,2,1);
+% plot(time,state(1,:));
+% xlim([time(1),time(end)]);
+% ylim([xMin,xMax]);
+% xlabel('Time (s)');
+% ylabel('x_{matlab} (m)');
+% subplot(3,2,2);
+% plot(gazSim.state.time,gazSim.state.pos(1,:));
+% xlim([time(1),time(end)]);
+% % ylim([xMin xMax]);
+% xlabel('Time (s)');
+% ylabel('x_{gazebo} (m)');
+% 
+% subplot(3,2,3);
+% plot(time,state(2,:));
+% xlim([time(1),time(end)]);
+% ylim([yMin,yMax]);
+% xlabel('Time (s)');
+% ylabel('y_{matlab} (m)');
+% subplot(3,2,4);
+% plot(gazSim.state.time,gazSim.state.pos(2,:));
+% xlim([time(1),time(end)]);
+% % ylim([yMin,yMax]);
+% xlabel('Time (s)');
+% ylabel('y_{gazebo} (m)');
+% 
+% subplot(3,2,5);
+% plot(time,state(3,:));
+% xlim([time(1),time(end)]);
+% ylim([zMin,zMax]);
+% xlabel('Time (s)');
+% ylabel('z_{matlab} (m)');
+% subplot(3,2,6);
+% plot(gazSim.state.time,gazSim.state.pos(3,:));
+% xlim([time(1),time(end)]);
+% % ylim([zMin,zMax]);
+% xlabel('Time (s)');
+% ylabel('z_{gazebo} (m)');
+% 
+% % Plot XYZ fixed angles/ZYX Euler angles
+% figure('Name', 'Angle plots (XYZ fixed/ZYX Euler)');
+% subplot(3,2,1);
+% plot(time,state(4,:));
+% xlim([time(1),time(end)]);
+% ylim([phiMin,phiMax]);
+% xlabel('Time (s)');
+% ylabel('\phi_{matlab} (rad)');
+% subplot(3,2,2);
+% plot(gazSim.state.time,gazSim.state.orient(1,:));
+% xlim([time(1),time(end)]);
+% % ylim([phiMin,phiMax]);
+% xlabel('Time (s)');
+% ylabel('\phi_{gazebo} (rad)');
+% 
+% subplot(3,2,3);
+% plot(time,state(5,:));
+% xlim([time(1),time(end)]);
+% ylim([thetaMin,thetaMax]);
+% xlabel('Time (s)');
+% ylabel('\theta (rad)');
+% subplot(3,2,4);
+% plot(gazSim.state.time,gazSim.state.orient(2,:));
+% xlim([time(1),time(end)]);
+% % ylim([thetaMin,thetaMax]);
+% xlabel('Time (s)');
+% ylabel('\theta_{gazebo} (rad)');
+% 
+% subplot(3,2,5);
+% plot(time,state(6,:));
+% xlim([time(1),time(end)]);
+% ylim([psiMin,psiMax]);
+% xlabel('Time (s)');
+% ylabel('\psi (rad)');
+% subplot(3,2,6);
+% plot(gazSim.state.time,gazSim.state.orient(3,:));
+% xlim([time(1),time(end)]);
+% % ylim([psiMin,psiMax]);
+% xlabel('Time (s)');
+% ylabel('\psi_{gazebo} (rad)');
 
-% Plot position
-figure('Name', 'Position in simulation plots (inertial frame)');
-
-subplot(3,2,1);
+figure('Name','States');
+subplot(6,2,1);
 plot(time,state(1,:));
 xlim([time(1),time(end)]);
-ylim([xMin,xMax]);
 xlabel('Time (s)');
 ylabel('x_{matlab} (m)');
-subplot(3,2,2);
-plot(gazSim.state.time,gazSim.state.pos(1,:));
-xlim([time(1),time(end)]);
-% ylim([xMin xMax]);
-xlabel('Time (s)');
-ylabel('x_{gazebo} (m)');
 
-subplot(3,2,3);
+subplot(6,2,3);
 plot(time,state(2,:));
 xlim([time(1),time(end)]);
-ylim([yMin,yMax]);
 xlabel('Time (s)');
 ylabel('y_{matlab} (m)');
-subplot(3,2,4);
-plot(gazSim.state.time,gazSim.state.pos(2,:));
-xlim([time(1),time(end)]);
-% ylim([yMin,yMax]);
-xlabel('Time (s)');
-ylabel('y_{gazebo} (m)');
 
-subplot(3,2,5);
+subplot(6,2,5);
 plot(time,state(3,:));
 xlim([time(1),time(end)]);
-ylim([zMin,zMax]);
 xlabel('Time (s)');
 ylabel('z_{matlab} (m)');
-subplot(3,2,6);
-plot(gazSim.state.time,gazSim.state.pos(3,:));
-xlim([time(1),time(end)]);
-% ylim([zMin,zMax]);
-xlabel('Time (s)');
-ylabel('z_{gazebo} (m)');
 
-% Plot XYZ fixed angles/ZYX Euler angles
-figure('Name', 'Angle plots (XYZ fixed/ZYX Euler)');
-subplot(3,2,1);
+subplot(6,2,7);
 plot(time,state(4,:));
 xlim([time(1),time(end)]);
-ylim([phiMin,phiMax]);
 xlabel('Time (s)');
-ylabel('\phi_{matlab} (rad)');
-subplot(3,2,2);
-plot(gazSim.state.time,gazSim.state.orient(1,:));
-xlim([time(1),time(end)]);
-% ylim([phiMin,phiMax]);
-xlabel('Time (s)');
-ylabel('\phi_{gazebo} (rad)');
+ylabel('xDot_{matlab} (m)');
 
-subplot(3,2,3);
+subplot(6,2,9);
 plot(time,state(5,:));
 xlim([time(1),time(end)]);
-ylim([thetaMin,thetaMax]);
 xlabel('Time (s)');
-ylabel('\theta (rad)');
-subplot(3,2,4);
-plot(gazSim.state.time,gazSim.state.orient(2,:));
-xlim([time(1),time(end)]);
-% ylim([thetaMin,thetaMax]);
-xlabel('Time (s)');
-ylabel('\theta_{gazebo} (rad)');
+ylabel('yDot_{matlab} (m)');
 
-subplot(3,2,5);
+subplot(6,2,11);
 plot(time,state(6,:));
 xlim([time(1),time(end)]);
-ylim([psiMin,psiMax]);
 xlabel('Time (s)');
-ylabel('\psi (rad)');
-subplot(3,2,6);
-plot(gazSim.state.time,gazSim.state.orient(3,:));
+ylabel('zDot_{matlab} (m)');
+
+% Plot XYZ fixed angles/ZYX Euler angles
+subplot(6,2,2);
+plot(time,state(7,:));
 xlim([time(1),time(end)]);
-% ylim([psiMin,psiMax]);
 xlabel('Time (s)');
-ylabel('\psi_{gazebo} (rad)');
+ylabel('\phi_{matlab} (rad)');
+
+subplot(6,2,4);
+plot(time,state(8,:));
+xlim([time(1),time(end)]);
+xlabel('Time (s)');
+ylabel('\theta_{matlab} (rad)');
+
+subplot(6,2,6);
+plot(time,state(9,:));
+xlim([time(1),time(end)]);
+xlabel('Time (s)');
+ylabel('\psi_{matlab} (rad)');
+
+subplot(6,2,8);
+plot(time,state(10,:));
+xlim([time(1),time(end)]);
+xlabel('Time (s)');
+ylabel('\phiDot_{matlab} (rad)');
+
+subplot(6,2,10);
+plot(time,state(11,:));
+xlim([time(1),time(end)]);
+xlabel('Time (s)');
+ylabel('\thetaDot_{matlab} (rad)');
+
+subplot(6,2,12);
+plot(time,state(12,:));
+xlim([time(1),time(end)]);
+xlabel('Time (s)');
+ylabel('\psiDot_{matlab} (rad)');
 
 
 %% Function definitions
@@ -374,6 +452,7 @@ function x = qrsimpleltisim(t,x0,u,param)
 n = length(x0);
 l = size(u,1);
 stateOperatingPoint = zeros(n,1);
+stateOperatingPoint(3) = 2;
 inputOperatingPoint = [param.m*param.g; 0; 0; 0];
 x0 = x0 - stateOperatingPoint;
 u = u - inputOperatingPoint;
@@ -385,9 +464,9 @@ A = [0, 0, 0, 1, 0, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0       , param.g, 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, -param.g, 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 1       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 1      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 1, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 1, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 1, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 1;
      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0];
@@ -414,13 +493,46 @@ sysd = c2d(sysc,param.sampleTime);
 % Simulate system on every time step
 dur     = length(t);
 
-u       = kron(ones(1,dur),[0; 0; 0; 0]);
+% Adjusted system input
+uFreq   = 5; %Hz
+% u       = kron(ones(1,dur/4),[3; 0; 0; 0]);
+% u       = [u, kron(ones(1,3*dur/4),[0; 0; 0; 0])];
+for i = 1:dur
+    u(2,i) = 0.001*cos(2*pi*uFreq*i*param.sampleTime);
+end
+% u   = kron(ones(1,dur),[0; 0; 0; 0]);
 
 x       = zeros(n,dur);
 x(:,1)  = x0;
 for i = 1:dur-1
     x(:,i+1) = sysd.A*x(:,i) + sysd.B*u(:,i);
+    % Ground constraint
+    if x(3,i+1) < 0
+        x(3,i+1) = 0;
+    end
+    if abs(x(3,i+1)) < param.groundThres && x(6,i+1) < 0
+        x(6,i+1) = 0;
+    end
 end
+
+% Plot inputs
+figure('Name','Linearised inputs');
+subplot(4,1,1);
+plot(u(1,:));
+xlabel('Time (s)');
+ylabel('T (N)');
+subplot(4,1,2);
+plot(u(2,:));
+xlabel('Time (s)');
+ylabel('\tau_\phi (N)');
+subplot(4,1,3);
+plot(u(3,:));
+xlabel('Time (s)');
+ylabel('\tau_\theta (N)');
+subplot(4,1,4);
+plot(u(4,:));
+xlabel('Time (s)');
+ylabel('\tau_\psi (N)');
 
 % Translate back to operating point in state-input space
 x = x + stateOperatingPoint;
