@@ -47,7 +47,7 @@ if topics.cmdVel
         'Topic', '/cmd_vel');
     msgsCmdVel = readMessages(bagCmdVel, 'DataFormat', 'Struct');
     lenCmdVel = length(msgsCmdVel);
-    
+
     % Store data of cmd_vel in arrays
     topicsOut.cmdVel.time = zeros(1, lenCmdVel);
     topicsOut.cmdVel.lin = zeros(3, lenCmdVel);
@@ -62,7 +62,7 @@ if topics.cmdVel
         topicsOut.cmdVel.ang(2,i) = msgsCmdVel{i}.Angular.Y;
         topicsOut.cmdVel.ang(3,i) = msgsCmdVel{i}.Angular.Z;
     end
-    
+
     % Remove unncessary data for later on in this function to save memory
     clear bagCmdVel msgsCmdVel;
 end
@@ -77,7 +77,7 @@ if topics.modelInput
         'Topic', '/ardrone2_dem/model_input');
     msgsModelInput = readMessages(bagModelInput, 'DataFormat', 'Struct');
     lenModelInput = length(msgsModelInput);
-    
+
     % Store data of model_input in arrays
     topicsOut.modelInput.time = zeros(1, lenModelInput);
     topicsOut.modelInput.force = zeros(3, lenModelInput);
@@ -97,7 +97,7 @@ if topics.modelInput
         topicsOut.modelInput.torque(3,i) = ...
             msgsModelInput{i}.Wrench.Torque.Z;
     end
-    
+
     % Remove unncessary data for later on in this function to save memory
     clear bagModelInput msgsModelInput;
 end
@@ -112,7 +112,7 @@ if topics.modelStates
         'Topic', '/gazebo/model_states');
     msgsModelStates = readMessages(bagModelStates, 'DataFormat', 'Struct');
     lenModelStates = length(msgsModelStates);
-    
+
     % Store data of model_states in arrays
     topicsOut.modelStates.time = zeros(1, lenModelStates);
     topicsOut.modelStates.pos = zeros(3, lenModelStates);
@@ -149,7 +149,7 @@ if topics.modelStates
         topicsOut.modelStates.vAng(3,i) = ...
             msgsModelStates{i}.Twist(2).Angular.Z;
     end
-    
+
     % Remove unncessary data for later on in this function to save memory
     clear bagModelStates msgsModelStates;
 end

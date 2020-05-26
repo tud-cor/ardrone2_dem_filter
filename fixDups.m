@@ -46,18 +46,18 @@ nDupsTot = size(dupsInfo.count,1);
 
 % For each amount of duplicates in sequence (starting from 2, of course)
 for i = 2:nDupsTot
-    
+
     % For each duplicate sequnce of a certain length
     nDups = dupsInfo.count(i,2);
     if nDups ~= 0
         tempString = ['dups' num2str(i)];
         for j = 1:nDups
-            
+
             % For each element in the duplicate sequence
             for k = 1:i-1
                 output(dupsInfo.(tempString)(j)+k) = ...
                     output(dupsInfo.(tempString)(j)) + k*avgDelta;
-            end  
+            end
         end
     end
 end

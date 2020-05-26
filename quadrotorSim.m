@@ -38,7 +38,7 @@ param.sampleTime    = 1e-3;     %s
 
 % Environmental constants
 param.g             = 9.81;     %m/s^2
-param.densityAir    = 1.2;      %kg/m^3 (for room temperature 
+param.densityAir    = 1.2;      %kg/m^3 (for room temperature
                                 %        ~20 degree Celcius)
 
 % Mass and inertia
@@ -103,7 +103,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 % tspan       = [0,1000];
 % x0Nonlin    = zeros(1,12);
 % u           = kron(840.8658965145,ones(1,4)); %hovering: u = 840.8658965145
-% 
+%
 % % opt = odeset('AbsTol', 1e-20);
 % [t,xNonlin] = ode45(@(t,xNonlin) qrodefcn(xNonlin,u,param),tspan,x0Nonlin);
 
@@ -116,7 +116,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 % time        = gazSim.input.time(startSample:endSample);
 % x0Nonlin	= zeros(12,1);
 % x0Nonlin(3) = 0.4;
-% 
+%
 % opt         = odeset('Stats', 'on');
 % [t,xNonlin] = ode45(@(t,xNonlin) qrgazodefcn(t,xNonlin,param),time,x0Nonlin,opt);
 
@@ -147,10 +147,10 @@ state   = qrsimpleltisim(time,x0,u,param);
 %                   min(gazSim.state.orient(3,startSample:endSample)));
 % psiMax      = max(max(state(9,startSample:endSample)), ...
 %                   max(gazSim.state.orient(3,startSample:endSample)));
-% 
+%
 % % Plot position
 % figure('Name', 'Position in simulation plots (inertial frame)');
-% 
+%
 % subplot(3,2,1);
 % plot(time,state(1,:));
 % xlim([time(1),time(end)]);
@@ -163,7 +163,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 % % ylim([xMin xMax]);
 % xlabel('Time (s)');
 % ylabel('x_{gazebo} (m)');
-% 
+%
 % subplot(3,2,3);
 % plot(time,state(2,:));
 % xlim([time(1),time(end)]);
@@ -176,7 +176,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 % % ylim([yMin,yMax]);
 % xlabel('Time (s)');
 % ylabel('y_{gazebo} (m)');
-% 
+%
 % subplot(3,2,5);
 % plot(time,state(3,:));
 % xlim([time(1),time(end)]);
@@ -189,7 +189,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 % % ylim([zMin,zMax]);
 % xlabel('Time (s)');
 % ylabel('z_{gazebo} (m)');
-% 
+%
 % % Plot XYZ fixed angles/ZYX Euler angles
 % figure('Name', 'Angle plots (XYZ fixed/ZYX Euler)');
 % subplot(3,2,1);
@@ -204,7 +204,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 % % ylim([phiMin,phiMax]);
 % xlabel('Time (s)');
 % ylabel('\phi_{gazebo} (rad)');
-% 
+%
 % subplot(3,2,3);
 % plot(time,state(5,:));
 % xlim([time(1),time(end)]);
@@ -217,7 +217,7 @@ state   = qrsimpleltisim(time,x0,u,param);
 % % ylim([thetaMin,thetaMax]);
 % xlabel('Time (s)');
 % ylabel('\theta_{gazebo} (rad)');
-% 
+%
 % subplot(3,2,5);
 % plot(time,state(6,:));
 % xlim([time(1),time(end)]);

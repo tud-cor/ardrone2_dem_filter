@@ -91,7 +91,7 @@ if topics.modelInput
     data.value = torque;
     tmp = interpolate(0.001, data);
     gazSim.input.torque = tmp.value;
-    
+
     gazSim.input.time = gazSim.input.time - gazSim.input.time(1);
 
     % subplot(3,1,1);
@@ -126,7 +126,7 @@ if topics.modelStates
     data.value = orient;
     tmp = interpolate(gazSim.input.time, data);
     gazSim.state.orient = tmp.value;
-    
+
     gazSim.state.time = gazSim.state.time - gazSim.state.time(1);
 end
 

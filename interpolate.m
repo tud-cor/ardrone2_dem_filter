@@ -5,7 +5,7 @@ function [intData] = interpolate(ref, data, time)
 % containing the interval on which the data will be interpolated (provided
 % that this interval is covered by the data and reference sampling time
 % array).
-%   
+%
 %   Author: Dennis Benders
 %   Last edited: 08.05.2020
 %
@@ -128,7 +128,7 @@ end
 intData.time = ref;
 if nRef == 1
     sampleTime = ref;
-    
+
     % Determine amount of samples, while taking floating-point inaccuracies
     % into account
     tempAmount = (endTime - startTime)/ref;
@@ -138,7 +138,7 @@ if nRef == 1
     else
         nTime = floor(tempAmount) + 1;
     end
-    
+
     intData.time = zeros(1,nTime);
     intData.time(1) = startTime;
     for i = 2:nTime
@@ -175,11 +175,11 @@ for refIdx = 1:nRef
         end
         dataIdx = dataIdx + 1;
     end
-    
+
     % If data.time == ref: no interpolation needed, just use that sample
     if abs(data.time(dataIdx) - intData.time(refIdx)) < timeThres
         intData.value(:,refIdx) = data.value(:,dataIdx);
-        
+
     % If data.time > ref: interpolate using data.value(dataIdx) and
     % data.value(dataIdx-1) depending on the time difference
     else

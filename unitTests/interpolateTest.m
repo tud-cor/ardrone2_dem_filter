@@ -292,13 +292,13 @@ end
 %--------------------------------------------------------------------------
 
 %---------------------- Custom with arbitrary refFreq ---------------------
-% customInterpolateTestData.mat can be visually inspected using function 
+% customInterpolateTestData.mat can be visually inspected using function
 % createCustomInterpolateTestDataMat. This shows that interpolation is done
 % properly and the results can be used to test the interpolate function.
 % Furthermore, this function has proven succesful for dataFreq = 1 and
-% refFreq = 0.951 (equivalent to using the more realistic frequencies 
+% refFreq = 0.951 (equivalent to using the more realistic frequencies
 % 1000 Hz and 951 Hz, respectively, but used to not let the interpolate
-% function throw the TooShortTimeInterval error) by checking it with 
+% function throw the TooShortTimeInterval error) by checking it with
 % calculations by hand on a relatively small time interval.
 
 function testCustomLowFreqWithoutTime(testCase)

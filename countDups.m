@@ -44,7 +44,7 @@ n = length(input);
 i = 2;
 while i <= n
     j = 1;
-    
+
     % Set i to index after a sequence of the same numbers in an array
     while abs(input(i) - input(i-1)) < timeThres
         j = j + 1;
@@ -54,7 +54,7 @@ while i <= n
         end
         i = i + 1;
     end
-    
+
     % If a sequence of more numbers than before is detected, expand
     % output.count
     if j > l
@@ -69,7 +69,7 @@ while i <= n
         clear k tempL tempR;
     end
     output.count(j,2) = output.count(j,2) + 1;
-    
+
     % Create a struct for the beginning positions of the sequences detected
     % above
     tempString = ['dups' num2str(j)];
@@ -78,7 +78,7 @@ while i <= n
     else
         output.(tempString) = i-j;
     end
-    
+
     % If the last number is not a sequence, but a single occurring number,
     % take this one also into account (while loop ends hereafter)
     if i == n && abs(input(i) - input(i-1)) > timeThres
@@ -89,7 +89,7 @@ while i <= n
             output.dups1 = n;
         end
     end
-    
+
     i = i + 1;
 end
 
