@@ -85,14 +85,14 @@ param.cQ            = param.CQ*param.densityAir*param.areaBlade^2* ...
 % simulation
 time    = gazSim.input.time(startSample:endSample);
 x0      = zeros(12,1);
-% x0(1)   = 0.1;
+x0(3)   = 2;
 % x0(1:3) = gazSim.state.pos(:,startSample);
 % x0(7:9) = gazSim.state.orient(:,startSample);
 u       = kron(ones(1,endSample-startSample+1),[param.m*param.g; 0; 0; 0]);
 % u       = [gazSim.input.force(3,startSample:endSample); ...
 %            gazSim.input.torque(1:3,startSample:endSample)];
 
-state   = qrsimpleltisim(time,x0,u,param);
+state   = qrsimpleltisim(u,time,x0,param);
 
 
 %% Nonlinear (non-working) simulations
@@ -447,7 +447,7 @@ dxdt = [R(1,1)*u + R(1,2)*v + R(1,3)*w;...
 % end
 end
 
-function x = qrsimpleltisim(t,x0,u,param)
+function x = qrsimpleltisim(u,t,x0,param)
 % Translate operating point to origin of state-input space
 n = length(x0);
 l = size(u,1);
@@ -482,6 +482,30 @@ B = [0        , 0          , 0          , 0;
      0        , 1/param.ixx, 0          , 0;
      0        , 0          , 1/param.iyy, 0;
      0        , 0          , 0          , 1/param.izz];
+% A = [0, 0, 0, 0, 0, 0, 0       , param.g, 0, 0, 0, 0;
+%      0, 0, 0, 0, 0, 0, -param.g, 0      , 0, 0, 0, 0;
+%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+%      1, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+%      0, 1, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+%      0, 0, 1, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 1, 0, 0;
+%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 1, 0;
+%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 1;
+%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0];
+% B = [0        , 0          , 0          , 0;
+%      0        , 0          , 0          , 0;
+%      1/param.m, 0          , 0          , 0;
+%      0        , 0          , 0          , 0;
+%      0        , 0          , 0          , 0;
+%      0        , 0          , 0          , 0;
+%      0        , 0          , 0          , 0;
+%      0        , 0          , 0          , 0;
+%      0        , 0          , 0          , 0;
+%      0        , 1/param.ixx, 0          , 0;
+%      0        , 0          , 1/param.iyy, 0;
+%      0        , 0          , 0          , 1/param.izz];
 C = eye(n);
 D = zeros(n,l);
 
@@ -514,6 +538,47 @@ for i = 1:dur-1
         x(6,i+1) = 0;
     end
 end
+
+% Use lsim
+x0 = x0';
+u = u';
+[y2,t2,x2] = lsim(sysd,u,t,x0);
+u = u';
+y2 = y2';
+x2 = x2';
+
+% State comparison for-loop vs lsim
+x = x + stateOperatingPoint;
+x2 = x2 + stateOperatingPoint;
+figure('Name','State comparison');
+subplot(2,2,1);
+plot(t,x(2,:));
+hold on;
+plot(t2,x2(2,:));
+xlabel('Time (s)');
+ylabel('y (m)');
+legend('Original','lsim');
+subplot(2,2,2);
+plot(t,x(5,:));
+hold on;
+plot(t2,x2(5,:));
+xlabel('Time (s)');
+ylabel('yDot (m/s)');
+legend('Original','lsim');
+subplot(2,2,3);
+plot(t,x(7,:));
+hold on;
+plot(t2,x2(7,:));
+xlabel('Time (s)');
+ylabel('\phi (m)');
+legend('Original','lsim');
+subplot(2,2,4);
+plot(t,x(10,:));
+hold on;
+plot(t2,x2(10,:));
+xlabel('Time (s)');
+ylabel('phiDot (m)');
+legend('Original','lsim');
 
 % Plot inputs
 figure('Name','Linearised inputs');
