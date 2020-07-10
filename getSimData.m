@@ -8,16 +8,17 @@ clc;
 % Retrieve bag file
 cd ~/.ros;
 % bag = rosbag("force_torque_meas_2020-05-13-09-08-59.bag");
-bag = rosbag("force_torque_meas_2020-05-19-09-11-55.bag");
+bag = rosbag("tum_ardrone_controller.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
-topics.cmdVel = 1;
+topics.cmdVel = 0;
 topics.modelInput = 1;
 topics.modelStates = 1;
+topics.ardroneMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [18, 38];
+time = [40,70];
 
 
 %% Get data
@@ -41,6 +42,11 @@ if topics.modelStates
     orientQuat = topicsOut.modelStates.orient;
     vLin = topicsOut.modelStates.vLin;
     vAng = topicsOut.modelStates.vAng;
+end
+
+if topics.ardroneMotorSpeed
+    rotorTime = topicsOut.motorSpeed.time;
+    rotorAngVel = topicsOut.motorSpeed.angVel;
 end
 
 
@@ -221,4 +227,5 @@ xlabel('Time (s)');
 ylabel('\psi (rad)');
 
 %% Save gazSim data
-save('TODOChooseProperName.mat', 'gazSim');
+filename = sprintf('bagdata_%s', datestr(now,'dd-mm-yyyy_HH-MM'));
+save(filename, 'gazSim');

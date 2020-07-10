@@ -14,7 +14,7 @@ function [topicsOut] = storeBagdata(bag, topics, time)
 %   Output: topicsOut: struct containing all (row) arrays as specified in
 %                       input
 %
-%   For usage, see get_rosbag_data.m.
+%   For usage, see getSimData.m.
 
 %--------------------------------------------------------------------------
 % Check input arguments
@@ -152,5 +152,36 @@ if topics.modelStates
 
     % Remove unncessary data for later on in this function to save memory
     clear bagModelStates msgsModelStates;
+end
+%--------------------------------------------------------------------------
+
+%--------------------------------------------------------------------------
+% Retreive information from ardrone/motor_speed if desired
+if topics.ardroneMotorSpeed
+    % Get bag data
+    bagMotorSpeed = select(bag, ...
+        'Time', [bag.StartTime + time(1), endTime], ...
+        'Topic', '/ardrone/motor_speed');
+    msgsMotorSpeed = readMessages(bagMotorSpeed, 'DataFormat', 'Struct');
+    lenMotorSpeed = length(msgsMotorSpeed);
+
+    % Store data of ardrone/motor_speed in arrays
+    topicsOut.motorSpeed.time = zeros(1, lenMotorSpeed);
+    topicsOut.motorSpeed.ang_vel = zeros(4, lenMotorSpeed);
+
+    for i = 1:lenMotorSpeed
+        topicsOut.motorSpeed.time(i) = bagMotorSpeed.MessageList.Time(i);
+        topicsOut.motorSpeed.angVel(1,i) = ...
+            msgsMotorSpeed{i}.AngularVelocities(1);
+        topicsOut.motorSpeed.angVel(2,i) = ...
+            msgsMotorSpeed{i}.AngularVelocities(2);
+        topicsOut.motorSpeed.angVel(3,i) = ...
+            msgsMotorSpeed{i}.AngularVelocities(3);
+        topicsOut.motorSpeed.angVel(4,i) = ...
+            msgsMotorSpeed{i}.AngularVelocities(4);
+    end
+
+    % Remove unncessary data for later on in this function to save memory
+    clear bagMotorSpeed msgsMotorSpeed;
 end
 %--------------------------------------------------------------------------
