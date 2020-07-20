@@ -91,7 +91,7 @@ clc;
 % 
 % % Select topics that need to be stored
 % topics.modelStates = 1;
-% topics.ardroneMotorSpeed = 1;
+% topics.rotorsMotorSpeed = 1;
 % 
 % % Set time interval with respect to start of rosbag recording
 % time = [0,70];
@@ -104,7 +104,7 @@ clc;
 %     pos = topicsOut.modelStates.pos;
 % end
 % 
-% if topics.ardroneMotorSpeed
+% if topics.rotorsMotorSpeed
 %     rotorTime = topicsOut.motorSpeed.time;
 %     rotorAngVel = topicsOut.motorSpeed.angVel;
 % end
