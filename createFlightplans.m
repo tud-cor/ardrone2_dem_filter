@@ -17,9 +17,10 @@ f = 1/20;
 omega = 2*pi*f;
 
 a = 0.5;
-x = rmvFPInacc(a*cos(omega*t));
-y = rmvFPInacc(a*sin(omega*t));
-z = ones(n,1);
+zMin = 0.5;
+x = rmvFPInacc(-a*sin(omega*t));
+y = rmvFPInacc(a*cos(omega*t));
+z = zMin*ones(n,1);
 psi = zeros(n,1);
 trajCircle = [x,y,z,psi];
 
@@ -33,15 +34,15 @@ end
 
 % Create text file
 if (constructFiles)
-    filename = ['circle_' num2str(2*a) 'x' num2str(2*a) 'm_n' num2str(n) ...
-                '.txt'];
+    filename = ['circle_' num2str(2*a) 'x' num2str(2*a) 'm_n' ...
+                num2str(n) '_zMin' num2str(zMin) '.txt'];
     constructTxtFile(filename,n,x,y,z,psi);
 end
 
 
 %% Inclined circle
 % Generate z data
-zInc = rmvFPInacc(x+1+max(x));
+zInc = rmvFPInacc(-y+zMin+max(y));
 
 % Plot
 if (plot)
@@ -53,7 +54,8 @@ end
 % Write to text file
 if (constructFiles)
     filename = ['incCircle_' num2str(2*a) 'x' num2str(2*a) 'x' ...
-                num2str(max(zInc)-min(zInc)) 'm_n' num2str(n) '.txt'];
+                num2str(max(zInc)-min(zInc)) 'm_n' num2str(n) '_zMin' ...
+                num2str(zMin) '.txt'];
     constructTxtFile(filename,n,x,y,zInc,psi);
 end
 
@@ -66,9 +68,10 @@ f = 1/50;
 omega = 2*pi*f;
 
 a = 0.5;
-x = rmvFPInacc(a*sin(omega*t));
-y = rmvFPInacc(sin(omega*t).*cos(omega*t));
-z = ones(n,1);
+zMin = 0.5;
+x = rmvFPInacc(2*a*sin(omega*t).*cos(omega*t));
+y = rmvFPInacc(a*sin(omega*t));
+z = zMin*ones(n,1);
 psi = zeros(n,1);
 traj8 = [x,y,z,psi];
 
@@ -82,15 +85,15 @@ end
 
 % Write to text file
 if (constructFiles)
-    filename = ['8Shape_' num2str(2*a) 'x' num2str(2*a) 'm_n' num2str(n) ...
-                '.txt'];
+    filename = ['8Shape_' num2str(2*a) 'x' num2str(2*a) 'm_n' ...
+                num2str(n) '_zMin' num2str(zMin) '.txt'];
     constructTxtFile(filename,n,x,y,z,psi);
 end
 
 
 %% Inclined 8-shape
 % Generate z-data
-zInc = rmvFPInacc(x+1+max(x));
+zInc = rmvFPInacc(-y+zMin+max(y));
 
 % Plot
 if (plot)
@@ -103,7 +106,8 @@ end
 % Write to text file
 if (constructFiles)
     filename = ['inc8Shape_' num2str(2*a) 'x' num2str(2*a) 'x' ...
-                num2str(max(zInc)-min(zInc)) 'm_n' num2str(n) '.txt'];
+                num2str(max(zInc)-min(zInc)) 'm_n' num2str(n) '_zMin' ...
+                num2str(zMin) '.txt'];
     constructTxtFile(filename,n,x,y,zInc,psi);
 end
 
@@ -129,9 +133,9 @@ fileStart = ['setInitialReachDist ' num2str(initialReachDist) '\n'...
             'setStayWithinDist ' num2str(stayWithinDist) '\n'...
             'setStayTime ' num2str(stayTime) '\n\n'...
             'takeoff\n\n'...
-            'goto 0 0 1 0\n\n'];
+            'goto 0 0 ' num2str(min(z)) ' 0\n\n'];
 fileClose = ['\n'...
-             'goto 0 0 1 0\n\n'...
+             'goto 0 0 ' num2str(min(z)) ' 0\n\n'...
              'land'];
 
 fid = fopen(filename,'wt');
