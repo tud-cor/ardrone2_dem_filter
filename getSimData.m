@@ -7,7 +7,7 @@ clc;
 %% Set variables
 % Retrieve bag file
 cd ~/.ros;
-bag = rosbag("ardrone2_exp_2020-07-17_2.bag");
+bag = rosbag("ardrone2_2020-07-24-14-10-40_determine_vx_vy_directions.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
@@ -17,11 +17,13 @@ topics.cmdVel = 0;
 % Simulation/flight data topics
 topics.modelInput = 0;
 topics.gazeboModelStates = 0;
+topics.optitrack = 1;
+topics.ardroneNavdata = 0; %TODO
 topics.ardroneOdom = 1;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [8,48];
+time = [20,120];
 
 
 %% Get data
@@ -38,6 +40,13 @@ if topics.modelInput
     modelInputRecordTime = topicsOut.modelInput.recordTime;
     force = topicsOut.modelInput.force;
     torque = topicsOut.modelInput.torque;
+end
+
+if topics.optitrack
+    optitrackStampTime = topicsOut.optitrack.stampTime;
+    optitrackRecordTime = topicsOut.optitrack.recordTime;
+    optitrackPos = topicsOut.optitrack.pos;
+    optitrackOrientQuat = topicsOut.optitrack.orient;
 end
 
 if topics.gazeboModelStates
@@ -61,6 +70,22 @@ if topics.rotorsMotorSpeed
     rotorTime = topicsOut.motorSpeed.time;
     rotorAngVel = topicsOut.motorSpeed.angVel;
 end
+
+
+%% Take derivative of OptiTrack data
+vLen = size(optitrackPos,2) - 1;
+optitrackVLin = zeros(3,vLen);
+for i = 1:vLen
+    optitrackVLin(:,i) = (optitrackPos(:,i+1) - optitrackPos(:,i))/...
+                         (optitrackStampTime(i+1) - optitrackStampTime(i));
+end
+
+
+%% TEMP
+optitrackPosZeroed = optitrackPos - optitrackPos(:,1);
+ardroneOdomStampTimeZeroed = ardroneOdomStampTime - optitrackStampTime(1);
+optitrackStampTimeZeroed = optitrackStampTime - optitrackStampTime(1);
+save('optitrackDetermineVxs','ardroneOdomStampTime','ardroneOdomStampTimeZeroed','ardroneOdomRecordTime','ardronePos','ardroneOrientQuat','ardroneVAng','ardroneVLin','optitrackOrient','optitrackPos','optitrackStampTime','optitrackStampTimeZeroed','optitrackPosZeroed');
 
 
 %% Convert quaternions to ZYX Euler angles

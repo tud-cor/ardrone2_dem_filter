@@ -160,6 +160,50 @@ end
 %--------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------
+% Retreive information from ardrone2/pose if desired
+if topics.optitrack
+    % Get bag data
+    bagOptitrack = select(bag, ...
+        'Time', [bag.StartTime + time(1), endTime], ...
+        'Topic', '/ardrone2/pose');
+    msgsOptitrack = readMessages(bagOptitrack, ...
+                                         'DataFormat', 'Struct');
+    lenOptitrack = length(msgsOptitrack);
+
+    % Store data of model_states in arrays
+    topicsOut.optitrack.stampTime = zeros(1, lenOptitrack);
+    topicsOut.optitrack.recordTime = zeros(1, lenOptitrack);
+    topicsOut.optitrack.pos = zeros(3, lenOptitrack);
+    topicsOut.optitrack.orient = zeros(4, lenOptitrack);
+
+    for i = 1:lenOptitrack
+        topicsOut.optitrack.stampTime(i) = ...
+            msgsOptitrack{i}.Header.Stamp.Sec + ...
+            msgsOptitrack{i}.Header.Stamp.Nsec/1000000000;
+        topicsOut.optitrack.recordTime(i) = ...
+            bagOptitrack.MessageList.Time(i);
+        topicsOut.optitrack.pos(1,i) = ...
+            msgsOptitrack{i}.Pose.Position.X;
+        topicsOut.optitrack.pos(2,i) = ...
+            msgsOptitrack{i}.Pose.Position.Y;
+        topicsOut.optitrack.pos(3,i) = ...
+            msgsOptitrack{i}.Pose.Position.Z;
+        topicsOut.optitrack.orient(1,i) = ...
+            msgsOptitrack{i}.Pose.Orientation.X;
+        topicsOut.optitrack.orient(2,i) = ...
+            msgsOptitrack{i}.Pose.Orientation.Y;
+        topicsOut.optitrack.orient(3,i) = ...
+            msgsOptitrack{i}.Pose.Orientation.Z;
+        topicsOut.optitrack.orient(4,i) = ...
+            msgsOptitrack{i}.Pose.Orientation.W;
+    end
+
+    % Remove unncessary data for later on in this function to save memory
+    clear bagOptitrack msgsOptitrack;
+end
+%--------------------------------------------------------------------------
+
+%--------------------------------------------------------------------------
 % Retreive information from ardrone/odometry if desired
 if topics.ardroneOdom
     % Get bag data
