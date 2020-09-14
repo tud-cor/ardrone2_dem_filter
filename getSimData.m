@@ -7,7 +7,7 @@ clc;
 %% Set variables
 % Retrieve bag file
 cd ~/.ros;
-bag = rosbag("ardrone2_2020-07-24-14-10-40_determine_vx_vy_directions.bag");
+bag = rosbag("ardrone2_exp_2020-09-06_3.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
@@ -17,13 +17,13 @@ topics.cmdVel = 0;
 % Simulation/flight data topics
 topics.modelInput = 0;
 topics.gazeboModelStates = 0;
-topics.optitrack = 1;
-topics.ardroneNavdata = 0; %TODO
-topics.ardroneOdom = 1;
+topics.optitrack = 0;
+topics.ardroneNavdata = 1;
+topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [20,120];
+time = [447,450];
 
 
 %% Get data
@@ -60,16 +60,48 @@ end
 if topics.ardroneOdom
     ardroneOdomStampTime = topicsOut.ardroneOdom.stampTime;
     ardroneOdomRecordTime = topicsOut.ardroneOdom.recordTime;
-    ardronePos = topicsOut.ardroneOdom.pos;
-    ardroneOrientQuat = topicsOut.ardroneOdom.orient;
-    ardroneVLin = topicsOut.ardroneOdom.vLin;
-    ardroneVAng = topicsOut.ardroneOdom.vAng;
+    ardroneOdomPos = topicsOut.ardroneOdom.pos;
+    ardroneOdomOrientQuat = topicsOut.ardroneOdom.orient;
+    ardroneOdomVLin = topicsOut.ardroneOdom.vLin;
+    ardroneOdomVAng = topicsOut.ardroneOdom.vAng;
+end
+
+if topics.ardroneNavdata
+    ardroneNavdataStampTime = topicsOut.ardroneNavdata.stampTime;
+    ardroneNavdataRecordTime = topicsOut.ardroneNavdata.recordTime;
+    ardroneNavdataMotor = topicsOut.ardroneNavdata.motor;
+    ardroneNavdataRot = topicsOut.ardroneNavdata.rot;
+    ardroneNavdataVLin = topicsOut.ardroneNavdata.vLin;
+    ardroneNavdataALin = topicsOut.ardroneNavdata.aLin;
+    ardroneNavdataStampTime = ardroneNavdataStampTime - ...
+        ardroneNavdataStampTime(1);
 end
 
 if topics.rotorsMotorSpeed
     rotorTime = topicsOut.motorSpeed.time;
     rotorAngVel = topicsOut.motorSpeed.angVel;
 end
+
+%% Determine time 85-100-85% PWM (216.75-255-216.75)
+% figure('Name','Motor 1');
+% hold on;
+% plot(ardroneNavdataStampTime,ardroneNavdataMotor(1,:),'-o');
+% yline(216.75);
+%
+% figure('Name','Motor 2');
+% hold on;
+% plot(ardroneNavdataStampTime,ardroneNavdataMotor(2,:),'-o');
+% yline(216.75);
+%
+% figure('Name','Motor 3');
+% hold on;
+% plot(ardroneNavdataStampTime,ardroneNavdataMotor(3,:),'-o');
+% yline(216.75);
+%
+% figure('Name','Motor 4');
+% hold on;
+% plot(ardroneNavdataStampTime,ardroneNavdataMotor(4,:),'-o');
+% yline(216.75);
 
 
 %% Take derivative of OptiTrack data
@@ -137,24 +169,6 @@ if topics.modelInput
     gazSim.input.torque = tmp.value;
 
     gazSim.input.time = gazSim.input.time - gazSim.input.time(1);
-
-    % subplot(3,1,1);
-    % plot(modelInputTime, force(3,:), 'Marker', 'o');
-    % xlim([8.8 8.9]);
-    % ylim([0 30]);
-    % subplot(3,1,2);
-    % plot(gazSim.input.time, gazSim.input.force(3,:), 'Marker', 'o', ...
-    %      'Color', 'r');
-    % xlim([8.8 8.9]);
-    % ylim([0 30]);
-    % subplot(3,1,3);
-    % plot(modelInputTime, force(3,:), 'Marker', 'o');
-    % xlim([8.8 8.9]);
-    % ylim([0 30]);
-    % hold on;
-    % plot(gazSim.input.time, gazSim.input.force(3,:), 'Marker', 'o');
-    % hold off;
-    % legend('Original data', 'Interpolated data');
 end
 
 

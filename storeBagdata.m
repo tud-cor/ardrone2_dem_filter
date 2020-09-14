@@ -35,23 +35,23 @@ elseif bag.EndTime < bag.StartTime + time(2)
 end
 
 % Calculate total recording time to be stored in arrays
-endTime = min(bag.EndTime, bag.StartTime + time(2));
+endTime = min(bag.EndTime,bag.StartTime+time(2));
 %--------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------
 % Retreive information from cmd_vel if desired
 if topics.cmdVel
     % Get bag data
-    bagCmdVel = select(bag, ...
-        'Time', [bag.StartTime + time(1), endTime], ...
-        'Topic', '/cmd_vel');
-    msgsCmdVel = readMessages(bagCmdVel, 'DataFormat', 'Struct');
+    bagCmdVel = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/cmd_vel');
+    msgsCmdVel = readMessages(bagCmdVel,'DataFormat','Struct');
     lenCmdVel = length(msgsCmdVel);
 
     % Store data of cmd_vel in arrays
-    topicsOut.cmdVel.time = zeros(1, lenCmdVel);
-    topicsOut.cmdVel.lin = zeros(3, lenCmdVel);
-    topicsOut.cmdVel.ang = zeros(3, lenCmdVel);
+    topicsOut.cmdVel.time = zeros(1,lenCmdVel);
+    topicsOut.cmdVel.lin = zeros(3,lenCmdVel);
+    topicsOut.cmdVel.ang = zeros(3,lenCmdVel);
 
     for i = 1:lenCmdVel
         topicsOut.cmdVel.time(i) = bagCmdVel.MessageList.Time(i);
@@ -72,16 +72,17 @@ end
 % Retreive information from ardrone2_dem/model_input if desired
 if topics.modelInput
     % Get bag data
-    bagModelInput = select(bag, ...
-        'Time', [bag.StartTime + time(1), endTime], ...
-        'Topic', '/ardrone2_dem/model_input');
-    msgsModelInput = readMessages(bagModelInput, 'DataFormat', 'Struct');
+    bagModelInput = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/ardrone2_dem/model_input');
+    msgsModelInput = readMessages(bagModelInput,'DataFormat','Struct');
     lenModelInput = length(msgsModelInput);
 
     % Store data of model_input in arrays
-    topicsOut.modelInput.time = zeros(1, lenModelInput);
-    topicsOut.modelInput.force = zeros(3, lenModelInput);
-    topicsOut.modelInput.torque = zeros(3, lenModelInput);
+    topicsOut.modelInput.stampTime = zeros(1,lenModelInput);
+    topicsOut.modelInput.recordTime = zeros(1,lenModelInput);
+    topicsOut.modelInput.force = zeros(3,lenModelInput);
+    topicsOut.modelInput.torque = zeros(3,lenModelInput);
 
     for i = 1:lenModelInput
         topicsOut.modelInput.stampTime(i) = ...
@@ -109,19 +110,19 @@ end
 % Retreive information from gazebo/model_states if desired
 if topics.gazeboModelStates
     % Get bag data
-    bagGazeboModelStates = select(bag, ...
-        'Time', [bag.StartTime + time(1), endTime], ...
-        'Topic', '/gazebo/model_states');
-    msgsGazeboModelStates = readMessages(bagGazeboModelStates, ...
-                                         'DataFormat', 'Struct');
+    bagGazeboModelStates = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/gazebo/model_states');
+    msgsGazeboModelStates = readMessages(bagGazeboModelStates,...
+        'DataFormat','Struct');
     lenGazeboModelStates = length(msgsGazeboModelStates);
 
     % Store data of model_states in arrays
-    topicsOut.gazeboModelStates.time = zeros(1, lenGazeboModelStates);
-    topicsOut.gazeboModelStates.pos = zeros(3, lenGazeboModelStates);
-    topicsOut.gazeboModelStates.orient = zeros(4, lenGazeboModelStates);
-    topicsOut.gazeboModelStates.vlin = zeros(3, lenGazeboModelStates);
-    topicsOut.gazeboModelStates.vang = zeros(3, lenGazeboModelStates);
+    topicsOut.gazeboModelStates.time = zeros(1,lenGazeboModelStates);
+    topicsOut.gazeboModelStates.pos = zeros(3,lenGazeboModelStates);
+    topicsOut.gazeboModelStates.orient = zeros(4,lenGazeboModelStates);
+    topicsOut.gazeboModelStates.vlin = zeros(3,lenGazeboModelStates);
+    topicsOut.gazeboModelStates.vang = zeros(3,lenGazeboModelStates);
 
     for i = 1:lenGazeboModelStates
         topicsOut.gazeboModelStates.time(i) = ...
@@ -163,18 +164,18 @@ end
 % Retreive information from ardrone2/pose if desired
 if topics.optitrack
     % Get bag data
-    bagOptitrack = select(bag, ...
-        'Time', [bag.StartTime + time(1), endTime], ...
-        'Topic', '/ardrone2/pose');
-    msgsOptitrack = readMessages(bagOptitrack, ...
-                                         'DataFormat', 'Struct');
+    bagOptitrack = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/ardrone2/pose');
+    msgsOptitrack = readMessages(bagOptitrack,...
+        'DataFormat','Struct');
     lenOptitrack = length(msgsOptitrack);
 
     % Store data of model_states in arrays
-    topicsOut.optitrack.stampTime = zeros(1, lenOptitrack);
-    topicsOut.optitrack.recordTime = zeros(1, lenOptitrack);
-    topicsOut.optitrack.pos = zeros(3, lenOptitrack);
-    topicsOut.optitrack.orient = zeros(4, lenOptitrack);
+    topicsOut.optitrack.stampTime = zeros(1,lenOptitrack);
+    topicsOut.optitrack.recordTime = zeros(1,lenOptitrack);
+    topicsOut.optitrack.pos = zeros(3,lenOptitrack);
+    topicsOut.optitrack.orient = zeros(4,lenOptitrack);
 
     for i = 1:lenOptitrack
         topicsOut.optitrack.stampTime(i) = ...
@@ -207,18 +208,19 @@ end
 % Retreive information from ardrone/odometry if desired
 if topics.ardroneOdom
     % Get bag data
-    bagArdroneOdom = select(bag, ...
-        'Time', [bag.StartTime + time(1), endTime], ...
-        'Topic', '/ardrone/odometry');
-    msgsArdroneOdom = readMessages(bagArdroneOdom, 'DataFormat', 'Struct');
+    bagArdroneOdom = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/ardrone/odometry');
+    msgsArdroneOdom = readMessages(bagArdroneOdom,'DataFormat','Struct');
     lenArdroneOdom = length(msgsArdroneOdom);
 
     % Store data of model_states in arrays
-    topicsOut.ardroneOdom.time = zeros(1, lenArdroneOdom);
-    topicsOut.ardroneOdom.pos = zeros(3, lenArdroneOdom);
-    topicsOut.ardroneOdom.orient = zeros(4, lenArdroneOdom);
-    topicsOut.ardroneOdom.vlin = zeros(3, lenArdroneOdom);
-    topicsOut.ardroneOdom.vang = zeros(3, lenArdroneOdom);
+    topicsOut.ardroneOdom.stampTime = zeros(1,lenArdroneOdom);
+    topicsOut.ardroneOdom.recordTime = zeros(1,lenArdroneOdom);
+    topicsOut.ardroneOdom.pos = zeros(3,lenArdroneOdom);
+    topicsOut.ardroneOdom.orient = zeros(4,lenArdroneOdom);
+    topicsOut.ardroneOdom.vlin = zeros(3,lenArdroneOdom);
+    topicsOut.ardroneOdom.vang = zeros(3,lenArdroneOdom);
 
     for i = 1:lenArdroneOdom
         topicsOut.ardroneOdom.stampTime(i) = ...
@@ -260,18 +262,63 @@ end
 %--------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------
+% Retreive information from ardrone/navdata if desired
+if topics.ardroneNavdata
+    % Get bag data
+    bagArdroneNavdata = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/ardrone/navdata');
+    msgsArdroneNavdata = readMessages(bagArdroneNavdata,...
+        'DataFormat','Struct');
+    lenArdroneNavdata = length(msgsArdroneNavdata);
+
+    % Store data of model_states in arrays
+    topicsOut.ardroneNavdata.stampTime = zeros(1,lenArdroneNavdata);
+    topicsOut.ardroneNavdata.recordTime = zeros(1,lenArdroneNavdata);
+    topicsOut.ardroneNavdata.motor = zeros(4,lenArdroneNavdata);
+    topicsOut.ardroneNavdata.rot = zeros(3,lenArdroneNavdata);
+    topicsOut.ardroneNavdata.vlin = zeros(3,lenArdroneNavdata);
+    topicsOut.ardroneNavdata.alin = zeros(3,lenArdroneNavdata);
+
+    for i = 1:lenArdroneNavdata
+        topicsOut.ardroneNavdata.stampTime(i) = ...
+            msgsArdroneNavdata{i}.Header.Stamp.Sec + ...
+            msgsArdroneNavdata{i}.Header.Stamp.Nsec/1000000000;
+        topicsOut.ardroneNavdata.recordTime(i) = ...
+            bagArdroneNavdata.MessageList.Time(i);
+        topicsOut.ardroneNavdata.motor(1,i) = msgsArdroneNavdata{i}.Motor1;
+        topicsOut.ardroneNavdata.motor(2,i) = msgsArdroneNavdata{i}.Motor2;
+        topicsOut.ardroneNavdata.motor(3,i) = msgsArdroneNavdata{i}.Motor3;
+        topicsOut.ardroneNavdata.motor(4,i) = msgsArdroneNavdata{i}.Motor4;
+        topicsOut.ardroneNavdata.rot(1,i) = msgsArdroneNavdata{i}.RotX;
+        topicsOut.ardroneNavdata.rot(2,i) = msgsArdroneNavdata{i}.RotY;
+        topicsOut.ardroneNavdata.rot(3,i) = msgsArdroneNavdata{i}.RotZ;
+        topicsOut.ardroneNavdata.vLin(1,i) = msgsArdroneNavdata{i}.Vx;
+        topicsOut.ardroneNavdata.vLin(2,i) = msgsArdroneNavdata{i}.Vy;
+        topicsOut.ardroneNavdata.vLin(3,i) = msgsArdroneNavdata{i}.Vz;
+        topicsOut.ardroneNavdata.aLin(1,i) = msgsArdroneNavdata{i}.Ax;
+        topicsOut.ardroneNavdata.aLin(2,i) = msgsArdroneNavdata{i}.Ay;
+        topicsOut.ardroneNavdata.aLin(3,i) = msgsArdroneNavdata{i}.Az;
+    end
+
+    % Remove unncessary data for later on in this function to save memory
+    clear bagArdroneNavdata msgsArdroneNavdata;
+end
+%--------------------------------------------------------------------------
+
+%--------------------------------------------------------------------------
 % Retreive information from ardrone/motor_speed if desired
 if topics.rotorsMotorSpeed
     % Get bag data
-    bagMotorSpeed = select(bag, ...
-        'Time', [bag.StartTime + time(1), endTime], ...
-        'Topic', '/ardrone/motor_speed');
-    msgsMotorSpeed = readMessages(bagMotorSpeed, 'DataFormat', 'Struct');
+    bagMotorSpeed = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/ardrone/motor_speed');
+    msgsMotorSpeed = readMessages(bagMotorSpeed,'DataFormat','Struct');
     lenMotorSpeed = length(msgsMotorSpeed);
 
     % Store data of ardrone/motor_speed in arrays
-    topicsOut.motorSpeed.time = zeros(1, lenMotorSpeed);
-    topicsOut.motorSpeed.ang_vel = zeros(4, lenMotorSpeed);
+    topicsOut.motorSpeed.time = zeros(1,lenMotorSpeed);
+    topicsOut.motorSpeed.ang_vel = zeros(4,lenMotorSpeed);
 
     for i = 1:lenMotorSpeed
         topicsOut.motorSpeed.time(i) = bagMotorSpeed.MessageList.Time(i);
