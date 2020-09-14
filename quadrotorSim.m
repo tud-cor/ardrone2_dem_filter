@@ -91,14 +91,16 @@ t       = linspace(0,10,10/param.sampleTime+1);
 x0      = zeros(12,1);
 x0(3)   = 1;
 
-% Construct input
+% Construct input - not tested yet
 % uFreq   = 5; %Hz
 % u       = kron(ones(1,dur/4),[3; 0; 0; 0]);
 % u       = [u, kron(ones(1,3*dur/4),[0; 0; 0; 0])];
 % for i = 1:dur
 %     u(2,i) = 0.001*cos(2*pi*uFreq*i*param.sampleTime);
 % end
-u       = kron(ones(1,length(t)-1),[0; 0; 0; 0]);
+
+% Construct input - working inputs
+% u       = kron(ones(1,length(t)-1),[0; 0; 0; 0]);
 % u       = kron(ones(1,length(t)),[param.m*param.g; 0; 0; 0]);
 
 

@@ -7,7 +7,7 @@ clc;
 %% Set variables
 % Retrieve bag file
 cd ~/.ros;
-bag = rosbag("ardrone2_exp_2020-09-06_3.bag");
+bag = rosbag("tum_ardrone_controller.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
@@ -15,15 +15,15 @@ cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 topics.cmdVel = 0;
 
 % Simulation/flight data topics
-topics.modelInput = 0;
-topics.gazeboModelStates = 0;
+topics.modelInput = 1;
+topics.gazeboModelStates = 1;
 topics.optitrack = 0;
-topics.ardroneNavdata = 1;
+topics.ardroneNavdata = 0;
 topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [447,450];
+time = [10,20];
 
 
 %% Get data
@@ -40,13 +40,6 @@ if topics.modelInput
     modelInputRecordTime = topicsOut.modelInput.recordTime;
     force = topicsOut.modelInput.force;
     torque = topicsOut.modelInput.torque;
-end
-
-if topics.optitrack
-    optitrackStampTime = topicsOut.optitrack.stampTime;
-    optitrackRecordTime = topicsOut.optitrack.recordTime;
-    optitrackPos = topicsOut.optitrack.pos;
-    optitrackOrientQuat = topicsOut.optitrack.orient;
 end
 
 if topics.gazeboModelStates
@@ -73,51 +66,12 @@ if topics.ardroneNavdata
     ardroneNavdataRot = topicsOut.ardroneNavdata.rot;
     ardroneNavdataVLin = topicsOut.ardroneNavdata.vLin;
     ardroneNavdataALin = topicsOut.ardroneNavdata.aLin;
-    ardroneNavdataStampTime = ardroneNavdataStampTime - ...
-        ardroneNavdataStampTime(1);
 end
 
 if topics.rotorsMotorSpeed
     rotorTime = topicsOut.motorSpeed.time;
     rotorAngVel = topicsOut.motorSpeed.angVel;
 end
-
-%% Determine time 85-100-85% PWM (216.75-255-216.75)
-% figure('Name','Motor 1');
-% hold on;
-% plot(ardroneNavdataStampTime,ardroneNavdataMotor(1,:),'-o');
-% yline(216.75);
-%
-% figure('Name','Motor 2');
-% hold on;
-% plot(ardroneNavdataStampTime,ardroneNavdataMotor(2,:),'-o');
-% yline(216.75);
-%
-% figure('Name','Motor 3');
-% hold on;
-% plot(ardroneNavdataStampTime,ardroneNavdataMotor(3,:),'-o');
-% yline(216.75);
-%
-% figure('Name','Motor 4');
-% hold on;
-% plot(ardroneNavdataStampTime,ardroneNavdataMotor(4,:),'-o');
-% yline(216.75);
-
-
-%% Take derivative of OptiTrack data
-vLen = size(optitrackPos,2) - 1;
-optitrackVLin = zeros(3,vLen);
-for i = 1:vLen
-    optitrackVLin(:,i) = (optitrackPos(:,i+1) - optitrackPos(:,i))/...
-                         (optitrackStampTime(i+1) - optitrackStampTime(i));
-end
-
-
-%% TEMP
-optitrackPosZeroed = optitrackPos - optitrackPos(:,1);
-ardroneOdomStampTimeZeroed = ardroneOdomStampTime - optitrackStampTime(1);
-optitrackStampTimeZeroed = optitrackStampTime - optitrackStampTime(1);
-save('optitrackDetermineVxs','ardroneOdomStampTime','ardroneOdomStampTimeZeroed','ardroneOdomRecordTime','ardronePos','ardroneOrientQuat','ardroneVAng','ardroneVLin','optitrackOrient','optitrackPos','optitrackStampTime','optitrackStampTimeZeroed','optitrackPosZeroed');
 
 
 %% Convert quaternions to ZYX Euler angles
@@ -157,7 +111,7 @@ end
 
 %% Interpolate input data
 if topics.modelInput
-    data.time = modelInputTime;
+    data.time = modelInputStampTime;
 
     data.value = force;
     tmp = interpolate(0.001, data);
@@ -167,8 +121,6 @@ if topics.modelInput
     data.value = torque;
     tmp = interpolate(0.001, data);
     gazSim.input.torque = tmp.value;
-
-    gazSim.input.time = gazSim.input.time - gazSim.input.time(1);
 end
 
 
@@ -184,9 +136,11 @@ if topics.gazeboModelStates
     data.value = orient;
     tmp = interpolate(gazSim.input.time, data);
     gazSim.state.orient = tmp.value;
-
-    gazSim.state.time = gazSim.state.time - gazSim.state.time(1);
 end
+
+
+%% Correctly initialize time data
+gazSim.state.time = gazSim.state.time - gazSim.state.time(1);
 
 
 %% Set sample frequency to 1000 Hz
@@ -277,58 +231,6 @@ plot(gazSim.state.time, gazSim.state.orient(3,:), 'LineStyle', '-', ...
      'Marker', '.');
 xlabel('Time (s)');
 ylabel('\psi (rad)');
-
-
-%% Plot odometry data
-ardroneOdomStampTime = ardroneOdomStampTime - ardroneOdomStampTime(1);
-ardroneOdomRecordTime = ardroneOdomRecordTime - ardroneOdomRecordTime(1);
-figure('Name', 'AR.Drone 2.0 odometry plots');
-sgtitle('Difference between recorded time and stamped time','FontSize',20);
-
-subplot(3,2,1);
-plot(ardroneOdomStampTime, ardronePos(1,:), '-o');
-% plot(ardroneOdomStampTime(3166:3356), ardronePos(1,3166:3356), '-o');
-title('Odometry position (stamped time)');
-xlabel('Time (s)');
-ylabel('x (m)');
-xlim([0,40]);
-% xlim([17.0,18.4]);
-
-subplot(3,2,3);
-plot(ardroneOdomStampTime, ardronePos(2,:), '-o');
-% plot(ardroneOdomStampTime(3166:3356), ardronePos(2,3166:3356), '-o');
-xlabel('Time (s)');
-ylabel('y (m)');
-xlim([0,40]);
-% xlim([17.0,18.4]);
-
-subplot(3,2,5);
-plot(ardroneOdomStampTime, ardronePos(3,:), '-o');
-% plot(ardroneOdomStampTime(3166:3356), ardronePos(3,3166:3356), '-o');
-xlabel('Time (s)');
-ylabel('z (m)');
-xlim([0,40]);
-% xlim([17.0,18.4]);
-
-
-subplot(3,2,2);
-plot(ardroneOdomRecordTime, ardronePos(1,:), '-o');
-% plot(ardroneOdomRecordTime(3166:3356), ardronePos(1,3166:3356), '-o');
-title('Odometry position (recorded time)');
-xlabel('Time (s)');
-ylabel('x (m)');
-
-subplot(3,2,4);
-plot(ardroneOdomRecordTime, ardronePos(2,:), '-o');
-% plot(ardroneOdomRecordTime(3166:3356), ardronePos(2,3166:3356), '-o');
-xlabel('Time (s)');
-ylabel('y (m)');
-
-subplot(3,2,6);
-plot(ardroneOdomRecordTime, ardronePos(3,:), '-o');
-% plot(ardroneOdomRecordTime(3166:3356), ardronePos(3,3166:3356), '-o');
-xlabel('Time (s)');
-ylabel('z (m)');
 
 
 %% Save gazSim data
