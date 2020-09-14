@@ -46,53 +46,91 @@ param.densityAir    = 1.2;      %kg/m^3 (for room temperature
 % Inertia matrix:   |iyx = ixy  iyy         iyz         |
 %                   |izx = ixz  izy = iyz   izz         |
 % Rotor inertia only has izz component
-param.m             = 1.477;    %kg
-param.ixx           = 0.01152;  %kgm^2
+param.m             = 0.481;    %kg
+param.ixx           = 3.4e-3;   %kgm^2
 param.ixy           = 0;        %kgm^2
 param.ixz           = 0;        %kgm^2
-param.iyy           = 0.01152;  %kgm^2
+param.iyy           = 4.0e-3;	%kgm^2
 param.iyz           = 0;        %kgm^2
-param.izz           = 0.0218;   %kgm^2
-param.irotor        = 0.0000202;%kgm^2 TODO: value taken from Q. Li (2014)
+param.izz           = 6.9e-3;   %kgm^2
+param.irotor        = 2.030e-5; %kgm^2 TODO: value taken from Q. Li (2014)
 
 % Dimensions
-%TODO: average between Q. Li (2014) and measured using Blender
-param.l             = 0.18;     %m
-%TODO: average between Q. Li (2014) and measured using Blender
-param.radiusBlade	= 0.096;    %m
-param.areaBlade     = 2*pi*param.radiusBlade^2;   %m^2
+% %TODO: average between Q. Li (2014) and measured using Blender
+% param.l             = 0.18;     %m
+% %TODO: average between Q. Li (2014) and measured using Blender
+% param.radiusBlade	= 0.096;    %m
+% param.areaBlade     = 2*pi*param.radiusBlade^2;   %m^2
+param.l             = 0.178;
 
 % Thrust and torque coefficients
-%TODO: optimise for this value using sim/flights
-%(now derived from Bouabdallah using their numbers for radius, area, etc.)
-%This value is 0.1225 in Nonlinear control of quadrotor for point-tracking
-param.CT            = 0.008;
+% %TODO: optimise for this value using sim/flights
+% %(now derived from Bouabdallah using their numbers for radius, area, etc.)
+% %This value is 0.1225 in Nonlinear control of quadrotor for point-tracking
+% param.CT            = 0.008;
+% 
+% %TODO: optimise for this value using sim/flights
+% %(now derived from Bouabdallah using their numbers for radius, area, etc.)
+% %This value is 0.0510 in Nonlinear control of quadrotor for point-tracking
+% param.CQ            = 0.001;
+% 
+% param.cT            = param.CT*param.densityAir*param.areaBlade* ...
+%                       param.radiusBlade^2;  %Ns^2/rad^2 (cT = F/omega^2)
+% param.cQ            = param.CQ*param.densityAir*param.areaBlade^2* ...
+%                       param.radiusBlade^3;  %Nms^2/rad^2 (cQ = tau/omega^2)
+% cT(1)*omegaR^2 + cT*omegaR
+param.cT            = [8.6e-6,-3.2e-4];
+% cQ(1)*omegaR^2 + cq*omegaR
+param.cQ            = [2.4e-7,-9.9e-6];
+% omegaR = PwmToOmegaR(1)*pwm + PwmToOmegaR(2)
+param.PwmToOmegaR   = [3.7,130.9];
 
-%TODO: optimise for this value using sim/flights
-%(now derived from Bouabdallah using their numbers for radius, area, etc.)
-%This value is 0.0510 in Nonlinear control of quadrotor for point-tracking
-param.CQ            = 0.001;
 
-param.cT            = param.CT*param.densityAir*param.areaBlade* ...
-                      param.radiusBlade^2;  %Ns^2/rad^2 (cT = F/omega^2)
-param.cQ            = param.CQ*param.densityAir*param.areaBlade^2* ...
-                      param.radiusBlade^3;  %Nms^2/rad^2 (cQ = tau/omega^2)
-
-
-%% LTI discrete-time simulation
-% TODO: not correct yet!
-% Simulate system with defined initial state and inputs from Gazebo
-% simulation
-time    = gazSim.input.time(startSample:endSample);
+%% Simulation parameters
+t       = linspace(0,10,10/param.sampleTime+1);
 x0      = zeros(12,1);
-x0(3)   = 2;
-% x0(1:3) = gazSim.state.pos(:,startSample);
-% x0(7:9) = gazSim.state.orient(:,startSample);
-u       = kron(ones(1,endSample-startSample+1),[param.m*param.g; 0; 0; 0]);
-% u       = [gazSim.input.force(3,startSample:endSample); ...
-%            gazSim.input.torque(1:3,startSample:endSample)];
+x0(3)   = 1;
 
-state   = qrsimpleltisim(u,time,x0,param);
+% Construct input
+% uFreq   = 5; %Hz
+% u       = kron(ones(1,dur/4),[3; 0; 0; 0]);
+% u       = [u, kron(ones(1,3*dur/4),[0; 0; 0; 0])];
+% for i = 1:dur
+%     u(2,i) = 0.001*cos(2*pi*uFreq*i*param.sampleTime);
+% end
+u       = kron(ones(1,length(t)-1),[0; 0; 0; 0]);
+% u       = kron(ones(1,length(t)),[param.m*param.g; 0; 0; 0]);
+
+
+%% Simulate simple LTI system
+x = qrSimpleLtiSim(u,t,x0,param);
+
+
+%% TODO: simulate nonlinear system model
+
+
+%% Plot results
+figure('Name','Position');
+subplot(3,1,1);
+plot(t,x(1,:));
+title('x');
+subplot(3,1,2);
+plot(t,x(2,:));
+title('y');
+subplot(3,1,3);
+plot(t,x(3,:),'-o');
+title('z');
+
+figure('Name','Velocity');
+subplot(3,1,1);
+plot(t,x(4,:));
+title('v_x');
+subplot(3,1,2);
+plot(t,x(5,:));
+title('v_y');
+subplot(3,1,3);
+plot(t,x(6,:),'-o');
+title('v_z');
 
 
 %% Nonlinear (non-working) simulations
@@ -230,80 +268,80 @@ state   = qrsimpleltisim(u,time,x0,param);
 % % ylim([psiMin,psiMax]);
 % xlabel('Time (s)');
 % ylabel('\psi_{gazebo} (rad)');
-
-figure('Name','States');
-subplot(6,2,1);
-plot(time,state(1,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('x_{matlab} (m)');
-
-subplot(6,2,3);
-plot(time,state(2,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('y_{matlab} (m)');
-
-subplot(6,2,5);
-plot(time,state(3,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('z_{matlab} (m)');
-
-subplot(6,2,7);
-plot(time,state(4,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('xDot_{matlab} (m)');
-
-subplot(6,2,9);
-plot(time,state(5,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('yDot_{matlab} (m)');
-
-subplot(6,2,11);
-plot(time,state(6,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('zDot_{matlab} (m)');
-
-% Plot XYZ fixed angles/ZYX Euler angles
-subplot(6,2,2);
-plot(time,state(7,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('\phi_{matlab} (rad)');
-
-subplot(6,2,4);
-plot(time,state(8,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('\theta_{matlab} (rad)');
-
-subplot(6,2,6);
-plot(time,state(9,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('\psi_{matlab} (rad)');
-
-subplot(6,2,8);
-plot(time,state(10,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('\phiDot_{matlab} (rad)');
-
-subplot(6,2,10);
-plot(time,state(11,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('\thetaDot_{matlab} (rad)');
-
-subplot(6,2,12);
-plot(time,state(12,:));
-xlim([time(1),time(end)]);
-xlabel('Time (s)');
-ylabel('\psiDot_{matlab} (rad)');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% figure('Name','States');
+% subplot(6,2,1);
+% plot(time,state(1,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('x_{matlab} (m)');
+% 
+% subplot(6,2,3);
+% plot(time,state(2,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('y_{matlab} (m)');
+% 
+% subplot(6,2,5);
+% plot(time,state(3,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('z_{matlab} (m)');
+% 
+% subplot(6,2,7);
+% plot(time,state(4,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('xDot_{matlab} (m)');
+% 
+% subplot(6,2,9);
+% plot(time,state(5,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('yDot_{matlab} (m)');
+% 
+% subplot(6,2,11);
+% plot(time,state(6,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('zDot_{matlab} (m)');
+% 
+% % Plot XYZ fixed angles/ZYX Euler angles
+% subplot(6,2,2);
+% plot(time,state(7,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('\phi_{matlab} (rad)');
+% 
+% subplot(6,2,4);
+% plot(time,state(8,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('\theta_{matlab} (rad)');
+% 
+% subplot(6,2,6);
+% plot(time,state(9,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('\psi_{matlab} (rad)');
+% 
+% subplot(6,2,8);
+% plot(time,state(10,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('\phiDot_{matlab} (rad)');
+% 
+% subplot(6,2,10);
+% plot(time,state(11,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('\thetaDot_{matlab} (rad)');
+% 
+% subplot(6,2,12);
+% plot(time,state(12,:));
+% xlim([time(1),time(end)]);
+% xlabel('Time (s)');
+% ylabel('\psiDot_{matlab} (rad)');
 
 
 %% Function definitions
@@ -445,160 +483,4 @@ dxdt = [R(1,1)*u + R(1,2)*v + R(1,3)*w;...
 % if abs(state(3)) < param.groundThres && dxdt(3) < 0
 %     dxdt(3) = 0;
 % end
-end
-
-function x = qrsimpleltisim(u,t,x0,param)
-% Translate operating point to origin of state-input space
-n = length(x0);
-l = size(u,1);
-stateOperatingPoint = zeros(n,1);
-stateOperatingPoint(3) = 2;
-inputOperatingPoint = [param.m*param.g; 0; 0; 0];
-x0 = x0 - stateOperatingPoint;
-u = u - inputOperatingPoint;
-
-% Construct continuous-time linearised state space system
-A = [0, 0, 0, 1, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 1, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 1, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , param.g, 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, -param.g, 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 1, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 1, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 1;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0];
-B = [0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     1/param.m, 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 1/param.ixx, 0          , 0;
-     0        , 0          , 1/param.iyy, 0;
-     0        , 0          , 0          , 1/param.izz];
-% A = [0, 0, 0, 0, 0, 0, 0       , param.g, 0, 0, 0, 0;
-%      0, 0, 0, 0, 0, 0, -param.g, 0      , 0, 0, 0, 0;
-%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-%      1, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-%      0, 1, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-%      0, 0, 1, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 1, 0, 0;
-%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 1, 0;
-%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 1;
-%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-%      0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0];
-% B = [0        , 0          , 0          , 0;
-%      0        , 0          , 0          , 0;
-%      1/param.m, 0          , 0          , 0;
-%      0        , 0          , 0          , 0;
-%      0        , 0          , 0          , 0;
-%      0        , 0          , 0          , 0;
-%      0        , 0          , 0          , 0;
-%      0        , 0          , 0          , 0;
-%      0        , 0          , 0          , 0;
-%      0        , 1/param.ixx, 0          , 0;
-%      0        , 0          , 1/param.iyy, 0;
-%      0        , 0          , 0          , 1/param.izz];
-C = eye(n);
-D = zeros(n,l);
-
-sysc = ss(A,B,C,D);
-
-% Construct discrete-time linearised state space system
-sysd = c2d(sysc,param.sampleTime);
-
-% Simulate system on every time step
-dur     = length(t);
-
-% Adjusted system input
-uFreq   = 5; %Hz
-% u       = kron(ones(1,dur/4),[3; 0; 0; 0]);
-% u       = [u, kron(ones(1,3*dur/4),[0; 0; 0; 0])];
-for i = 1:dur
-    u(2,i) = 0.001*cos(2*pi*uFreq*i*param.sampleTime);
-end
-% u   = kron(ones(1,dur),[0; 0; 0; 0]);
-
-x       = zeros(n,dur);
-x(:,1)  = x0;
-for i = 1:dur-1
-    x(:,i+1) = sysd.A*x(:,i) + sysd.B*u(:,i);
-    % Ground constraint
-    if x(3,i+1) < 0
-        x(3,i+1) = 0;
-    end
-    if abs(x(3,i+1)) < param.groundThres && x(6,i+1) < 0
-        x(6,i+1) = 0;
-    end
-end
-
-% Use lsim
-x0 = x0';
-u = u';
-[y2,t2,x2] = lsim(sysd,u,t,x0);
-u = u';
-y2 = y2';
-x2 = x2';
-
-% State comparison for-loop vs lsim
-x = x + stateOperatingPoint;
-x2 = x2 + stateOperatingPoint;
-figure('Name','State comparison');
-subplot(2,2,1);
-plot(t,x(2,:));
-hold on;
-plot(t2,x2(2,:));
-xlabel('Time (s)');
-ylabel('y (m)');
-legend('Original','lsim');
-subplot(2,2,2);
-plot(t,x(5,:));
-hold on;
-plot(t2,x2(5,:));
-xlabel('Time (s)');
-ylabel('yDot (m/s)');
-legend('Original','lsim');
-subplot(2,2,3);
-plot(t,x(7,:));
-hold on;
-plot(t2,x2(7,:));
-xlabel('Time (s)');
-ylabel('\phi (m)');
-legend('Original','lsim');
-subplot(2,2,4);
-plot(t,x(10,:));
-hold on;
-plot(t2,x2(10,:));
-xlabel('Time (s)');
-ylabel('phiDot (m)');
-legend('Original','lsim');
-
-% Plot inputs
-figure('Name','Linearised inputs');
-subplot(4,1,1);
-plot(u(1,:));
-xlabel('Time (s)');
-ylabel('T (N)');
-subplot(4,1,2);
-plot(u(2,:));
-xlabel('Time (s)');
-ylabel('\tau_\phi (N)');
-subplot(4,1,3);
-plot(u(3,:));
-xlabel('Time (s)');
-ylabel('\tau_\theta (N)');
-subplot(4,1,4);
-plot(u(4,:));
-xlabel('Time (s)');
-ylabel('\tau_\psi (N)');
-
-% Translate back to operating point in state-input space
-x = x + stateOperatingPoint;
 end
