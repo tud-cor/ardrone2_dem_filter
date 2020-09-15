@@ -19,11 +19,7 @@ close all;
 
 %% Select simulation data
 % Load pre-processed simulation data file
-load gazSim.mat gazSim;
-
-% Select time samples to use
-startSample = 1;
-endSample   = 6000;
+load bagdata_15-09-2020_15-05.mat expData;
 
 
 %% System parameters
@@ -34,7 +30,7 @@ param.timeThres     = 1e-10;
 param.groundThres   = 1e-3;     %m
 
 % Recorded data accuracy
-param.sampleTime    = 1e-3;     %s
+param.sampleTime    = expData.sampleTime;   %s
 
 % Environmental constants
 param.g             = 9.81;     %m/s^2
@@ -46,14 +42,14 @@ param.densityAir    = 1.2;      %kg/m^3 (for room temperature
 % Inertia matrix:   |iyx = ixy  iyy         iyz         |
 %                   |izx = ixz  izy = iyz   izz         |
 % Rotor inertia only has izz component
-param.m             = 0.481;    %kg
-param.ixx           = 3.4e-3;   %kgm^2
+param.m             = 0.481;	%kg
+param.ixx           = 3.4e-3;	%kgm^2
 param.ixy           = 0;        %kgm^2
 param.ixz           = 0;        %kgm^2
-param.iyy           = 4.0e-3;	%kgm^2
+param.iyy           = 4.0e-3;   %kgm^2
 param.iyz           = 0;        %kgm^2
 param.izz           = 6.9e-3;   %kgm^2
-param.irotor        = 2.030e-5; %kgm^2 TODO: value taken from Q. Li (2014)
+param.irotor        = 2.030e-5;	%kgm^2 TODO: value from Q. Li (2014)
 
 % Dimensions
 % %TODO: average between Q. Li (2014) and measured using Blender
@@ -61,7 +57,7 @@ param.irotor        = 2.030e-5; %kgm^2 TODO: value taken from Q. Li (2014)
 % %TODO: average between Q. Li (2014) and measured using Blender
 % param.radiusBlade	= 0.096;    %m
 % param.areaBlade     = 2*pi*param.radiusBlade^2;   %m^2
-param.l             = 0.178;
+param.l             = 0.178;	%m
 
 % Thrust and torque coefficients
 % %TODO: optimise for this value using sim/flights
@@ -78,20 +74,40 @@ param.l             = 0.178;
 %                       param.radiusBlade^2;  %Ns^2/rad^2 (cT = F/omega^2)
 % param.cQ            = param.CQ*param.densityAir*param.areaBlade^2* ...
 %                       param.radiusBlade^3;  %Nms^2/rad^2 (cQ = tau/omega^2)
+%PWM-PWM relation: PWM_ardrone/navdata = 2.55*PWM_toolbox
+param.PwmToPwm      = 2.55;
+% omegaR = PwmToOmegaR(1)*pwm + PwmToOmegaR(2)
+param.PwmToOmegaR   = [3.7,130.9];
 % cT(1)*omegaR^2 + cT*omegaR
 param.cT            = [8.6e-6,-3.2e-4];
 % cQ(1)*omegaR^2 + cq*omegaR
 param.cQ            = [2.4e-7,-9.9e-6];
-% omegaR = PwmToOmegaR(1)*pwm + PwmToOmegaR(2)
-param.PwmToOmegaR   = [3.7,130.9];
 
 
 %% Simulation parameters
-t       = linspace(0,10,10/param.sampleTime+1);
-x0      = zeros(12,1);
-x0(3)   = 1;
+t           = expData.input.time;
+x0          = [expData.state.otPos(:,1);expData.state.otOrient(:,1);...
+               zeros(6,1)];
 
 % Construct input - not tested yet
+pwmToolbox  = expData.input.motor/param.PwmToPwm;
+omegaR      = param.PwmToOmegaR(1)*pwmToolbox+param.PwmToOmegaR(2);
+dur         = length(expData.input.time);
+f           = zeros(4,1);
+T           = zeros(1,dur);
+tauPhi      = zeros(1,dur);
+tauTheta    = zeros(1,dur);
+tauPsi      = zeros(1,dur);
+for i = 1:dur
+    f           = param.cT(1)*omegaR(:,i).^2 + param.cT(2)*omegaR(:,i);
+    T(i)        = sum(f);
+    tauPhi(i)   = sqrt(1/2)*param.l*(f(1)-f(2)-f(3)+f(4));
+    tauTheta(i) = sqrt(1/2)*param.l*(-f(1)-f(2)+f(3)+f(4));
+    tauPsi(i)   = param.cQ(1)*(sum(omegaR(1:2:3,i).^2)-...
+                               sum(omegaR(2:2:4).^2)) + ...
+                  param.cQ(2)*(sum(omegaR(1:2:3,i))-sum(omegaR(2:2:4)));
+end
+u = [T;tauPhi;tauTheta;tauPsi];
 % uFreq   = 5; %Hz
 % u       = kron(ones(1,dur/4),[3; 0; 0; 0]);
 % u       = [u, kron(ones(1,3*dur/4),[0; 0; 0; 0])];
@@ -99,7 +115,7 @@ x0(3)   = 1;
 %     u(2,i) = 0.001*cos(2*pi*uFreq*i*param.sampleTime);
 % end
 
-% Construct input - working inputs
+% Construct input - working inputs when only looking at position
 % u       = kron(ones(1,length(t)-1),[0; 0; 0; 0]);
 % u       = kron(ones(1,length(t)),[param.m*param.g; 0; 0; 0]);
 

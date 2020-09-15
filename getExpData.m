@@ -3,6 +3,10 @@ clear;
 close all;
 clc;
 
+% Parameters
+timeAcc = 2e-3; %start and end time accuracy
+eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
+
 
 %% Set variables
 % Retrieve bag file
@@ -23,7 +27,7 @@ topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [41.8,60];
+time = [36,60];
 
 
 %% Get data
@@ -61,56 +65,162 @@ if topics.ardroneOdom
 end
 
 
-%% Convert quaternions to ZYX Euler angles
-if topics.gazeboModelStates
-    gazeboOrientQuat = gazeboOrientQuat';
-    orient = zeros(size(gazeboOrientQuat,1),3);
-    for i = 1:size(gazeboOrientQuat,1)
-        orient(i,:) = quat2eul(gazeboOrientQuat(i,:));
+%% Select suitable time frames
+% Plot position data to search for time where x and y are constant
+figure('Name','OptiTrack position data');
+hold on;
+plot(optitrackStampTime,optitrackPos(1,:),'-o');
+plot(optitrackStampTime,optitrackPos(2,:),'-o');
+plot(optitrackStampTime,optitrackPos(3,:),'-o');
+
+keyboard;   %enter otStart and otEnd here
+
+% Select proper OptiTrack data
+optitrackStampTime = optitrackStampTime(otStart:otEnd);
+optitrackPos = optitrackPos(:,otStart:otEnd);
+optitrackOrientQuat = optitrackOrientQuat(:,otStart:otEnd);
+
+% Search for otStart and otEnd time in ardroneNavdataStampTime
+arStart = find(abs(ardroneNavdataStampTime-optitrackStampTime(1)) ...
+               < timeAcc);
+arEnd = find(abs(ardroneNavdataStampTime-optitrackStampTime(end)) ...
+             < timeAcc);
+
+% Select desired Motor PWM data
+ardroneNavdataStampTime = ardroneNavdataStampTime(arStart:arEnd);
+ardroneNavdataMotor = ardroneNavdataMotor(:,arStart:arEnd);
+
+
+%% Convert OptiTrack quaternions to ZYX Euler angles
+%TODO: maybe create a function with this functionality
+% optitrackStampTime = optitrackStampTime - optitrackStampTime(1);
+optitrackOrientQuat = optitrackOrientQuat';
+orient = zeros(size(optitrackOrientQuat,1),3);
+for i = 1:size(optitrackOrientQuat,1)
+    orient(i,:) = quat2eul(optitrackOrientQuat(i,:));
+end
+orient = orient';
+
+for i = 1:3
+    % Store indices where jumps occur in array
+    n = size(orient,2);
+    jumps = zeros(1,n);
+    for j = 2:n
+        if orient(i,j) > 0 && orient(i,j-1) < 0 && orient(i,j) - ...
+                orient(i,j-1) > eulThres
+            jumps(j) = 1;
+        elseif orient(i,j) < 0 && orient(i,j-1) > 0 && orient(i,j) - ...
+                orient(i,j-1) < eulThres
+            jumps(j) = -1;
+        end
     end
-    orient = orient';
 
-    % for i = 1:3
-    %     % Check for jumps between ~0 and ~2*pi and center angles around 0.
-    %     % If amount of jumps is at least equal to 50, the data will be edited
-    %     cnt = 0;
-    %     for j = 2:size(orient,2)
-    %         if abs(orient(i,j) - orient(i,j-1)) > 6
-    %             cnt = cnt + 1;
-    %         end
-    %     end
-    %     if cnt >= 50
-    %         orient(i,:) = orient(i,:) + 2*pi;
-    %         orient(i,:) = mod(orient(i,:),2*pi);
-    %         avg = mean(orient(i,:));
-    %         orient(i,:) = orient(i,:) - avg;
-    %         for j = 1:size(orient,2)
-    %             if orient(i,j) < -0.75
-    %                 orient(i,j) = 0;
-    %             elseif orient(i,j) > 0.75
-    %                 orient(i,j) = 0;
-    %             end
-    %         end
-    %     end
-    % end
+    % Add +/-pi depending on first jump. For each jump, add +/-2pi, such
+    % that every values becomes approximately 0
+    jumpsDown = find(jumps == -1);
+    jumpsUp = find(jumps == 1);
+    nDown = length(jumpsDown);
+    nUp = length(jumpsUp);
+    if nDown > 1 && nUp > 1
+        if jumpsDown(1) < jumpsUp(1)
+            orient(i,:) = orient(i,:) - pi;
+            for j = 1:nDown-1
+                orient(i,jumpsDown(j):jumpsUp(j)-1) = ...
+                    orient(i,jumpsDown(j):jumpsUp(j)-1) + 2*pi;
+            end
+            if nDown > nUp
+                orient(i,jumpsDown(j):end) = orient(i,jumpsDown(j):end) + 2*pi;
+            else
+                orient(i,jumpsDown(end):jumpsUp(end)-1) = ...
+                    orient(i,jumpsDown(end):jumpsUp(end)-1) + 2*pi;
+            end
+        else
+            orient(i,:) = orient(i,:) + pi;
+            for j = 1:nUp-1
+                orient(i,jumpsUp(j):jumpsDown(j)-1) = ...
+                    orient(i,jumpsUp(j):jumpsDown(j)-1) + 2*pi;
+            end
+            if nUp > nDown
+                orient(i,jumpsUp(j):end) = orient(i,jumpsUp(j):end) + 2*pi;
+            else
+                orient(i,jumpsUp(end):jumpsDown(end)-1) = ...
+                    orient(i,jumpsUp(end):jumpsDown(end)-1) + 2*pi;
+            end
+        end
+    end
+
+    optitrackOrient = orient;
 end
 
+figure('Name','OptiTrack orientation data');
+subplot(3,1,1);
+plot(optitrackStampTime,optitrackOrient(1,:),'-o');
+title('\phi');
+subplot(3,1,2);
+plot(optitrackStampTime,optitrackOrient(2,:),'-o');
+title('\theta');
+subplot(3,1,3);
+plot(optitrackStampTime,optitrackOrient(3,:),'-o');
+title('\psi');
 
-%% Interpolate motor data
-if topics.modelInput
-    data.time = ardroneNavdataStampTime;
 
-    data.value = ardroneNavdataMotor;
-    tmp = interpolate(0.001, data);
-    expData.input.time = tmp.time;
-    expData.input.motor(1,:) = tmp.value;
+%% Interpolate data
+% Sample time
+expData.sampleTime = 1e-3;
 
-    data.value = torque;
-    tmp = interpolate(0.001, data);
-    expData.input.torque = tmp.value;
+% OptiTrack data
+data.time = optitrackStampTime;
+data.value = [optitrackPos;optitrackOrient];
+tmp = interpolate(0.001, data);
+expData.state.otTime = tmp.time;
+expData.state.otPos = tmp.value(1:3,:);
+expData.state.otOrient = tmp.value(4:6,:);
 
-    expData.input.time = expData.input.time - expData.input.time(1);
+% AR.Drone 2.0 motor PWM data
+data.time = ardroneNavdataStampTime;
+data.value = ardroneNavdataMotor;
+tmp = interpolate(expData.state.otTime, data);
+expData.input.time = tmp.time;
+expData.input.motor = tmp.value;
+
+
+%% Ensure data is consistent: same start and end time + start at zero
+% Start time
+if expData.input.time(1) < expData.state.otTime(1)
+    i = 2;
+    while expData.input.time(i) < expData.state.otTime(1)
+        i = i + 1;
+    end
+    expData.input.time = expData.input.time(i:end);
+    expData.input.motor = expData.input.motor(:,i:end);
+elseif expData.input.time(1) > expData.state.otTime(1)
+    i = 2;
+    while expData.input.time(1) > expData.state.otTime(i)
+        i = i + 1;
+    end
+    expData.state.otTime = expData.state.otTime(i:end);
+    expData.state.otPos = expData.state.otPos(:,i:end);
 end
+
+% End time
+if expData.input.time(end) > expData.state.otTime(end)
+    i = length(expData.input.time);
+    while expData.input.time(i) > expData.state.otTime(end)
+        i = i - 1;
+    end
+    expData.input.time = expData.input.time(1:i);
+    expData.input.motor = expData.input.motor(:,1:i);
+elseif expData.input.time(end) < expData.state.otTime(end)
+    i = length(expData.state.otTime);
+    while expData.input.time(end) < expData.state.otTime(i)
+        i = i - 1;
+    end
+    expData.state.otTime = expData.state.otTime(1:i);
+    expData.state.otPos = expData.state.otPos(:,1:i);
+end
+
+expData.input.time = expData.input.time - expData.input.time(1);
+expData.state.otTime = expData.state.otTime - expData.state.otTime(1);
 
 
 %% Save gazSim data
