@@ -127,28 +127,37 @@ x = qrSimpleLtiSim(u,t,x0,param);
 %% TODO: simulate nonlinear system model
 
 
-%% Plot results
+%% Plot results and compare with OptiTrack data
 figure('Name','Position');
 subplot(3,1,1);
+hold on;
 plot(t,x(1,:));
+plot(t,expData.state.otPos(1,:));
+legend('LtI simulation','OptiTrack');
 title('x');
 subplot(3,1,2);
+hold on;
 plot(t,x(2,:));
+plot(t,expData.state.otPos(2,:));
+legend('LtI simulation','OptiTrack');
 title('y');
 subplot(3,1,3);
-plot(t,x(3,:),'-o');
+hold on;
+plot(t,x(3,:));
+plot(t,expData.state.otPos(3,:));
+legend('LtI simulation','OptiTrack');
 title('z');
 
-figure('Name','Velocity');
-subplot(3,1,1);
-plot(t,x(4,:));
-title('v_x');
-subplot(3,1,2);
-plot(t,x(5,:));
-title('v_y');
-subplot(3,1,3);
-plot(t,x(6,:),'-o');
-title('v_z');
+% figure('Name','Velocity');
+% subplot(3,1,1);
+% plot(t,x(4,:));
+% title('v_x');
+% subplot(3,1,2);
+% plot(t,x(5,:));
+% title('v_y');
+% subplot(3,1,3);
+% plot(t,x(6,:),'-o');
+% title('v_z');
 
 
 %% Nonlinear (non-working) simulations
