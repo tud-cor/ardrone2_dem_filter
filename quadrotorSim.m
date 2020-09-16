@@ -21,8 +21,15 @@ close all;
 % Load pre-processed simulation data file
 load bagdata_15-09-2020_15-05.mat expData;
 
+% Select samples to use in simulation
 startSample = 1;
 endSample = 10000;
+
+expData.state.otTime = expData.state.otTime(startSample:endSample);
+expData.state.otPos = expData.state.otPos(:,startSample:endSample);
+expData.state.otOrient = expData.state.otOrient(:,startSample:endSample);
+expData.input.time = expData.input.time(startSample:endSample);
+expData.input.motor = expData.input.motor(:,startSample:endSample);
 
 
 %% System parameters
@@ -125,7 +132,7 @@ sysd = c2d(sysc,param.sampleTime);
 
 
 %% Simulation parameters
-t           = expData.input.time(startSample:endSample);
+t           = expData.input.time;
 x0          = [expData.state.otPos(:,1);zeros(3,1);...
                expData.state.otOrient(:,1);zeros(3,1)];
 % x0          = zeros(12,1);
@@ -140,7 +147,7 @@ rotorSpeed  = expData.input.motor;
 % Construct input from rotor speeds
 pwmToolbox  = rotorSpeed/param.PwmToPwm;
 omegaR      = param.PwmToOmegaR(1)*pwmToolbox+param.PwmToOmegaR(2);
-dur         = length(expData.input.time(startSample:endSample));
+dur         = length(expData.input.time);
 f           = zeros(4,1);
 T           = zeros(1,dur);
 tauPhi      = zeros(1,dur);
@@ -187,14 +194,21 @@ u = [T;tauPhi;tauTheta;tauPsi];
 
 
 %% Simulate LTI system (using manual iterations)
-x = ltiSim(sysd,t,x0,u,param);
+% x = ltiSim(sysd,t,x0,u,param);
 
 
 %% Simulate LTI system (using MATLAB function lsim)
 [tLsim,xLsim] = ltiLsim(sysd,t,x0,u,param);
 
 
-%% TODO: simulate nonlinear system model
+%% Simulate nonlinear TI system (using MATLAB function ode45)
+tspan       = [t(1),t(end)];
+% opt = odeset('AbsTol', 1e-20);
+[tNonlin,xNonlin] = ode45(@(tNonlin,xNonlin) ...
+                          nonlinSim(tNonlin,t,xNonlin,u,omegaR,param),...
+                          tspan,x0);
+tNonlin = tNonlin';
+xNonlin = xNonlin';
 
 
 %% Plot results and compare with OptiTrack data
@@ -203,22 +217,25 @@ subplot(3,1,1);
 hold on;
 plot(t,x(1,:));
 plot(tLsim,xLsim(1,1:end-1));
-plot(t,expData.state.otPos(1,startSample:endSample));
-legend('LTI simulation','lsim','OptiTrack');
+plot(t,expData.state.otPos(1,:));
+plot(tNonlin,xNonlin(1,:));
+legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
 title('x');
 subplot(3,1,2);
 hold on;
 plot(t,x(2,:));
 plot(tLsim,xLsim(2,1:end-1));
-plot(t,expData.state.otPos(2,startSample:endSample));
-legend('LtI simulation','lsim','OptiTrack');
+plot(tNonlin,xNonlin(2,:));
+plot(t,expData.state.otPos(2,:));
+legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
 title('y');
 subplot(3,1,3);
 hold on;
 plot(t,x(3,:));
 plot(tLsim,xLsim(3,1:end-1));
-plot(t,expData.state.otPos(3,startSample:endSample));
-legend('LtI simulation','lsim','OptiTrack');
+plot(tNonlin,xNonlin(3,:));
+plot(t,expData.state.otPos(3,:));
+legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
 title('z');
 
 % figure('Name','Velocity');
@@ -444,143 +461,79 @@ title('z');
 % ylabel('\psiDot_{matlab} (rad)');
 
 
-%% Function definitions
-function dxdt = qrodefcn(state,input,param)
-%QRODEFUN ODE implementation of quadrotor model.
-%   This function provides the ODEs of the quadrotor model.
-%   The ODEs used in this function contain the most (nonlinear) terms as
-%   defined in the quadrotor model.
-
-% State definition:
-x       = state(1);     %x position in inertial frame
-y       = state(2);     %y position in inertial frame
-z       = state(3);     %z position in inertial frame
-u       = state(4);     %linear velocity along x-axis in body frame
-v       = state(5);     %linear velocity along y-axis in body frame
-w       = state(6);     %linear velocity along z-axis in body frame
-phi     = state(7);     %roll Euler angle
-theta   = state(8);     %pitch Euler angle
-psi     = state(9);     %yaw Euler angle
-p       = state(10);    %angular velocity around x-axis in body frame
-q       = state(11);    %angular velocity around y-axis in body frame
-r       = state(12);    %angular velocity around z-axis in body frame
-
-% Input definition:
-omega1  = input(1);     %rotational velocity of rotor 1
-omega2  = input(2);     %rotational velocity of rotor 2
-omega3  = input(3);     %rotational velocity of rotor 3
-omega4  = input(4);     %rotational velocity of rotor 4
-
-% Thrust and torque values
-T           = param.cT*(omega1^2 + omega2^2 + omega3^2 + omega4^2);
-tauPhi      = param.cT*(omega4^2 - omega2^2);
-tauTheta    = param.cT*(omega3^2 - omega1^2);
-tauPsi      = param.cQ*(omega2^2 + omega4^2 - omega1^2 - omega3^2);
-omega       = omega2 + omega4 - omega1 - omega3;
-
-% Linear and angular rotation matrices (constructed using ZYX Euler
-% angles):
-R           = [cos(theta)*cos(psi), ...
-               sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), ...
-               cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);...
-               cos(theta)*sin(psi), ...
-               sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), ...
-               cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);...
-               -sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)];
-
-Rr          = [1, sin(phi)*tan(theta), cos(phi)*tan(theta);...
-               0, cos(phi)           , -sin(phi);...
-               0, sin(phi)/cos(theta), cos(phi)/cos(theta)];
-
-dxdt = [R(1,1)*u + R(1,2)*v + R(1,3)*w;...
-        R(2,1)*u + R(2,2)*v + R(2,3)*w;...
-        R(3,1)*u + R(3,2)*v + R(3,3)*w;...
-        r*v - q*w + param.g*sin(theta);...
-        p*w - r*u - param.g*cos(theta)*sin(phi);...
-        q*u - p*v - param.g*cos(theta)*cos(phi) + 1/param.m*T;...
-        Rr(1,1)*p + Rr(1,2)*q + Rr(1,3)*r;...
-        Rr(2,1)*p + Rr(2,2)*q + Rr(2,3)*r;...
-        Rr(3,1)*p + Rr(3,2)*q + Rr(3,3)*r;...
-        1/param.ixx*((param.iyy - param.izz)*q*r - ...
-        param.irotor*q*omega + tauPhi);...
-        1/param.iyy*((param.izz - param.ixx)*p*r + ...
-        param.irotor*p*omega + tauTheta);...
-        1/param.izz*((param.ixx - param.iyy)*p*q + tauPsi)];
-end
-
-function dxdt = qrgazodefcn(t,state,param)
-%QRODEFUN ODE implementation of quadrotor model.
-%   This function provides the ODEs of the quadrotor model.
-%   The ODEs used in this function contain the most (nonlinear) terms as
-%   defined in the quadrotor model.
-
-% State definition:
-x       = state(1);     %x position in inertial frame
-y       = state(2);     %y position in inertial frame
-z       = state(3);     %z position in inertial frame
-u       = state(4);     %linear velocity along x-axis in body frame
-v       = state(5);     %linear velocity along y-axis in body frame
-w       = state(6);     %linear velocity along z-axis in body frame
-phi     = state(7);     %roll Euler angle
-theta   = state(8);     %pitch Euler angle
-psi     = state(9);     %yaw Euler angle
-p       = state(10);    %angular velocity around x-axis in body frame
-q       = state(11);    %angular velocity around y-axis in body frame
-r       = state(12);    %angular velocity around z-axis in body frame
-
-% Load data and determine time index in input arrays
-load gazSim.mat gazSim;
-for i = 1:length(gazSim.input.time)
-    if abs(gazSim.input.time(i) - t) < param.timeThres
-        break;
-    elseif t >= gazSim.input.time(i) && t <= gazSim.input.time(i+1) && ...
-           abs(gazSim.input.time(i) - t) <= abs(gazSim.input.time(i+1) - t)
-        break;
-    elseif t >= gazSim.input.time(i) && t <= gazSim.input.time(i+1) && ...
-           abs(gazSim.input.time(i) - t) > abs(gazSim.input.time(i+1) - t)
-        i = i + 1;
-        break;
-    end
-end
-
-% Thrust and torque values
-T           = gazSim.input.force(3,i);
-tauPhi      = gazSim.input.torque(1,i);
-tauTheta    = gazSim.input.torque(2,i);
-tauPsi      = gazSim.input.torque(3,i);
-
-% Linear and angular rotation matrices (constructed using ZYX Euler
-% angles):
-R           = [cos(theta)*cos(psi), ...
-               sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), ...
-               cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);...
-               cos(theta)*sin(psi), ...
-               sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), ...
-               cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);...
-               -sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)];
-
-Rr          = [1, sin(phi)*tan(theta), cos(phi)*tan(theta);...
-               0, cos(phi)           , -sin(phi);...
-               0, sin(phi)/cos(theta), cos(phi)/cos(theta)];
-
-dxdt = [R(1,1)*u + R(1,2)*v + R(1,3)*w;...
-        R(2,1)*u + R(2,2)*v + R(2,3)*w;...
-        R(3,1)*u + R(3,2)*v + R(3,3)*w;...
-        r*v - q*w + param.g*sin(theta);...
-        p*w - r*u - param.g*cos(theta)*sin(phi);...
-        q*u - p*v - param.g*cos(theta)*cos(phi) + 1/param.m*T;...
-        Rr(1,1)*p + Rr(1,2)*q + Rr(1,3)*r;...
-        Rr(2,1)*p + Rr(2,2)*q + Rr(2,3)*r;...
-        Rr(3,1)*p + Rr(3,2)*q + Rr(3,3)*r;...
-        1/param.ixx*((param.iyy - param.izz)*q*r - tauPhi);...
-        1/param.iyy*((param.izz - param.ixx)*p*r + tauTheta);...
-        1/param.izz*((param.ixx - param.iyy)*p*q + tauPsi)];
-
-% Ground constraint
-% if state(3) < 0
-%     state(3) = 0;
+% function dxdt = qrgazodefcn(t,state,param)
+% %QRODEFUN ODE implementation of quadrotor model.
+% %   This function provides the ODEs of the quadrotor model.
+% %   The ODEs used in this function contain the most (nonlinear) terms as
+% %   defined in the quadrotor model.
+% 
+% % State definition:
+% x       = state(1);     %x position in inertial frame
+% y       = state(2);     %y position in inertial frame
+% z       = state(3);     %z position in inertial frame
+% u       = state(4);     %linear velocity along x-axis in body frame
+% v       = state(5);     %linear velocity along y-axis in body frame
+% w       = state(6);     %linear velocity along z-axis in body frame
+% phi     = state(7);     %roll Euler angle
+% theta   = state(8);     %pitch Euler angle
+% psi     = state(9);     %yaw Euler angle
+% p       = state(10);    %angular velocity around x-axis in body frame
+% q       = state(11);    %angular velocity around y-axis in body frame
+% r       = state(12);    %angular velocity around z-axis in body frame
+% 
+% % Load data and determine time index in input arrays
+% load gazSim.mat gazSim;
+% for i = 1:length(gazSim.input.time)
+%     if abs(gazSim.input.time(i) - t) < param.timeThres
+%         break;
+%     elseif t >= gazSim.input.time(i) && t <= gazSim.input.time(i+1) && ...
+%            abs(gazSim.input.time(i) - t) <= abs(gazSim.input.time(i+1) - t)
+%         break;
+%     elseif t >= gazSim.input.time(i) && t <= gazSim.input.time(i+1) && ...
+%            abs(gazSim.input.time(i) - t) > abs(gazSim.input.time(i+1) - t)
+%         i = i + 1;
+%         break;
+%     end
 % end
-% if abs(state(3)) < param.groundThres && dxdt(3) < 0
-%     dxdt(3) = 0;
+% 
+% % Thrust and torque values
+% T           = gazSim.input.force(3,i);
+% tauPhi      = gazSim.input.torque(1,i);
+% tauTheta    = gazSim.input.torque(2,i);
+% tauPsi      = gazSim.input.torque(3,i);
+% 
+% % Linear and angular rotation matrices (constructed using ZYX Euler
+% % angles):
+% R           = [cos(theta)*cos(psi), ...
+%                sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), ...
+%                cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);...
+%                cos(theta)*sin(psi), ...
+%                sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), ...
+%                cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);...
+%                -sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)];
+% 
+% Rr          = [1, sin(phi)*tan(theta), cos(phi)*tan(theta);...
+%                0, cos(phi)           , -sin(phi);...
+%                0, sin(phi)/cos(theta), cos(phi)/cos(theta)];
+% 
+% dxdt = [R(1,1)*u + R(1,2)*v + R(1,3)*w;...
+%         R(2,1)*u + R(2,2)*v + R(2,3)*w;...
+%         R(3,1)*u + R(3,2)*v + R(3,3)*w;...
+%         r*v - q*w + param.g*sin(theta);...
+%         p*w - r*u - param.g*cos(theta)*sin(phi);...
+%         q*u - p*v - param.g*cos(theta)*cos(phi) + 1/param.m*T;...
+%         Rr(1,1)*p + Rr(1,2)*q + Rr(1,3)*r;...
+%         Rr(2,1)*p + Rr(2,2)*q + Rr(2,3)*r;...
+%         Rr(3,1)*p + Rr(3,2)*q + Rr(3,3)*r;...
+%         1/param.ixx*((param.iyy - param.izz)*q*r - tauPhi);...
+%         1/param.iyy*((param.izz - param.ixx)*p*r + tauTheta);...
+%         1/param.izz*((param.ixx - param.iyy)*p*q + tauPsi)];
+% 
+% % Ground constraint
+% % if state(3) < 0
+% %     state(3) = 0;
+% % end
+% % if abs(state(3)) < param.groundThres && dxdt(3) < 0
+% %     dxdt(3) = 0;
+% % end
 % end
-end
