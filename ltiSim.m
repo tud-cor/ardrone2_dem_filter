@@ -1,45 +1,15 @@
-function x = qrSimpleLtiSim(u,t,x0,param)
-% Translate operating point to origin of state-input space
+function x = ltiSim(sysd,t,x0,u,param)
 n = length(x0);
-l = size(u,1);
+
+% Translate operating point to origin of state-input space
 stateOperatingPoint = zeros(n,1);
 stateOperatingPoint(3) = 1;
-inputOperatingPoint = [param.m*param.g; 0; 0; 0];
 x0 = x0 - stateOperatingPoint;
+
+inputOperatingPoint = [param.m*param.g; 0; 0; 0];
+% inputOperatingPoint = [4.39457076058028; 0; 0; 0];
+% inputOperatingPoint = [4.44; 0; 0; 0];
 u = u - inputOperatingPoint;
-
-% Construct continuous-time linearised state space system
-A = [0, 0, 0, 1, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 1, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 1, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , param.g, 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, -param.g, 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 1, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 1, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 1;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
-     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0];
-B = [0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     1/param.m, 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 0          , 0          , 0;
-     0        , 1/param.ixx, 0          , 0;
-     0        , 0          , 1/param.iyy, 0;
-     0        , 0          , 0          , 1/param.izz];
-C = eye(n);
-D = zeros(n,l);
-
-sysc = ss(A,B,C,D);
-
-% Construct discrete-time linearised state space system
-sysd = c2d(sysc,param.sampleTime);
 
 % Simulate system on every time step
 dur     = length(t);
@@ -61,10 +31,10 @@ end
 % Use lsim
 % x0 = x0';
 % u = u';
-% [y2,t2,x2] = lsim(sysd,u,t,x0);
+% [y2,t,x2] = lsim(sysd,u,t,x0);
 % u = u';
-% y2 = y2';
-% x2 = x2';
+% y = y2';
+% x = x2';
 
 % State comparison for-loop vs lsim
 % x = x + stateOperatingPoint;

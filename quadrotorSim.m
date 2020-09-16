@@ -3,7 +3,7 @@
 %
 % This file loads simulation data, specifies quadrotor parameters,
 % simulates the mathematical quadrotor model and plots the results in order
-% to compare with Gazebo simulation data
+% to compare with physical flight (or Gazebo simulation) data
 %
 % Author: Dennis Benders
 % Last edited: 13.05.2020
@@ -20,6 +20,9 @@ close all;
 %% Select simulation data
 % Load pre-processed simulation data file
 load bagdata_15-09-2020_15-05.mat expData;
+
+startSample = 1;
+endSample = 10000;
 
 
 %% System parameters
@@ -84,15 +87,60 @@ param.cT            = [8.6e-6,-3.2e-4];
 param.cQ            = [2.4e-7,-9.9e-6];
 
 
-%% Simulation parameters
-t           = expData.input.time;
-x0          = [expData.state.otPos(:,1);expData.state.otOrient(:,1);...
-               zeros(6,1)];
+%% LTI state-space description and discretize
+% Construct continuous-time linearised state space system
+n = 12;
+l = 4;
+A = [0, 0, 0, 1, 0, 0, 0       , 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 1, 0, 0       , 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 1, 0       , 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , param.g, 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, -param.g, 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 1, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 1, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 1;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0       , 0      , 0, 0, 0, 0];
+B = [0        , 0          , 0          , 0;
+     0        , 0          , 0          , 0;
+     0        , 0          , 0          , 0;
+     0        , 0          , 0          , 0;
+     0        , 0          , 0          , 0;
+     1/param.m, 0          , 0          , 0;
+     0        , 0          , 0          , 0;
+     0        , 0          , 0          , 0;
+     0        , 0          , 0          , 0;
+     0        , 1/param.ixx, 0          , 0;
+     0        , 0          , 1/param.iyy, 0;
+     0        , 0          , 0          , 1/param.izz];
+C = eye(n);
+D = zeros(n,l);
 
-% Construct input - not tested yet
-pwmToolbox  = expData.input.motor/param.PwmToPwm;
+sysc = ss(A,B,C,D);
+
+% Construct discrete-time linearised state space system
+sysd = c2d(sysc,param.sampleTime);
+
+
+%% Simulation parameters
+t           = expData.input.time(startSample:endSample);
+x0          = [expData.state.otPos(:,1);zeros(3,1);...
+               expData.state.otOrient(:,1);zeros(3,1)];
+% x0          = zeros(12,1);
+% x0(3)       = 1;
+
+% Construct rotor speed input
+rotorSpeed  = expData.input.motor;
+% rotorSpeed  = kron(ones(size(expData.input.motor,1),...
+%                         size(expData.input.motor,2)),...
+%                    mean(mean(expData.input.motor)));
+
+% Construct input from rotor speeds
+pwmToolbox  = rotorSpeed/param.PwmToPwm;
 omegaR      = param.PwmToOmegaR(1)*pwmToolbox+param.PwmToOmegaR(2);
-dur         = length(expData.input.time);
+dur         = length(expData.input.time(startSample:endSample));
 f           = zeros(4,1);
 T           = zeros(1,dur);
 tauPhi      = zeros(1,dur);
@@ -100,6 +148,19 @@ tauTheta    = zeros(1,dur);
 tauPsi      = zeros(1,dur);
 for i = 1:dur
     f           = param.cT(1)*omegaR(:,i).^2 + param.cT(2)*omegaR(:,i);
+%     f           = 9e-6*omegaR(:,i).^2 - 5.6e-4*omegaR(:,i) + 3.2e-2;
+%     f           = 7.7e-6*omegaR(:,i).^2;
+
+%     f(1)        = 1.5618e-4*pwmToolbox(1,i)^2 + ...
+%                   1.0395e-2*pwmToolbox(1,i) + 0.13894;
+%     f(2)        = 1.8150e-4*pwmToolbox(2,i)^2 + ...
+%                   8.7242e-3*pwmToolbox(2,i) + 0.14425;
+%     f(3)        = 1.3478e-4*pwmToolbox(3,i)^2 + ...
+%                   7.3295e-3*pwmToolbox(3,i) + 0.11698;
+%     f(4)        = 1.4306e-4*pwmToolbox(4,i)^2 + ...
+%                   5.7609e-3*pwmToolbox(4,i) + 0.13362;
+
+%     f           = 8.386e-6*omegaR(:,i).^2 - 3.723e-5*omegaR(:,i) - 0.0318;
     T(i)        = sum(f);
     tauPhi(i)   = sqrt(1/2)*param.l*(f(1)-f(2)-f(3)+f(4));
     tauTheta(i) = sqrt(1/2)*param.l*(-f(1)-f(2)+f(3)+f(4));
@@ -108,6 +169,15 @@ for i = 1:dur
                   param.cQ(2)*(sum(omegaR(1:2:3,i))-sum(omegaR(2:2:4)));
 end
 u = [T;tauPhi;tauTheta;tauPsi];
+
+
+
+% Custom input
+% Correctly working when looking at position data
+% u       = kron(ones(1,length(t)-1),[0; 0; 0; 0]);
+% u       = kron(ones(1,length(t)),[param.m*param.g; 0; 0; 0]);
+
+% Not tested yet
 % uFreq   = 5; %Hz
 % u       = kron(ones(1,dur/4),[3; 0; 0; 0]);
 % u       = [u, kron(ones(1,3*dur/4),[0; 0; 0; 0])];
@@ -115,13 +185,13 @@ u = [T;tauPhi;tauTheta;tauPsi];
 %     u(2,i) = 0.001*cos(2*pi*uFreq*i*param.sampleTime);
 % end
 
-% Construct input - working inputs when only looking at position
-% u       = kron(ones(1,length(t)-1),[0; 0; 0; 0]);
-% u       = kron(ones(1,length(t)),[param.m*param.g; 0; 0; 0]);
+
+%% Simulate LTI system (using manual iterations)
+x = ltiSim(sysd,t,x0,u,param);
 
 
-%% Simulate simple LTI system
-x = qrSimpleLtiSim(u,t,x0,param);
+%% Simulate LTI system (using MATLAB function lsim)
+[tLsim,xLsim] = ltiLsim(sysd,t,x0,u,param);
 
 
 %% TODO: simulate nonlinear system model
@@ -132,20 +202,23 @@ figure('Name','Position');
 subplot(3,1,1);
 hold on;
 plot(t,x(1,:));
-plot(t,expData.state.otPos(1,:));
-legend('LtI simulation','OptiTrack');
+plot(tLsim,xLsim(1,1:end-1));
+plot(t,expData.state.otPos(1,startSample:endSample));
+legend('LTI simulation','lsim','OptiTrack');
 title('x');
 subplot(3,1,2);
 hold on;
 plot(t,x(2,:));
-plot(t,expData.state.otPos(2,:));
-legend('LtI simulation','OptiTrack');
+plot(tLsim,xLsim(2,1:end-1));
+plot(t,expData.state.otPos(2,startSample:endSample));
+legend('LtI simulation','lsim','OptiTrack');
 title('y');
 subplot(3,1,3);
 hold on;
 plot(t,x(3,:));
-plot(t,expData.state.otPos(3,:));
-legend('LtI simulation','OptiTrack');
+plot(tLsim,xLsim(3,1:end-1));
+plot(t,expData.state.otPos(3,startSample:endSample));
+legend('LtI simulation','lsim','OptiTrack');
 title('z');
 
 % figure('Name','Velocity');
