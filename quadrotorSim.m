@@ -1,9 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Quadrotor simulation
 %
-% This file loads simulation data, specifies quadrotor parameters,
-% simulates the mathematical quadrotor model and plots the results in order
-% to compare with physical flight (or Gazebo simulation) data
+% This file loads physical flight (simulation) data, specifies quadrotor
+% parameters, simulates the mathematical quadrotor model and plots the
+% results in order to compare with the physical flight (or Gazebo
+% simulation) data
 %
 % Author: Dennis Benders
 % Last edited: 13.05.2020
@@ -71,19 +72,21 @@ param.l             = 0.178;	%m
 
 % Thrust and torque coefficients
 % %TODO: optimise for this value using sim/flights
-% %(now derived from Bouabdallah using their numbers for radius, area, etc.)
-% %This value is 0.1225 in Nonlinear control of quadrotor for point-tracking
+% %(now derived from Bouabdallah using their numbers for radius, area,
+% % etc.) This value is 0.1225 in Nonlinear control of quadrotor for
+% % point-tracking
 % param.CT            = 0.008;
 % 
 % %TODO: optimise for this value using sim/flights
-% %(now derived from Bouabdallah using their numbers for radius, area, etc.)
-% %This value is 0.0510 in Nonlinear control of quadrotor for point-tracking
+% %(now derived from Bouabdallah using their numbers for radius, area,
+% % etc.) This value is 0.0510 in Nonlinear control of quadrotor for
+% % point-tracking
 % param.CQ            = 0.001;
 % 
 % param.cT            = param.CT*param.densityAir*param.areaBlade* ...
-%                       param.radiusBlade^2;  %Ns^2/rad^2 (cT = F/omega^2)
+%                       param.radiusBlade^2;%Ns^2/rad^2 (cT = F/omega^2)
 % param.cQ            = param.CQ*param.densityAir*param.areaBlade^2* ...
-%                       param.radiusBlade^3;  %Nms^2/rad^2 (cQ = tau/omega^2)
+%                       param.radiusBlade^3;%Nms^2/rad^2 (cQ = tau/omega^2)
 %PWM-PWM relation: PWM_ardrone/navdata = 2.55*PWM_toolbox
 param.PwmToPwm      = 2.55;
 % omegaR = PwmToOmegaR(1)*pwm + PwmToOmegaR(2)
@@ -158,6 +161,7 @@ for i = 1:dur
 %     f           = 9e-6*omegaR(:,i).^2 - 5.6e-4*omegaR(:,i) + 3.2e-2;
 %     f           = 7.7e-6*omegaR(:,i).^2;
 
+% Twente thesis
 %     f(1)        = 1.5618e-4*pwmToolbox(1,i)^2 + ...
 %                   1.0395e-2*pwmToolbox(1,i) + 0.13894;
 %     f(2)        = 1.8150e-4*pwmToolbox(2,i)^2 + ...
@@ -167,7 +171,10 @@ for i = 1:dur
 %     f(4)        = 1.4306e-4*pwmToolbox(4,i)^2 + ...
 %                   5.7609e-3*pwmToolbox(4,i) + 0.13362;
 
-%     f           = 8.386e-6*omegaR(:,i).^2 - 3.723e-5*omegaR(:,i) - 0.0318;
+% Delft thesis
+%     f           = 8.386e-6*omegaR(:,i).^2 - 3.723e-5*omegaR(:,i) - ...
+%                   0.0318;
+
     T(i)        = sum(f);
     tauPhi(i)   = sqrt(1/2)*param.l*(f(1)-f(2)-f(3)+f(4));
     tauTheta(i) = sqrt(1/2)*param.l*(-f(1)-f(2)+f(3)+f(4));
@@ -181,8 +188,10 @@ u = [T;tauPhi;tauTheta;tauPsi];
 
 % Custom input
 % Correctly working when looking at position data
-% u       = kron(ones(1,length(t)-1),[0; 0; 0; 0]);
+% u       = kron(ones(1,length(t)),[0; 0; 0; 0]);
 % u       = kron(ones(1,length(t)),[param.m*param.g; 0; 0; 0]);
+
+
 
 % Not tested yet
 % uFreq   = 5; %Hz
@@ -194,7 +203,7 @@ u = [T;tauPhi;tauTheta;tauPsi];
 
 
 %% Simulate LTI system (using manual iterations)
-% x = ltiSim(sysd,t,x0,u,param);
+x = ltiSim(sysd,t,x0,u,param);
 
 
 %% Simulate LTI system (using MATLAB function lsim)
@@ -217,9 +226,10 @@ subplot(3,1,1);
 hold on;
 plot(t,x(1,:));
 plot(tLsim,xLsim(1,1:end-1));
-plot(t,expData.state.otPos(1,:));
 plot(tNonlin,xNonlin(1,:));
+plot(t,expData.state.otPos(1,:));
 legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
+% legend('nonlin ode45','OptiTrack');
 title('x');
 subplot(3,1,2);
 hold on;
@@ -228,6 +238,7 @@ plot(tLsim,xLsim(2,1:end-1));
 plot(tNonlin,xNonlin(2,:));
 plot(t,expData.state.otPos(2,:));
 legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
+% legend('nonlin ode45','OptiTrack');
 title('y');
 subplot(3,1,3);
 hold on;
@@ -236,6 +247,7 @@ plot(tLsim,xLsim(3,1:end-1));
 plot(tNonlin,xNonlin(3,:));
 plot(t,expData.state.otPos(3,:));
 legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
+% legend('nonlin ode45','OptiTrack');
 title('z');
 
 % figure('Name','Velocity');
@@ -249,6 +261,35 @@ title('z');
 % plot(t,x(6,:),'-o');
 % title('v_z');
 
+figure('Name','Attitude');
+subplot(3,1,1);
+hold on;
+plot(t,x(7,:));
+plot(tLsim,xLsim(7,1:end-1));
+plot(tNonlin,xNonlin(7,:));
+plot(t,expData.state.otOrient(1,:));
+legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
+% legend('nonlin ode45','OptiTrack');
+title('\phi');
+subplot(3,1,2);
+hold on;
+plot(t,x(8,:));
+plot(tLsim,xLsim(8,1:end-1));
+plot(tNonlin,xNonlin(8,:));
+plot(t,expData.state.otOrient(2,:));
+legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
+% legend('nonlin ode45','OptiTrack');
+title('\theta');
+subplot(3,1,3);
+hold on;
+plot(t,x(9,:));
+plot(tLsim,xLsim(9,1:end-1));
+plot(tNonlin,xNonlin(9,:));
+plot(t,expData.state.otOrient(3,:));
+legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
+% legend('nonlin ode45','OptiTrack');
+title('\psi');
+
 
 %% Nonlinear (non-working) simulations
 % TODO: not correct yet!
@@ -257,10 +298,11 @@ title('z');
 % not anymore
 % tspan       = [0,1000];
 % x0Nonlin    = zeros(1,12);
-% u           = kron(840.8658965145,ones(1,4)); %hovering: u = 840.8658965145
+% u           = kron(840.8658965145,ones(1,4)); %hovering: u=840.8658965145
 %
 % % opt = odeset('AbsTol', 1e-20);
-% [t,xNonlin] = ode45(@(t,xNonlin) qrodefcn(xNonlin,u,param),tspan,x0Nonlin);
+% [t,xNonlin] = ode45(@(t,xNonlin) qrodefcn(xNonlin,u,param),tspan,...
+%                     x0Nonlin);
 
 
 % Gazebo simulation comparison
@@ -273,7 +315,8 @@ title('z');
 % x0Nonlin(3) = 0.4;
 %
 % opt         = odeset('Stats', 'on');
-% [t,xNonlin] = ode45(@(t,xNonlin) qrgazodefcn(t,xNonlin,param),time,x0Nonlin,opt);
+% [t,xNonlin] = ode45(@(t,xNonlin) qrgazodefcn(t,xNonlin,param),time,...
+%                     x0Nonlin,opt);
 
 
 % %% Plot results
@@ -486,11 +529,13 @@ title('z');
 % for i = 1:length(gazSim.input.time)
 %     if abs(gazSim.input.time(i) - t) < param.timeThres
 %         break;
-%     elseif t >= gazSim.input.time(i) && t <= gazSim.input.time(i+1) && ...
-%            abs(gazSim.input.time(i) - t) <= abs(gazSim.input.time(i+1) - t)
+%     elseif t >= gazSim.input.time(i) && ...
+%            t <= gazSim.input.time(i+1) && ...
+%            abs(gazSim.input.time(i)-t) <= abs(gazSim.input.time(i+1) - t)
 %         break;
-%     elseif t >= gazSim.input.time(i) && t <= gazSim.input.time(i+1) && ...
-%            abs(gazSim.input.time(i) - t) > abs(gazSim.input.time(i+1) - t)
+%     elseif t >= gazSim.input.time(i) && ...
+%            t <= gazSim.input.time(i+1) && ...
+%            abs(gazSim.input.time(i)-t) > abs(gazSim.input.time(i+1) - t)
 %         i = i + 1;
 %         break;
 %     end

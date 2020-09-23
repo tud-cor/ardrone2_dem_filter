@@ -23,9 +23,8 @@ T           = interp1(sampleTimes,input(1,:),t);
 tauPhi      = interp1(sampleTimes,input(2,:),t);
 tauTheta    = interp1(sampleTimes,input(3,:),t);
 tauPsi      = interp1(sampleTimes,input(4,:),t);
-omegaInt    = interp1(sampleTimes',...
-                      [omegaR(1,:)',omegaR(2,:)',omegaR(3,:)',omegaR(4,:)'],...
-                      t);
+omegaInt    = interp1(sampleTimes',[omegaR(1,:)',omegaR(2,:)',...
+                                    omegaR(3,:)',omegaR(4,:)'],t);
 omega       = -omegaInt(1) + omegaInt(2) - omegaInt(3) + omegaInt(4);
 
 % Linear and angular rotation matrices (constructed using ZYX Euler
