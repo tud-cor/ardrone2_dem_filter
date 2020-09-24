@@ -7,7 +7,7 @@
 % simulation) data
 %
 % Author: Dennis Benders
-% Last edited: 13.05.2020
+% Last edited: 24.09.2020
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -125,10 +125,20 @@ B = [0        , 0          , 0          , 0;
      0        , 1/param.ixx, 0          , 0;
      0        , 0          , 1/param.iyy, 0;
      0        , 0          , 0          , 1/param.izz];
-C = eye(n);
+% C = eye(n);
+C = zeros(n,n);
+C(1:3,1:3) = eye(3);
+% C(4:6,4:6) = eye(3);
+C(7:9,7:9) = eye(3);
+% C(10:12,10:12) = eye(3);
 D = zeros(n,l);
 
-eig(A)
+% Linearized system analysis
+lambda = eig(A);
+con = ctrb(A,B);
+nUncon = size(con,1) - rank(con);
+obs = obsv(A,C);
+nUnobs = size(obs,2) - rank(obs);
 
 sysc = ss(A,B,C,D);
 
@@ -181,8 +191,15 @@ for i = 1:dur
     tauPhi(i)   = sqrt(1/2)*param.l*(f(1)-f(2)-f(3)+f(4));
     tauTheta(i) = sqrt(1/2)*param.l*(-f(1)-f(2)+f(3)+f(4));
     tauPsi(i)   = param.cQ(1)*(sum(omegaR(1:2:3,i).^2)-...
-                               sum(omegaR(2:2:4).^2)) + ...
-                  param.cQ(2)*(sum(omegaR(1:2:3,i))-sum(omegaR(2:2:4)));
+                               sum(omegaR(2:2:4,i).^2)) + ...
+                  param.cQ(2)*(sum(omegaR(1:2:3,i))-...
+                               sum(omegaR(2:2:4,i)));
+%     tauPsi(i)   = 2.6e-7*(sum(omegaR(1:2:3,i).^2)-...
+%                           sum(omegaR(2:2:4,i).^2)) - ...
+%                   2.3e-5*(sum(omegaR(1:2:3,i))-...
+%                           sum(omegaR(2:2:4,i))) + ...
+%                   1.8e-3;
+%     tauPsi(i)   = 2.2e-7*(sum(omegaR(1:2:3,i).^2)-sum(omegaR(2:2:4,i).^2));
 end
 u = [T;tauPhi;tauTheta;tauPsi];
 
