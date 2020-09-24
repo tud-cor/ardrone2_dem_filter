@@ -27,7 +27,8 @@ topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [36,60];
+% time = [36,60];
+time = [25,75];
 
 
 %% Get data
@@ -73,7 +74,14 @@ plot(optitrackStampTime,optitrackPos(1,:),'-o');
 plot(optitrackStampTime,optitrackPos(2,:),'-o');
 plot(optitrackStampTime,optitrackPos(3,:),'-o');
 
-keyboard;   %enter otStart and otEnd here
+% Enter otStart and otEnd here by:
+% - Visually determining the time interval
+% - Finding the samples corresponding to the beginning and end of the
+%   interval using:
+%   "otStart = find(abs(optitrackStampTime - startTime) < timeAcc);
+%   otEnd = find(abs(optitrackStampTime - endTime) < timeAcc);"
+%   and checking if otStart and otEnd have size 1x1
+keyboard;
 
 % Select proper OptiTrack data
 optitrackStampTime = optitrackStampTime(otStart:otEnd);
@@ -94,6 +102,8 @@ ardroneNavdataMotor = ardroneNavdataMotor(:,arStart:arEnd);
 %% Convert OptiTrack quaternions to ZYX Euler angles
 %TODO: maybe create a function with this functionality
 % optitrackStampTime = optitrackStampTime - optitrackStampTime(1);
+
+% Convert quaternions to Euler angles
 optitrackOrientQuat = optitrackOrientQuat';
 orient = zeros(size(optitrackOrientQuat,1),3);
 for i = 1:size(optitrackOrientQuat,1)
@@ -101,55 +111,65 @@ for i = 1:size(optitrackOrientQuat,1)
 end
 orient = orient';
 
+% Remove jumps of 2*pi in the angle data
+% for i = 1:3
+%     % Store indices where jumps occur in array
+%     n = size(orient,2);
+%     jumps = zeros(1,n);
+%     for j = 2:n
+%         if orient(i,j) > 0 && orient(i,j-1) < 0 && orient(i,j) - ...
+%                 orient(i,j-1) > eulThres
+%             jumps(j) = 1;
+%         elseif orient(i,j) < 0 && orient(i,j-1) > 0 && orient(i,j) - ...
+%                 orient(i,j-1) < eulThres
+%             jumps(j) = -1;
+%         end
+%     end
+% 
+%     % Add +/-pi depending on first jump. For each jump, add +/-2pi, such
+%     % that every values becomes approximately 0
+%     jumpsDown = find(jumps == -1);
+%     jumpsUp = find(jumps == 1);
+%     nDown = length(jumpsDown);
+%     nUp = length(jumpsUp);
+%     if nDown > 1 && nUp > 1
+%         if jumpsDown(1) < jumpsUp(1)
+%             orient(i,:) = orient(i,:) - pi;
+%             for j = 1:nDown-1
+%                 orient(i,jumpsDown(j):jumpsUp(j)-1) = ...
+%                     orient(i,jumpsDown(j):jumpsUp(j)-1) + 2*pi;
+%             end
+%             if nDown > nUp
+%                 orient(i,jumpsDown(j):end) = ...
+%                     orient(i,jumpsDown(j):end) + 2*pi;
+%             else
+%                 orient(i,jumpsDown(end):jumpsUp(end)-1) = ...
+%                     orient(i,jumpsDown(end):jumpsUp(end)-1) + 2*pi;
+%             end
+%         else
+%             orient(i,:) = orient(i,:) + pi;
+%             for j = 1:nUp-1
+%                 orient(i,jumpsUp(j):jumpsDown(j)-1) = ...
+%                     orient(i,jumpsUp(j):jumpsDown(j)-1) + 2*pi;
+%             end
+%             if nUp > nDown
+%                 orient(i,jumpsUp(j):end) = orient(i,jumpsUp(j):end) + 2*pi;
+%             else
+%                 orient(i,jumpsUp(end):jumpsDown(end)-1) = ...
+%                     orient(i,jumpsUp(end):jumpsDown(end)-1) + 2*pi;
+%             end
+%         end
+%     end
+%     optitrackOrient(i,:) = unwrap(orient(i,:),eulThres);
+% end
+
+optitrackOrient = unwrap(orient,eulThres,2);
 for i = 1:3
-    % Store indices where jumps occur in array
-    n = size(orient,2);
-    jumps = zeros(1,n);
-    for j = 2:n
-        if orient(i,j) > 0 && orient(i,j-1) < 0 && orient(i,j) - ...
-                orient(i,j-1) > eulThres
-            jumps(j) = 1;
-        elseif orient(i,j) < 0 && orient(i,j-1) > 0 && orient(i,j) - ...
-                orient(i,j-1) < eulThres
-            jumps(j) = -1;
-        end
+    if mean(optitrackOrient(i,:)) > eulThres/2
+        optitrackOrient(i,:) = optitrackOrient(i,:) - pi;
+    elseif mean(optitrackOrient(i,:)) < -eulThres/2
+        optitrackOrient(i,:) = optitrackOrient(i,:) + pi;
     end
-
-    % Add +/-pi depending on first jump. For each jump, add +/-2pi, such
-    % that every values becomes approximately 0
-    jumpsDown = find(jumps == -1);
-    jumpsUp = find(jumps == 1);
-    nDown = length(jumpsDown);
-    nUp = length(jumpsUp);
-    if nDown > 1 && nUp > 1
-        if jumpsDown(1) < jumpsUp(1)
-            orient(i,:) = orient(i,:) - pi;
-            for j = 1:nDown-1
-                orient(i,jumpsDown(j):jumpsUp(j)-1) = ...
-                    orient(i,jumpsDown(j):jumpsUp(j)-1) + 2*pi;
-            end
-            if nDown > nUp
-                orient(i,jumpsDown(j):end) = orient(i,jumpsDown(j):end) + 2*pi;
-            else
-                orient(i,jumpsDown(end):jumpsUp(end)-1) = ...
-                    orient(i,jumpsDown(end):jumpsUp(end)-1) + 2*pi;
-            end
-        else
-            orient(i,:) = orient(i,:) + pi;
-            for j = 1:nUp-1
-                orient(i,jumpsUp(j):jumpsDown(j)-1) = ...
-                    orient(i,jumpsUp(j):jumpsDown(j)-1) + 2*pi;
-            end
-            if nUp > nDown
-                orient(i,jumpsUp(j):end) = orient(i,jumpsUp(j):end) + 2*pi;
-            else
-                orient(i,jumpsUp(end):jumpsDown(end)-1) = ...
-                    orient(i,jumpsUp(end):jumpsDown(end)-1) + 2*pi;
-            end
-        end
-    end
-
-    optitrackOrient = orient;
 end
 
 figure('Name','OptiTrack orientation data');
@@ -166,12 +186,12 @@ title('\psi');
 
 %% Interpolate data
 % Sample time
-expData.sampleTime = 1e-3;
+expData.sampleTime = 0.04;
 
 % OptiTrack data
 data.time = optitrackStampTime;
 data.value = [optitrackPos;optitrackOrient];
-tmp = interpolate(0.001, data);
+tmp = interpolate(expData.sampleTime, data);
 expData.state.otTime = tmp.time;
 expData.state.otPos = tmp.value(1:3,:);
 expData.state.otOrient = tmp.value(4:6,:);
@@ -200,6 +220,7 @@ elseif expData.input.time(1) > expData.state.otTime(1)
     end
     expData.state.otTime = expData.state.otTime(i:end);
     expData.state.otPos = expData.state.otPos(:,i:end);
+    expData.state.otOrient = expData.state.otOrient(:,i:end);
 end
 
 % End time
@@ -217,6 +238,7 @@ elseif expData.input.time(end) < expData.state.otTime(end)
     end
     expData.state.otTime = expData.state.otTime(1:i);
     expData.state.otPos = expData.state.otPos(:,1:i);
+    expData.state.otOrient = expData.state.otOrient(:,1:i);
 end
 
 expData.input.time = expData.input.time - expData.input.time(1);

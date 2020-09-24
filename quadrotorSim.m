@@ -20,11 +20,11 @@ close all;
 
 %% Select simulation data
 % Load pre-processed simulation data file
-load bagdata_15-09-2020_15-05.mat expData;
+load hoverSpiralling25Hz.mat expData;
 
 % Select samples to use in simulation
 startSample = 1;
-endSample = 10000;
+endSample = 250;
 
 expData.state.otTime = expData.state.otTime(startSample:endSample);
 expData.state.otPos = expData.state.otPos(:,startSample:endSample);
@@ -128,6 +128,8 @@ B = [0        , 0          , 0          , 0;
 C = eye(n);
 D = zeros(n,l);
 
+eig(A)
+
 sysc = ss(A,B,C,D);
 
 % Construct discrete-time linearised state space system
@@ -221,74 +223,119 @@ xNonlin = xNonlin';
 
 
 %% Plot results and compare with OptiTrack data
-figure('Name','Position');
-subplot(3,1,1);
+figure('Name','Position and attitude');
+subplot(3,2,1);
 hold on;
 plot(t,x(1,:));
-plot(tLsim,xLsim(1,1:end-1));
+plot(tLsim,xLsim(1,1:end));
 plot(tNonlin,xNonlin(1,:));
 plot(t,expData.state.otPos(1,:));
-legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
-% legend('nonlin ode45','OptiTrack');
+legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
+% legend('Nonlin ode45','OptiTrack');
 title('x');
-subplot(3,1,2);
+
+subplot(3,2,3);
 hold on;
 plot(t,x(2,:));
-plot(tLsim,xLsim(2,1:end-1));
+plot(tLsim,xLsim(2,1:end));
 plot(tNonlin,xNonlin(2,:));
 plot(t,expData.state.otPos(2,:));
-legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
-% legend('nonlin ode45','OptiTrack');
+legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
+% legend('Nonlin ode45','OptiTrack');
 title('y');
-subplot(3,1,3);
+
+subplot(3,2,5);
 hold on;
 plot(t,x(3,:));
-plot(tLsim,xLsim(3,1:end-1));
+plot(tLsim,xLsim(3,1:end));
 plot(tNonlin,xNonlin(3,:));
 plot(t,expData.state.otPos(3,:));
-legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
-% legend('nonlin ode45','OptiTrack');
+legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
+% legend('Nonlin ode45','OptiTrack');
 title('z');
 
-% figure('Name','Velocity');
-% subplot(3,1,1);
-% plot(t,x(4,:));
-% title('v_x');
-% subplot(3,1,2);
-% plot(t,x(5,:));
-% title('v_y');
-% subplot(3,1,3);
-% plot(t,x(6,:),'-o');
-% title('v_z');
 
-figure('Name','Attitude');
-subplot(3,1,1);
+subplot(3,2,2);
 hold on;
 plot(t,x(7,:));
-plot(tLsim,xLsim(7,1:end-1));
+plot(tLsim,xLsim(7,1:end));
 plot(tNonlin,xNonlin(7,:));
 plot(t,expData.state.otOrient(1,:));
-legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
-% legend('nonlin ode45','OptiTrack');
+legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
+% legend('Nonlin ode45','OptiTrack');
 title('\phi');
-subplot(3,1,2);
+
+subplot(3,2,4);
 hold on;
 plot(t,x(8,:));
-plot(tLsim,xLsim(8,1:end-1));
+plot(tLsim,xLsim(8,1:end));
 plot(tNonlin,xNonlin(8,:));
 plot(t,expData.state.otOrient(2,:));
-legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
-% legend('nonlin ode45','OptiTrack');
+legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
+% legend('Nonlin ode45','OptiTrack');
 title('\theta');
-subplot(3,1,3);
+
+subplot(3,2,6);
 hold on;
 plot(t,x(9,:));
-plot(tLsim,xLsim(9,1:end-1));
+plot(tLsim,xLsim(9,1:end));
 plot(tNonlin,xNonlin(9,:));
 plot(t,expData.state.otOrient(3,:));
-legend('LTI','LTI lsim','nonlin ode45','OptiTrack');
-% legend('nonlin ode45','OptiTrack');
+legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
+% legend('Nonlin ode45','OptiTrack');
 title('\psi');
+
+
+
+figure('Name','Linear and angular velocity');
+subplot(3,2,1);
+hold on;
+plot(t,x(4,:));
+plot(tLsim,xLsim(4,1:end));
+plot(tNonlin,xNonlin(4,:));
+legend('LTI','LTI lsim','Nonlin ode45');
+title('v_x');
+
+subplot(3,2,3);
+hold on;
+plot(t,x(5,:));
+plot(tLsim,xLsim(5,1:end));
+plot(tNonlin,xNonlin(5,:));
+legend('LTI','LTI lsim','Nonlin ode45');
+title('v_y');
+
+subplot(3,2,5);
+hold on;
+plot(t,x(6,:));
+plot(tLsim,xLsim(6,1:end));
+plot(tNonlin,xNonlin(6,:));
+legend('LTI','LTI lsim','Nonlin ode45');
+title('v_z');
+
+
+subplot(3,2,2);
+hold on;
+plot(t,x(10,:));
+plot(tLsim,xLsim(10,1:end));
+plot(tNonlin,xNonlin(10,:));
+legend('LTI','LTI lsim','Nonlin ode45');
+title('v_{\phi}');
+
+subplot(3,2,4);
+hold on;
+plot(t,x(11,:));
+plot(tLsim,xLsim(11,1:end));
+plot(tNonlin,xNonlin(11,:));
+legend('LTI','LTI lsim','Nonlin ode45');
+title('v_{\theta}');
+
+subplot(3,2,6);
+hold on;
+plot(t,x(12,:));
+plot(tLsim,xLsim(12,1:end));
+plot(tNonlin,xNonlin(12,:));
+legend('LTI','LTI lsim','Nonlin ode45');
+title('v_{\psi}');
 
 
 %% Nonlinear (non-working) simulations
