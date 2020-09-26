@@ -240,6 +240,8 @@ xNonlin = xNonlin';
 
 
 %% Plot results and compare with OptiTrack data
+quadrotor3DVisualization(t,x);
+
 figure('Name','Position and attitude');
 subplot(3,2,1);
 hold on;
