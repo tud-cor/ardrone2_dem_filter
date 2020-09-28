@@ -4,7 +4,6 @@ close all;
 clc;
 
 % Parameters
-timeAcc = 2e-3; %start and end time accuracy
 eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
 
 
@@ -27,8 +26,7 @@ topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-% time = [36,60];
-time = [25,75];
+time = [36,60];
 
 
 %% Get data
@@ -78,9 +76,8 @@ plot(optitrackStampTime,optitrackPos(3,:),'-o');
 % - Visually determining the time interval
 % - Finding the samples corresponding to the beginning and end of the
 %   interval using:
-%   "otStart = find(abs(optitrackStampTime - startTime) < timeAcc);
-%   otEnd = find(abs(optitrackStampTime - endTime) < timeAcc);"
-%   and checking if otStart and otEnd have size 1x1
+%   "[~,otStart] = min(abs(optitrackStampTime-startTime))
+%   [~,otEnd] = min(abs(optitrackStampTime-endTime))"
 keyboard;
 
 % Select proper OptiTrack data
@@ -88,11 +85,10 @@ optitrackStampTime = optitrackStampTime(otStart:otEnd);
 optitrackPos = optitrackPos(:,otStart:otEnd);
 optitrackOrientQuat = optitrackOrientQuat(:,otStart:otEnd);
 
-% Search for otStart and otEnd time in ardroneNavdataStampTime
-arStart = find(abs(ardroneNavdataStampTime-optitrackStampTime(1)) ...
-               < timeAcc);
-arEnd = find(abs(ardroneNavdataStampTime-optitrackStampTime(end)) ...
-             < timeAcc);
+% Search for closest value for otStart and otEnd time in
+% ardroneNavdataStampTime
+[~,arStart] = min(abs(ardroneNavdataStampTime-optitrackStampTime(1)));
+[~,arEnd] = min(abs(ardroneNavdataStampTime-optitrackStampTime(end)));
 
 % Select desired Motor PWM data
 ardroneNavdataStampTime = ardroneNavdataStampTime(arStart:arEnd);
@@ -100,9 +96,6 @@ ardroneNavdataMotor = ardroneNavdataMotor(:,arStart:arEnd);
 
 
 %% Convert OptiTrack quaternions to ZYX Euler angles
-%TODO: maybe create a function with this functionality
-% optitrackStampTime = optitrackStampTime - optitrackStampTime(1);
-
 % Convert quaternions to Euler angles
 optitrackOrientQuat = optitrackOrientQuat';
 orient = zeros(size(optitrackOrientQuat,1),3);
@@ -111,58 +104,8 @@ for i = 1:size(optitrackOrientQuat,1)
 end
 orient = orient';
 
-% Remove jumps of 2*pi in the angle data
-% for i = 1:3
-%     % Store indices where jumps occur in array
-%     n = size(orient,2);
-%     jumps = zeros(1,n);
-%     for j = 2:n
-%         if orient(i,j) > 0 && orient(i,j-1) < 0 && orient(i,j) - ...
-%                 orient(i,j-1) > eulThres
-%             jumps(j) = 1;
-%         elseif orient(i,j) < 0 && orient(i,j-1) > 0 && orient(i,j) - ...
-%                 orient(i,j-1) < eulThres
-%             jumps(j) = -1;
-%         end
-%     end
-% 
-%     % Add +/-pi depending on first jump. For each jump, add +/-2pi, such
-%     % that every values becomes approximately 0
-%     jumpsDown = find(jumps == -1);
-%     jumpsUp = find(jumps == 1);
-%     nDown = length(jumpsDown);
-%     nUp = length(jumpsUp);
-%     if nDown > 1 && nUp > 1
-%         if jumpsDown(1) < jumpsUp(1)
-%             orient(i,:) = orient(i,:) - pi;
-%             for j = 1:nDown-1
-%                 orient(i,jumpsDown(j):jumpsUp(j)-1) = ...
-%                     orient(i,jumpsDown(j):jumpsUp(j)-1) + 2*pi;
-%             end
-%             if nDown > nUp
-%                 orient(i,jumpsDown(j):end) = ...
-%                     orient(i,jumpsDown(j):end) + 2*pi;
-%             else
-%                 orient(i,jumpsDown(end):jumpsUp(end)-1) = ...
-%                     orient(i,jumpsDown(end):jumpsUp(end)-1) + 2*pi;
-%             end
-%         else
-%             orient(i,:) = orient(i,:) + pi;
-%             for j = 1:nUp-1
-%                 orient(i,jumpsUp(j):jumpsDown(j)-1) = ...
-%                     orient(i,jumpsUp(j):jumpsDown(j)-1) + 2*pi;
-%             end
-%             if nUp > nDown
-%                 orient(i,jumpsUp(j):end) = orient(i,jumpsUp(j):end) + 2*pi;
-%             else
-%                 orient(i,jumpsUp(end):jumpsDown(end)-1) = ...
-%                     orient(i,jumpsUp(end):jumpsDown(end)-1) + 2*pi;
-%             end
-%         end
-%     end
-%     optitrackOrient(i,:) = unwrap(orient(i,:),eulThres);
-% end
-
+% Remove jumps of 2*pi in angle data and ensure the angles are centered
+% around 0 rad
 optitrackOrient = unwrap(orient,eulThres,2);
 for i = 1:3
     if mean(optitrackOrient(i,:)) > eulThres/2
@@ -186,63 +129,80 @@ title('\psi');
 
 %% Interpolate data
 % Sample time
-expData.sampleTime = 0.04;
+expData.sampleTimeLow = 0.04;
+expData.sampleTimeHigh = 0.01;
 
 % OptiTrack data
 data.time = optitrackStampTime;
 data.value = [optitrackPos;optitrackOrient];
-tmp = interpolate(expData.sampleTime, data);
-expData.state.otTime = tmp.time;
-expData.state.otPos = tmp.value(1:3,:);
-expData.state.otOrient = tmp.value(4:6,:);
+tmp = interpolate(expData.sampleTimeLow,data);
+expData.state.lowFreq.otTime = tmp.time;
+expData.state.lowFreq.otPos = tmp.value(1:3,:);
+expData.state.lowFreq.otOrient = tmp.value(4:6,:);
+tmp = interpolate(expData.sampleTimeHigh,data);
+expData.state.highFreq.otTime = tmp.time;
+expData.state.highFreq.otPos = tmp.value(1:3,:);
+expData.state.highFreq.otOrient = tmp.value(4:6,:);
 
 % AR.Drone 2.0 motor PWM data
 data.time = ardroneNavdataStampTime;
 data.value = ardroneNavdataMotor;
-tmp = interpolate(expData.state.otTime, data);
-expData.input.time = tmp.time;
-expData.input.motor = tmp.value;
+tmp = interpolate(expData.state.lowFreq.otTime,data);
+expData.input.lowFreq.time = tmp.time;
+expData.input.lowFreq.motor = tmp.value;
+
+
+%% Ensure that the data sampled at a high frequency has enough samples
+%  before the first sample of the data sampled at a low frequency
+expData.state.lowFreq.otTime = expData.state.lowFreq.otTime(2:end);
+expData.state.lowFreq.otPos = expData.state.lowFreq.otPos(:,2:end);
+expData.state.lowFreq.otOrient = expData.state.lowFreq.otOrient(:,2:end);
 
 
 %% Ensure data is consistent: same start and end time + start at zero
 % Start time
-if expData.input.time(1) < expData.state.otTime(1)
+if expData.input.lowFreq.time(1) < expData.state.lowFreq.otTime(1)
     i = 2;
-    while expData.input.time(i) < expData.state.otTime(1)
+    while expData.input.lowFreq.time(i) < expData.state.lowFreq.otTime(1)
         i = i + 1;
     end
-    expData.input.time = expData.input.time(i:end);
-    expData.input.motor = expData.input.motor(:,i:end);
-elseif expData.input.time(1) > expData.state.otTime(1)
+    expData.input.lowFreq.time = expData.input.lowFreq.time(i:end);
+    expData.input.lowFreq.motor = expData.input.lowFreq.motor(:,i:end);
+elseif expData.input.lowFreq.time(1) > expData.state.lowFreq.otTime(1)
     i = 2;
-    while expData.input.time(1) > expData.state.otTime(i)
+    while expData.input.lowFreq.time(1) > expData.state.lowFreq.otTime(i)
         i = i + 1;
     end
-    expData.state.otTime = expData.state.otTime(i:end);
-    expData.state.otPos = expData.state.otPos(:,i:end);
-    expData.state.otOrient = expData.state.otOrient(:,i:end);
+    expData.state.lowFreq.otTime = expData.state.lowFreq.otTime(i:end);
+    expData.state.lowFreq.otPos = expData.state.lowFreq.otPos(:,i:end);
+    expData.state.lowFreq.otOrient = ...
+        expData.state.lowFreq.otOrient(:,i:end);
 end
 
 % End time
-if expData.input.time(end) > expData.state.otTime(end)
-    i = length(expData.input.time);
-    while expData.input.time(i) > expData.state.otTime(end)
+if expData.input.lowFreq.time(end) > expData.state.lowFreq.otTime(end)
+    i = length(expData.input.lowFreq.time);
+    while expData.input.lowFreq.time(i) > expData.state.lowFreq.otTime(end)
         i = i - 1;
     end
-    expData.input.time = expData.input.time(1:i);
-    expData.input.motor = expData.input.motor(:,1:i);
-elseif expData.input.time(end) < expData.state.otTime(end)
-    i = length(expData.state.otTime);
-    while expData.input.time(end) < expData.state.otTime(i)
+    expData.input.lowFreq.time = expData.input.lowFreq.time(1:i);
+    expData.input.lowFreq.motor = expData.input.lowFreq.motor(:,1:i);
+elseif expData.input.lowFreq.time(end) < expData.state.lowFreq.otTime(end)
+    i = length(expData.state.lowFreq.otTime);
+    while expData.input.lowFreq.time(end) < expData.state.lowFreq.otTime(i)
         i = i - 1;
     end
-    expData.state.otTime = expData.state.otTime(1:i);
-    expData.state.otPos = expData.state.otPos(:,1:i);
-    expData.state.otOrient = expData.state.otOrient(:,1:i);
+    expData.state.lowFreq.otTime = expData.state.lowFreq.otTime(1:i);
+    expData.state.lowFreq.otPos = expData.state.lowFreq.otPos(:,1:i);
+    expData.state.lowFreq.otOrient = expData.state.lowFreq.otOrient(:,1:i);
 end
 
-expData.input.time = expData.input.time - expData.input.time(1);
-expData.state.otTime = expData.state.otTime - expData.state.otTime(1);
+expData.input.lowFreq.time	  = expData.input.lowFreq.time - ...
+                                expData.input.lowFreq.time(1);
+expData.state.lowFreq.otTime  = expData.state.lowFreq.otTime - ...
+                                expData.state.lowFreq.otTime(1);
+expData.state.highFreq.otTime = expData.state.highFreq.otTime - ...
+                                expData.state.highFreq.otTime(1);
 
 
 %% Save gazSim data

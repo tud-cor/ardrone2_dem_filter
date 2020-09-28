@@ -20,7 +20,7 @@ close all;
 
 %% Select simulation data
 % Load pre-processed simulation data file
-load hoverSpiralling25Hz.mat expData;
+load hoverSpiralling25-100Hz.mat expData;
 
 % Select samples to use in simulation
 startSample = 1;
@@ -125,7 +125,6 @@ B = [0        , 0          , 0          , 0;
      0        , 1/param.ixx, 0          , 0;
      0        , 0          , 1/param.iyy, 0;
      0        , 0          , 0          , 1/param.izz];
-% C = eye(n);
 C = zeros(n,n);
 C(1:3,1:3) = eye(3);
 % C(4:6,4:6) = eye(3);
