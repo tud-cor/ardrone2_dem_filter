@@ -16,16 +16,16 @@ expData.state.otTime = expData.state.otTime(startSample:endSample);
 expData.state.otPos = expData.state.otPos(:,startSample:endSample);
 expData.state.otOrient = expData.state.otOrient(:,startSample:endSample);
 
-nSamplesExtra = expData.sampleTime/expData.sampleTimeHighFreq;
+nOffset = expData.sampleTime/expData.sampleTimeHighFreq;
 [~,sIdx] = min(abs(expData.state.highFreq.otTime-expData.state.otTime(1)));
 [~,eIdx] = min(abs(expData.state.highFreq.otTime-...
                    expData.state.otTime(end)));
 expData.state.highFreq.otTime = ...
-    expData.state.highFreq.otTime(sIdx-nSamplesExtra:eIdx+nSamplesExtra);
+    expData.state.highFreq.otTime(sIdx-nOffset:eIdx+nOffset);
 expData.state.highFreq.otPos = ...
-    expData.state.highFreq.otPos(:,sIdx-nSamplesExtra:eIdx+nSamplesExtra);
+    expData.state.highFreq.otPos(:,sIdx-nOffset:eIdx+nOffset);
 expData.state.highFreq.otOrient = ...
-    expData.state.highFreq.otOrient(:,sIdx-nSamplesExtra:eIdx+nSamplesExtra);
+    expData.state.highFreq.otOrient(:,sIdx-nOffset:eIdx+nOffset);
 
 expData.input.time = expData.input.time(startSample:endSample);
 expData.input.motor = expData.input.motor(:,startSample:endSample);
@@ -174,11 +174,12 @@ u = [T;tauPhi;tauTheta;tauPsi];
 
 
 %% Construct full state from OptiTrack data
-xExp = getFullState(expData);
+[xExp,xExpSimpleDer] = getFullState(expData);
 
 
 %% Calculate MSE for LTI system
-[x,mse] = ltiStepSim(sysd,t,xExp,expData.input.motor,param);
+[x,mse] = ltiStepSim(sysd,t,xExp,u,param);
+% [x,mse] = ltiStepSim(sysd,t,xExpSimpleDer,u,param);
 
 
 %% Plot results and compare with OptiTrack data
@@ -187,7 +188,7 @@ xExp = getFullState(expData);
 figure('Name','Position and attitude');
 subplot(3,2,1);
 hold on;
-plot(t,x(1,:),'o');
+plot(t,x(1,:));
 plot(t,expData.state.otPos(1,:));
 legend('LTI','OptiTrack');
 title('x');

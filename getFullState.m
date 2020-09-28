@@ -1,10 +1,11 @@
-function xExp = getFullState(expData)
+function [xExp,xExpSimpleDer] = getFullState(expData)
 % Dimension initialization
 n = 12;
 dur = length(expData.state.otTime);
 
 % Output initialization
 xExp = zeros(n,dur);
+xExpSimpleDer = zeros(n,dur);
 
 % Matrix for finite differences initialization
 dt = 0.01;
@@ -36,5 +37,26 @@ for i = 1:dur
     xExp(10:12,i) = E*...
         reshape(expData.state.highFreq.otOrient(:,sIdx:eIdx),...
                 [(p+o)*dim,1]);
+end
+
+for i = 1:dur
+    % Position
+    xExpSimpleDer(1:3,i) = expData.state.otPos(:,i);
+
+    % Linear velocity (by taking simple derivatives)
+    [~,cIdx] = min(abs(expData.state.highFreq.otTime-...
+                       expData.state.otTime(i)));
+    xExpSimpleDer(4:6,i) = (expData.state.highFreq.otPos(:,cIdx) - ...
+                            expData.state.highFreq.otPos(:,cIdx-1))/...
+                           expData.sampleTimeHighFreq;
+
+    % Orientation
+    xExpSimpleDer(7:9,i) = expData.state.otOrient(:,i);
+
+    % Angular velocity (by taking simple derivatives)
+    xExpSimpleDer(10:12,i) = ...
+        (expData.state.highFreq.otOrient(:,cIdx) - ...
+         expData.state.highFreq.otOrient(:,cIdx-1))/...
+        expData.sampleTimeHighFreq;
 end
 end
