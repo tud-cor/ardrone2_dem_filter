@@ -7,7 +7,7 @@
 % simulation) data
 %
 % Author: Dennis Benders
-% Last edited: 24.09.2020
+% Last edited: 28.09.2020
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -239,7 +239,7 @@ xNonlin = xNonlin';
 
 
 %% Plot results and compare with OptiTrack data
-quadrotor3DVisualization(t,x);
+% quadrotor3DVisualization(t,x);
 
 figure('Name','Position and attitude');
 subplot(3,2,1);
