@@ -139,22 +139,6 @@ tauTheta    = zeros(1,dur);
 tauPsi      = zeros(1,dur);
 for i = 1:dur
     f           = param.cT(1)*omegaR(:,i).^2 + param.cT(2)*omegaR(:,i);
-%     f           = 9e-6*omegaR(:,i).^2 - 5.6e-4*omegaR(:,i) + 3.2e-2;
-%     f           = 7.7e-6*omegaR(:,i).^2;
-
-% Twente thesis
-%     f(1)        = 1.5618e-4*pwmToolbox(1,i)^2 + ...
-%                   1.0395e-2*pwmToolbox(1,i) + 0.13894;
-%     f(2)        = 1.8150e-4*pwmToolbox(2,i)^2 + ...
-%                   8.7242e-3*pwmToolbox(2,i) + 0.14425;
-%     f(3)        = 1.3478e-4*pwmToolbox(3,i)^2 + ...
-%                   7.3295e-3*pwmToolbox(3,i) + 0.11698;
-%     f(4)        = 1.4306e-4*pwmToolbox(4,i)^2 + ...
-%                   5.7609e-3*pwmToolbox(4,i) + 0.13362;
-
-% Delft thesis
-%     f           = 8.386e-6*omegaR(:,i).^2 - 3.723e-5*omegaR(:,i) - ...
-%                   0.0318;
 
     T(i)        = sum(f);
     tauPhi(i)   = sqrt(1/2)*param.l*(f(1)-f(2)-f(3)+f(4));
@@ -163,12 +147,6 @@ for i = 1:dur
                                sum(omegaR(2:2:4,i).^2)) + ...
                   param.cQ(2)*(sum(omegaR(1:2:3,i))-...
                                sum(omegaR(2:2:4,i)));
-%     tauPsi(i)   = 2.6e-7*(sum(omegaR(1:2:3,i).^2)-...
-%                           sum(omegaR(2:2:4,i).^2)) - ...
-%                   2.3e-5*(sum(omegaR(1:2:3,i))-...
-%                           sum(omegaR(2:2:4,i))) + ...
-%                   1.8e-3;
-%     tauPsi(i)   = 2.2e-7*(sum(omegaR(1:2:3,i).^2)-sum(omegaR(2:2:4,i).^2));
 end
 u = [T;tauPhi;tauTheta;tauPsi];
 
@@ -183,7 +161,7 @@ u = [T;tauPhi;tauTheta;tauPsi];
 
 
 %% Plot results and compare with OptiTrack data
-% quadrotor3DVisualization(t,x);
+quadrotor3DVisualization(t,x,'Simulated quadrotor movements');
 
 figure('Name','Position and attitude');
 subplot(3,2,1);

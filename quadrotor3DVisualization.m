@@ -1,4 +1,4 @@
-function quadrotor3DVisualization(sampleTime,state)
+function quadrotor3DVisualization(sampleTime,state,plotTitle)
 % t: time array
 % x: {x,y,z} position in inertial frame
 %    {phi,theta,psi} ZYX Euler angles
@@ -60,6 +60,9 @@ grid on;
 hold on;
 plot3([0;0],[0;1],[0;0],'Color','b','LineWidth',3);
 plot3([0;0],[0;0],[0;1],'Color','b','LineWidth',3);
+if nargin > 2
+    title(plotTitle,'FontSize',40);
+end
 
 % Plot quadrotor on every time step
 for t = 1:size(state,2)
