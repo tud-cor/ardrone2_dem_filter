@@ -6,11 +6,11 @@ close all;
 
 %% Select simulation data
 % Load pre-processed simulation data file
-load hoverSpiralling25-100Hz.mat expData;
+load hoverSpiralling25-100Hz15-120s.mat expData;
 
 % Select samples to use in simulation
 startSample = 1;
-endSample = 250;
+endSample = 2600;
 
 expData.state.otTime = expData.state.otTime(startSample:endSample);
 expData.state.otPos = expData.state.otPos(:,startSample:endSample);
@@ -155,56 +155,79 @@ u = [T;tauPhi;tauTheta;tauPsi];
 [xExp,xExpSimpleDer] = getFullState(expData);
 
 
-%% Calculate MSE for LTI system
-[x,mse] = ltiStepSim(sysd,t,xExp,u,param);
-% [x,mse] = ltiStepSim(sysd,t,xExpSimpleDer,u,param);
+%% Calculate MSE for white-box LTI system
+[xWB,mseWB] = ltiStepSim(sysd,t,xExp,u,param);
+% [xWB,mseWB] = ltiStepSim(sysd,t,xExpSimpleDer,u,param);
+
+
+%% Calculate MSE for black-box LTI system
+% Load and discretize system estimate
+load sysBB_exp_24-7_7.mat;
+ssModel = ssEnv3;
+syscBB = ss(ssModel.A,ssModel.B,ssModel.C,ssModel.D);
+sysdBB = c2d(syscBB,param.sampleTime);
+
+% Simulate LTI system
+[xBB,mseBB] = ltiStepSim(sysdBB,t,xExp,u,param);
 
 
 %% Plot results and compare with OptiTrack data
-quadrotor3DVisualization(t,x,'Simulated quadrotor movements');
+% quadrotor3DVisualization(t,x,'Simulated quadrotor movements');
 
 figure('Name','Position and attitude');
 subplot(3,2,1);
 hold on;
-plot(t,x(1,:));
+plot(t,xWB(1,:));
+plot(t,xBB(1,:));
 plot(t,expData.state.otPos(1,:));
-legend('LTI','OptiTrack');
+% legend('WB LTI model','OptiTrack');
+legend('WB LTI model','BB LTI model','OptiTrack');
 title('x');
 
 subplot(3,2,3);
 hold on;
-plot(t,x(2,:));
+plot(t,xWB(2,:));
+plot(t,xBB(2,:));
 plot(t,expData.state.otPos(2,:));
-legend('LTI','OptiTrack');
+% legend('WB LTI model','OptiTrack');
+legend('WB LTI model','BB LTI model','OptiTrack');
 title('y');
 
 subplot(3,2,5);
 hold on;
-plot(t,x(3,:));
+plot(t,xWB(3,:));
+plot(t,xBB(3,:));
 plot(t,expData.state.otPos(3,:));
-legend('LTI','OptiTrack');
+% legend('WB LTI model','OptiTrack');
+legend('WB LTI model','BB LTI model','OptiTrack');
 title('z');
 
 
 subplot(3,2,2);
 hold on;
-plot(t,x(7,:));
+plot(t,xWB(7,:));
+plot(t,xBB(7,:));
 plot(t,expData.state.otOrient(1,:));
-legend('LTI','OptiTrack');
+% legend('WB LTI model','OptiTrack');
+legend('WB LTI model','BB LTI model','OptiTrack');
 title('\phi');
 
 subplot(3,2,4);
 hold on;
-plot(t,x(8,:));
+plot(t,xWB(8,:));
+plot(t,xBB(8,:));
 plot(t,expData.state.otOrient(2,:));
-legend('LTI','OptiTrack');
+% legend('WB LTI model','OptiTrack');
+legend('WB LTI model','BB LTI model','OptiTrack');
 title('\theta');
 
 subplot(3,2,6);
 hold on;
-plot(t,x(9,:));
+plot(t,xWB(9,:));
+plot(t,xBB(9,:));
 plot(t,expData.state.otOrient(3,:));
-legend('LTI','OptiTrack');
+% legend('WB LTI model','OptiTrack');
+legend('WB LTI model','BB LTI model','OptiTrack');
 title('\psi');
 
 
@@ -212,43 +235,55 @@ title('\psi');
 figure('Name','Linear and angular velocity');
 subplot(3,2,1);
 hold on;
-plot(t,x(4,:));
+plot(t,xWB(4,:));
+plot(t,xBB(4,:));
 plot(t,xExp(4,:));
-legend('LTI','Finite differences approach');
+% legend('WB LTI model','Finite differences approach');
+legend('WB LTI model','WB LTI model','Finite differences approach');
 title('v_x');
 
 subplot(3,2,3);
 hold on;
-plot(t,x(5,:));
+plot(t,xWB(5,:));
+plot(t,xBB(5,:));
 plot(t,xExp(5,:));
-legend('LTI','Finite differences approach');
+% legend('WB LTI model','Finite differences approach');
+legend('WB LTI model','WB LTI model','Finite differences approach');
 title('v_y');
 
 subplot(3,2,5);
 hold on;
-plot(t,x(6,:));
+plot(t,xWB(6,:));
+plot(t,xBB(6,:));
 plot(t,xExp(6,:));
-legend('LTI','Finite differences approach');
+% legend('WB LTI model','Finite differences approach');
+legend('WB LTI model','WB LTI model','Finite differences approach');
 title('v_z');
 
 
 subplot(3,2,2);
 hold on;
-plot(t,x(10,:));
+plot(t,xWB(10,:));
+plot(t,xBB(10,:));
 plot(t,xExp(10,:));
-legend('LTI','Finite differences approach');
+% legend('WB LTI model','Finite differences approach');
+legend('WB LTI model','WB LTI model','Finite differences approach');
 title('v_{\phi}');
 
 subplot(3,2,4);
 hold on;
-plot(t,x(11,:));
+plot(t,xWB(11,:));
+plot(t,xBB(11,:));
 plot(t,xExp(11,:));
-legend('LTI','Finite differences approach');
+% legend('WB LTI model','Finite differences approach');
+legend('WB LTI model','WB LTI model','Finite differences approach');
 title('v_{\theta}');
 
 subplot(3,2,6);
 hold on;
-plot(t,x(12,:));
+plot(t,xWB(12,:));
+plot(t,xBB(12,:));
 plot(t,xExp(12,:));
-legend('LTI','Finite differences approach');
+% legend('WB LTI model','Finite differences approach');
+legend('WB LTI model','WB LTI model','Finite differences approach');
 title('v_{\psi}');

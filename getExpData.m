@@ -10,7 +10,7 @@ eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
 %% Set variables
 % Retrieve bag file
 cd ~/.ros;
-bag = rosbag("ardrone2_exp_2020-07-24_2.bag");
+bag = rosbag("ardrone2_exp_2020-07-24_7.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
@@ -26,7 +26,7 @@ topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [36,60];
+time = [15,120];
 
 
 %% Get data
@@ -198,14 +198,14 @@ expData.state.highFreq.otTime = expData.state.highFreq.otTime - startTime;
 
 %% Ensure that the data sampled at a higher frequency has enough samples
 %  at the beginning and end of the data to construct the derivatives
-expData.input.time    = expData.input.time(1:end-1);
-expData.input.motor    = expData.input.motor(:,1:end-1);
+expData.input.time    = expData.input.time(2:end-1);
+expData.input.motor    = expData.input.motor(:,2:end-1);
 
-expData.state.otTime  = expData.state.otTime(1:end-1);
-expData.state.otPos  = expData.state.otPos(:,1:end-1);
-expData.state.otOrient  = expData.state.otOrient(:,1:end-1);
+expData.state.otTime  = expData.state.otTime(2:end-1);
+expData.state.otPos  = expData.state.otPos(:,2:end-1);
+expData.state.otOrient  = expData.state.otOrient(:,2:end-1);
 
 
-%% Save gazSim data
+%% Save expData data
 filename = sprintf('bagdata_%s', datestr(now,'dd-mm-yyyy_HH-MM'));
 save(filename, 'expData');
