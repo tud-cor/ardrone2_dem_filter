@@ -14,23 +14,24 @@ stateOperatingPoint = zeros(n,1);
 stateOperatingPoint(3) = 1;
 inputOperatingPoint = [param.m*param.g;0;0;0];
 
-% Error initialization
-se = zeros(1,dur);
-se(1) = 0;
 
+% Shift operating point to origin of state-input space
+xExpOP = xExp - stateOperatingPoint;
+uExpOP = uExp - inputOperatingPoint;
+
+% Calculate next state using the current state and input
 for i = 1:dur-1
-    % Shift operating point to origin of state-input space
-    xExp(:,i) = xExp(:,i) - stateOperatingPoint;
-    uExp(:,i) = uExp(:,i) - inputOperatingPoint;
+    x(:,i+1) = sysd.A*xExpOP(:,i) + sysd.B*uExpOP(:,i);
+end
 
-    % Calculate next state using the current state and input
-    x(:,i+1) = sysd.A*xExp(:,i) + sysd.B*uExp(:,i);
+% Shift state back to operating point
+x(:,2:end) = x(:,2:end) + stateOperatingPoint;
 
-    % Shift state back to operating point
-    x(:,i+1) = x(:,i+1) + stateOperatingPoint;
 
-    % Calculate the Squared Error (SE) by comparing next state with next
-    % state derived from OptiTrack data
+% Calculate the Squared Error (SE) by comparing next state with next
+% state derived from OptiTrack data
+se = zeros(1,dur);
+for i = 1:dur-1
     se(i+1) = norm(x(:,i+1) - xExp(:,i+1))^2;
 end
 

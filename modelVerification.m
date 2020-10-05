@@ -166,7 +166,7 @@ u = [T;tauPhi;tauTheta;tauPsi];
 %% Calculate MSE for black-box LTI system
 % Load and discretize system estimate
 load sysBB_exp_24-7_7.mat;
-ssModel = ssEnv3;
+ssModel = ssUnfilt;
 syscBB = ss(ssModel.A,ssModel.B,ssModel.C,ssModel.D);
 sysdBB = c2d(syscBB,param.sampleTime);
 
