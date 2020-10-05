@@ -26,9 +26,9 @@ load hoverSpiralling25-100Hz.mat expData;
 startSample = 1;
 endSample = 250;
 
-expData.state.otTime = expData.state.otTime(startSample:endSample);
-expData.state.otPos = expData.state.otPos(:,startSample:endSample);
-expData.state.otOrient = expData.state.otOrient(:,startSample:endSample);
+expData.output.otTime = expData.output.otTime(startSample:endSample);
+expData.output.otPos = expData.output.otPos(:,startSample:endSample);
+expData.output.otOrient = expData.output.otOrient(:,startSample:endSample);
 expData.input.time = expData.input.time(startSample:endSample);
 expData.input.motor = expData.input.motor(:,startSample:endSample);
 
@@ -147,8 +147,8 @@ sysd = c2d(sysc,param.sampleTime);
 
 %% Simulation parameters
 t           = expData.input.time;
-x0          = [expData.state.otPos(:,1);zeros(3,1);...
-               expData.state.otOrient(:,1);zeros(3,1)];
+x0          = [expData.output.otPos(:,1);zeros(3,1);...
+               expData.output.otOrient(:,1);zeros(3,1)];
 % x0          = zeros(12,1);
 % x0(3)       = 1;
 
@@ -247,7 +247,7 @@ hold on;
 plot(t,x(1,:));
 plot(tLsim,xLsim(1,1:end));
 plot(tNonlin,xNonlin(1,:));
-plot(t,expData.state.otPos(1,:));
+plot(t,expData.output.otPos(1,:));
 legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
 % legend('Nonlin ode45','OptiTrack');
 title('x');
@@ -257,7 +257,7 @@ hold on;
 plot(t,x(2,:));
 plot(tLsim,xLsim(2,1:end));
 plot(tNonlin,xNonlin(2,:));
-plot(t,expData.state.otPos(2,:));
+plot(t,expData.output.otPos(2,:));
 legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
 % legend('Nonlin ode45','OptiTrack');
 title('y');
@@ -267,7 +267,7 @@ hold on;
 plot(t,x(3,:));
 plot(tLsim,xLsim(3,1:end));
 plot(tNonlin,xNonlin(3,:));
-plot(t,expData.state.otPos(3,:));
+plot(t,expData.output.otPos(3,:));
 legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
 % legend('Nonlin ode45','OptiTrack');
 title('z');
@@ -278,7 +278,7 @@ hold on;
 plot(t,x(7,:));
 plot(tLsim,xLsim(7,1:end));
 plot(tNonlin,xNonlin(7,:));
-plot(t,expData.state.otOrient(1,:));
+plot(t,expData.output.otOrient(1,:));
 legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
 % legend('Nonlin ode45','OptiTrack');
 title('\phi');
@@ -288,7 +288,7 @@ hold on;
 plot(t,x(8,:));
 plot(tLsim,xLsim(8,1:end));
 plot(tNonlin,xNonlin(8,:));
-plot(t,expData.state.otOrient(2,:));
+plot(t,expData.output.otOrient(2,:));
 legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
 % legend('Nonlin ode45','OptiTrack');
 title('\theta');
@@ -298,7 +298,7 @@ hold on;
 plot(t,x(9,:));
 plot(tLsim,xLsim(9,1:end));
 plot(tNonlin,xNonlin(9,:));
-plot(t,expData.state.otOrient(3,:));
+plot(t,expData.output.otOrient(3,:));
 legend('LTI','LTI lsim','Nonlin ode45','OptiTrack');
 % legend('Nonlin ode45','OptiTrack');
 title('\psi');

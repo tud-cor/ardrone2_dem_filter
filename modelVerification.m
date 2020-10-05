@@ -12,20 +12,21 @@ load hoverSpiralling25-100Hz15-120s.mat expData;
 startSample = 1;
 endSample = 2600;
 
-expData.state.otTime = expData.state.otTime(startSample:endSample);
-expData.state.otPos = expData.state.otPos(:,startSample:endSample);
-expData.state.otOrient = expData.state.otOrient(:,startSample:endSample);
+expData.output.otTime = expData.output.otTime(startSample:endSample);
+expData.output.otPos = expData.output.otPos(:,startSample:endSample);
+expData.output.otOrient = expData.output.otOrient(:,startSample:endSample);
 
 nOffset = expData.sampleTime/expData.sampleTimeHighFreq;
-[~,sIdx] = min(abs(expData.state.highFreq.otTime-expData.state.otTime(1)));
-[~,eIdx] = min(abs(expData.state.highFreq.otTime-...
-                   expData.state.otTime(end)));
-expData.state.highFreq.otTime = ...
-    expData.state.highFreq.otTime(sIdx-nOffset:eIdx+nOffset);
-expData.state.highFreq.otPos = ...
-    expData.state.highFreq.otPos(:,sIdx-nOffset:eIdx+nOffset);
-expData.state.highFreq.otOrient = ...
-    expData.state.highFreq.otOrient(:,sIdx-nOffset:eIdx+nOffset);
+[~,sIdx] = min(abs(expData.output.highFreq.otTime-...
+                   expData.output.otTime(1)));
+[~,eIdx] = min(abs(expData.output.highFreq.otTime-...
+                   expData.output.otTime(end)));
+expData.output.highFreq.otTime = ...
+    expData.output.highFreq.otTime(sIdx-nOffset:eIdx+nOffset);
+expData.output.highFreq.otPos = ...
+    expData.output.highFreq.otPos(:,sIdx-nOffset:eIdx+nOffset);
+expData.output.highFreq.otOrient = ...
+    expData.output.highFreq.otOrient(:,sIdx-nOffset:eIdx+nOffset);
 
 expData.input.time = expData.input.time(startSample:endSample);
 expData.input.motor = expData.input.motor(:,startSample:endSample);
@@ -76,8 +77,9 @@ param.cQ            = [2.4e-7,-9.9e-6];
 
 %% LTI state-space description and discretize
 % Construct continuous-time linearised state space system
-n = 12;
-l = 4;
+nu = 4;
+nx = 12;
+ny = 6;
 A = [0, 0, 0, 1, 0, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 1, 0, 0       , 0      , 0, 0, 0, 0;
      0, 0, 0, 0, 0, 1, 0       , 0      , 0, 0, 0, 0;
@@ -102,12 +104,10 @@ B = [0        , 0          , 0          , 0;
      0        , 1/param.ixx, 0          , 0;
      0        , 0          , 1/param.iyy, 0;
      0        , 0          , 0          , 1/param.izz];
-C = zeros(n,n);
+C = zeros(ny,nx);
 C(1:3,1:3) = eye(3);
-% C(4:6,4:6) = eye(3);
-C(7:9,7:9) = eye(3);
-% C(10:12,10:12) = eye(3);
-D = zeros(n,l);
+C(4:6,7:9) = eye(3);
+D = zeros(ny,nu);
 
 % Linearized system analysis
 lambda = eig(A);
@@ -152,6 +152,9 @@ u = [T;tauPhi;tauTheta;tauPsi];
 
 
 %% Construct full state from OptiTrack data
+% TAKE CARE The system output (OptiTrack) data is used to compare with the
+% simulated states of the model, since it is assumed that the OptiTrack
+% data does not contain a lot of noise
 [xExp,xExpSimpleDer] = getFullState(expData);
 
 
@@ -179,7 +182,7 @@ subplot(3,2,1);
 hold on;
 plot(t,xWB(1,:));
 plot(t,xBB(1,:));
-plot(t,expData.state.otPos(1,:));
+plot(t,expData.output.otPos(1,:));
 % legend('WB LTI model','OptiTrack');
 legend('WB LTI model','BB LTI model','OptiTrack');
 title('x');
@@ -188,7 +191,7 @@ subplot(3,2,3);
 hold on;
 plot(t,xWB(2,:));
 plot(t,xBB(2,:));
-plot(t,expData.state.otPos(2,:));
+plot(t,expData.output.otPos(2,:));
 % legend('WB LTI model','OptiTrack');
 legend('WB LTI model','BB LTI model','OptiTrack');
 title('y');
@@ -197,7 +200,7 @@ subplot(3,2,5);
 hold on;
 plot(t,xWB(3,:));
 plot(t,xBB(3,:));
-plot(t,expData.state.otPos(3,:));
+plot(t,expData.output.otPos(3,:));
 % legend('WB LTI model','OptiTrack');
 legend('WB LTI model','BB LTI model','OptiTrack');
 title('z');
@@ -207,7 +210,7 @@ subplot(3,2,2);
 hold on;
 plot(t,xWB(7,:));
 plot(t,xBB(7,:));
-plot(t,expData.state.otOrient(1,:));
+plot(t,expData.output.otOrient(1,:));
 % legend('WB LTI model','OptiTrack');
 legend('WB LTI model','BB LTI model','OptiTrack');
 title('\phi');
@@ -216,7 +219,7 @@ subplot(3,2,4);
 hold on;
 plot(t,xWB(8,:));
 plot(t,xBB(8,:));
-plot(t,expData.state.otOrient(2,:));
+plot(t,expData.output.otOrient(2,:));
 % legend('WB LTI model','OptiTrack');
 legend('WB LTI model','BB LTI model','OptiTrack');
 title('\theta');
@@ -225,7 +228,7 @@ subplot(3,2,6);
 hold on;
 plot(t,xWB(9,:));
 plot(t,xBB(9,:));
-plot(t,expData.state.otOrient(3,:));
+plot(t,expData.output.otOrient(3,:));
 % legend('WB LTI model','OptiTrack');
 legend('WB LTI model','BB LTI model','OptiTrack');
 title('\psi');
@@ -239,7 +242,7 @@ plot(t,xWB(4,:));
 plot(t,xBB(4,:));
 plot(t,xExp(4,:));
 % legend('WB LTI model','Finite differences approach');
-legend('WB LTI model','WB LTI model','Finite differences approach');
+legend('WB LTI model','BB LTI model','Finite differences approach');
 title('v_x');
 
 subplot(3,2,3);
@@ -248,7 +251,7 @@ plot(t,xWB(5,:));
 plot(t,xBB(5,:));
 plot(t,xExp(5,:));
 % legend('WB LTI model','Finite differences approach');
-legend('WB LTI model','WB LTI model','Finite differences approach');
+legend('WB LTI model','BB LTI model','Finite differences approach');
 title('v_y');
 
 subplot(3,2,5);
@@ -257,7 +260,7 @@ plot(t,xWB(6,:));
 plot(t,xBB(6,:));
 plot(t,xExp(6,:));
 % legend('WB LTI model','Finite differences approach');
-legend('WB LTI model','WB LTI model','Finite differences approach');
+legend('WB LTI model','BB LTI model','Finite differences approach');
 title('v_z');
 
 
@@ -267,7 +270,7 @@ plot(t,xWB(10,:));
 plot(t,xBB(10,:));
 plot(t,xExp(10,:));
 % legend('WB LTI model','Finite differences approach');
-legend('WB LTI model','WB LTI model','Finite differences approach');
+legend('WB LTI model','BB LTI model','Finite differences approach');
 title('v_{\phi}');
 
 subplot(3,2,4);
@@ -276,7 +279,7 @@ plot(t,xWB(11,:));
 plot(t,xBB(11,:));
 plot(t,xExp(11,:));
 % legend('WB LTI model','Finite differences approach');
-legend('WB LTI model','WB LTI model','Finite differences approach');
+legend('WB LTI model','BB LTI model','Finite differences approach');
 title('v_{\theta}');
 
 subplot(3,2,6);
@@ -285,5 +288,5 @@ plot(t,xWB(12,:));
 plot(t,xBB(12,:));
 plot(t,xExp(12,:));
 % legend('WB LTI model','Finite differences approach');
-legend('WB LTI model','WB LTI model','Finite differences approach');
+legend('WB LTI model','BB LTI model','Finite differences approach');
 title('v_{\psi}');

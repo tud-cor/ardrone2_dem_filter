@@ -138,72 +138,73 @@ expData.sampleTimeHighFreq = 0.01;
 data.time = optitrackStampTime;
 data.value = [optitrackPos;optitrackOrient];
 tmp = interpolate(expData.sampleTime,data);
-expData.state.otTime = tmp.time;
-expData.state.otPos = tmp.value(1:3,:);
-expData.state.otOrient = tmp.value(4:6,:);
+expData.output.otTime = tmp.time;
+expData.output.otPos = tmp.value(1:3,:);
+expData.output.otOrient = tmp.value(4:6,:);
 tmp = interpolate(expData.sampleTimeHighFreq,data);
-expData.state.highFreq.otTime = tmp.time;
-expData.state.highFreq.otPos = tmp.value(1:3,:);
-expData.state.highFreq.otOrient = tmp.value(4:6,:);
+expData.output.highFreq.otTime = tmp.time;
+expData.output.highFreq.otPos = tmp.value(1:3,:);
+expData.output.highFreq.otOrient = tmp.value(4:6,:);
 
 % AR.Drone 2.0 motor PWM data
 data.time = ardroneNavdataStampTime;
 data.value = ardroneNavdataMotor;
-tmp = interpolate(expData.state.otTime,data);
+tmp = interpolate(expData.output.otTime,data);
 expData.input.time = tmp.time;
 expData.input.motor = tmp.value;
 
 
 %% Ensure data is consistent: same start and end time + start at zero
 % Start time
-if expData.input.time(1) < expData.state.otTime(1)
+if expData.input.time(1) < expData.output.otTime(1)
     i = 2;
-    while expData.input.time(i) < expData.state.otTime(1)
+    while expData.input.time(i) < expData.output.otTime(1)
         i = i + 1;
     end
     expData.input.time = expData.input.time(i:end);
     expData.input.motor = expData.input.motor(:,i:end);
-elseif expData.input.time(1) > expData.state.otTime(1)
+elseif expData.input.time(1) > expData.output.otTime(1)
     i = 2;
-    while expData.input.time(1) > expData.state.otTime(i)
+    while expData.input.time(1) > expData.output.otTime(i)
         i = i + 1;
     end
-    expData.state.otTime = expData.state.otTime(i:end);
-    expData.state.otPos = expData.state.otPos(:,i:end);
-    expData.state.otOrient = expData.state.otOrient(:,i:end);
+    expData.output.otTime = expData.output.otTime(i:end);
+    expData.output.otPos = expData.output.otPos(:,i:end);
+    expData.output.otOrient = expData.output.otOrient(:,i:end);
 end
 
 % End time
-if expData.input.time(end) > expData.state.otTime(end)
+if expData.input.time(end) > expData.output.otTime(end)
     i = length(expData.input.time);
-    while expData.input.time(i) > expData.state.otTime(end)
+    while expData.input.time(i) > expData.output.otTime(end)
         i = i - 1;
     end
     expData.input.time = expData.input.time(1:i);
     expData.input.motor = expData.input.motor(:,1:i);
-elseif expData.input.time(end) < expData.state.otTime(end)
-    i = length(expData.state.otTime);
-    while expData.input.time(end) < expData.state.otTime(i)
+elseif expData.input.time(end) < expData.output.otTime(end)
+    i = length(expData.output.otTime);
+    while expData.input.time(end) < expData.output.otTime(i)
         i = i - 1;
     end
-    expData.state.otTime = expData.state.otTime(1:i);
-    expData.state.otPos = expData.state.otPos(:,1:i);
-    expData.state.otOrient = expData.state.otOrient(:,1:i);
+    expData.output.otTime = expData.output.otTime(1:i);
+    expData.output.otPos = expData.output.otPos(:,1:i);
+    expData.output.otOrient = expData.output.otOrient(:,1:i);
 end
 
-startTime = min([min(expData.input.time),min(expData.state.otTime)]);
+startTime = min([min(expData.input.time),min(expData.output.otTime)]);
 expData.input.time	  = expData.input.time - startTime;
-expData.state.otTime  = expData.state.otTime - startTime;
-expData.state.highFreq.otTime = expData.state.highFreq.otTime - startTime;
+expData.output.otTime  = expData.output.otTime - startTime;
+expData.output.highFreq.otTime = expData.output.highFreq.otTime - ...
+                                 startTime;
 
 %% Ensure that the data sampled at a higher frequency has enough samples
 %  at the beginning and end of the data to construct the derivatives
 expData.input.time    = expData.input.time(2:end-1);
 expData.input.motor    = expData.input.motor(:,2:end-1);
 
-expData.state.otTime  = expData.state.otTime(2:end-1);
-expData.state.otPos  = expData.state.otPos(:,2:end-1);
-expData.state.otOrient  = expData.state.otOrient(:,2:end-1);
+expData.output.otTime  = expData.output.otTime(2:end-1);
+expData.output.otPos  = expData.output.otPos(:,2:end-1);
+expData.output.otOrient  = expData.output.otOrient(:,2:end-1);
 
 
 %% Save expData data

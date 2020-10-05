@@ -1,7 +1,7 @@
 function [xExp,xExpSimpleDer] = getFullState(expData)
 % Dimension initialization
 n = 12;
-dur = length(expData.state.otTime);
+dur = length(expData.output.otTime);
 
 % Output initialization
 xExp = zeros(n,dur);
@@ -18,45 +18,45 @@ E = E(4:6,:);
 
 for i = 1:dur
     % Position
-    xExp(1:3,i) = expData.state.otPos(:,i);
+    xExp(1:3,i) = expData.output.otPos(:,i);
 
     % Find central time to use for central differences approach
-    [~,cIdx] = min(abs(expData.state.highFreq.otTime-...
-                       expData.state.otTime(i)));
+    [~,cIdx] = min(abs(expData.output.highFreq.otTime-...
+                       expData.output.otTime(i)));
     sIdx = cIdx - 0.5*(p+o-1);
     eIdx = cIdx + 0.5*(p+o-1);
 
     % Linear velocity (by taking derivatives using finite differences)
-    xExp(4:6,i) = E*reshape(expData.state.highFreq.otPos(:,sIdx:eIdx),...
+    xExp(4:6,i) = E*reshape(expData.output.highFreq.otPos(:,sIdx:eIdx),...
                             [(p+o)*dim,1]);
 
     % Orientation
-    xExp(7:9,i) = expData.state.otOrient(:,i);
+    xExp(7:9,i) = expData.output.otOrient(:,i);
 
     % Angular velocity (by taking derivatives using finite differences)
     xExp(10:12,i) = E*...
-        reshape(expData.state.highFreq.otOrient(:,sIdx:eIdx),...
+        reshape(expData.output.highFreq.otOrient(:,sIdx:eIdx),...
                 [(p+o)*dim,1]);
 end
 
 for i = 1:dur
     % Position
-    xExpSimpleDer(1:3,i) = expData.state.otPos(:,i);
+    xExpSimpleDer(1:3,i) = expData.output.otPos(:,i);
 
     % Linear velocity (by taking simple derivatives)
-    [~,cIdx] = min(abs(expData.state.highFreq.otTime-...
-                       expData.state.otTime(i)));
-    xExpSimpleDer(4:6,i) = (expData.state.highFreq.otPos(:,cIdx) - ...
-                            expData.state.highFreq.otPos(:,cIdx-1))/...
+    [~,cIdx] = min(abs(expData.output.highFreq.otTime-...
+                       expData.output.otTime(i)));
+    xExpSimpleDer(4:6,i) = (expData.output.highFreq.otPos(:,cIdx) - ...
+                            expData.output.highFreq.otPos(:,cIdx-1))/...
                            expData.sampleTimeHighFreq;
 
     % Orientation
-    xExpSimpleDer(7:9,i) = expData.state.otOrient(:,i);
+    xExpSimpleDer(7:9,i) = expData.output.otOrient(:,i);
 
     % Angular velocity (by taking simple derivatives)
     xExpSimpleDer(10:12,i) = ...
-        (expData.state.highFreq.otOrient(:,cIdx) - ...
-         expData.state.highFreq.otOrient(:,cIdx-1))/...
+        (expData.output.highFreq.otOrient(:,cIdx) - ...
+         expData.output.highFreq.otOrient(:,cIdx-1))/...
         expData.sampleTimeHighFreq;
 end
 end

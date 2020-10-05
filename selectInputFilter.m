@@ -12,9 +12,9 @@ load hoverSpiralling25-100Hz15-120s.mat expData;
 startSample = 1;
 endSample = 2600;
 
-t      = expData.state.otTime(startSample:endSample);
-pos    = expData.state.otPos(:,startSample:endSample);
-orient = expData.state.otOrient(:,startSample:endSample);
+t      = expData.output.otTime(startSample:endSample);
+pos    = expData.output.otPos(:,startSample:endSample);
+orient = expData.output.otOrient(:,startSample:endSample);
 
 uMotor = expData.input.motor(:,startSample:endSample);
 
