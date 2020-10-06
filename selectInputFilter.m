@@ -5,7 +5,7 @@ clc;
 
 
 %% Select simulation data
-% Load pre-processed simulation data file
+% Load pre-processed experiment data file
 load hoverSpiralling25-100Hz15-120s.mat expData;
 
 % Select samples to use in simulation
