@@ -149,85 +149,31 @@ load measNoiseTest.mat;
 
 %% Calculate noise characteristics of OptiTrack position and orientation
 %  states
-% Measurement noise dimensions
-ny = size(z,1);
-n = size(z,2);
+% [f,pZ1] = getFFT(time,z);
+% plot(f,pZ1);
+% legend('x','y','z','\phi','\theta','\psi');
+% ylim([0,0.3e-3]);
 
-% Calculate frequency spectrum of measurement noise
-for stateNr = 1:6
-%     z(stateNr,:) = z(stateNr,:) - mean(z(stateNr,:));
-    fs = zeros(1,n-1);
-    for i = 1:n-1
-        fs(i) = time(i+1) - time(i);
-    end
-    fs = 1/mean(fs);
-    f = fs*(0:(n/2))/n;
+% for i = 1:ny
+%     figure('Name',['Frequency spectrum of z' num2str(i)]);
+%     plot(f,pZ1(i,:));
+% end
 
-    freqZ = fft(z(stateNr,:),n,2);
-    pZ2 = abs(freqZ/n);
-    pZ1 = pZ2(:,1:n/2+1);
-    pZ1(:,2:end-1) = 2*pZ1(:,2:end-1);
-%     figure('Name','Measurement noise in frequency domain');
-%     plot(f,pZ1);
-end
+time = time(1:1000);
+z = z(:,1:1000);
 
-% Standard deviation
-muZ = mean(z,2);
-muZAvg = mean(muZ);
-SigmaZ = diag(std(z,1,2));
-sigmaZAvg = mean(diag(SigmaZ));
+[SigmaZEst1,sZEst1] = estimateNoiseCharacteristics(time,z,0,0);
 
-% Kernel width of Gaussian filter that is assumed to produce coloured noise
-% from white noise
-numLags = 100;
-numStd = 1;
-acZ = zeros(ny,numLags+1);
-lagsZ = zeros(ny,numLags+1);
-boundsZ = zeros(ny,2);
-for i = 1:ny
-    [acZ(i,:),lagsZ(i,:),boundsZ(i,:)] = ...
-        autocorr(z(i,:),'NumLags',numLags,'NumSTD',1);
-%     figure('Name',num2str(i));
-%     stem(lagsZ(i,:),acZ(i,:),'filled');
-%     hold on
-%     plot(lagsZ(i,:),boundsZ(i,:)'*ones(size(lagsZ(i,:))),'r');
-end
-rng(1);
-tau = linspace(-time(end),time(end),2*n-1);
-muOmegaRef = muZAvg;
-SigmaOmegaRef = sigmaZAvg;
-omegaRef = normrnd(muOmegaRef,SigmaOmegaRef,[ny,n]);
-mseResult.sRef = 0.001:0.01:1;
-mseResult.mseRef = zeros(ny,length(mseResult.sRef));
-for i = 1:length(mseResult.sRef)
-    s = mseResult.sRef(i);
-    h = sqrt(1/fs*s*sqrt(pi))*exp(-tau.^2/(2*s^2));
-    ref = zeros(ny,n);
-    acRef = zeros(ny,numLags+1);
-    lagsRef = zeros(ny,numLags+1);
-    boundsRef = zeros(ny,2);
-    for j = 1:ny
-        ref(j,:) = conv(h,omegaRef(j,:),'valid');
-        [acRef(j,:),lagsRef(j,:),boundsRef(j,:)] = ...
-            autocorr(ref(j,:),'NumLags',numLags,'NumSTD',numStd);
-        mseResult.mseRef(j,i) = mean((acZ(j,:)-acRef(j,:)).^2);
-    end
-end
+[sZEst2] = estimateSmoothness(time,z);
 
-for i = 1:ny
-    figure('Name',strcat(['Estimated kernel width for z' num2str(i)],...
-                         ' using LS'));
-    plot(mseResult.sRef,mseResult.mseRef(i,:),'-o');
-    hold on;
-    [~,idx] = min(mseResult.mseRef(i,:));
-    xline(mseResult.sRef(idx),'Color',[0 0.4470 0.7410]);
-    legend(['MSE for sZ ' num2str(mseResult.sRef(i)) '-' ...
-            num2str(mseResult.sRef(end))],'sZ');
-end
 
 %% Save expData data
-% measNoiseData.time = time;
-% measNoiseData.z = z;
-% measNoiseData.dataName = 'exp_24-7_0-40s';
-% filename = sprintf('bagdata_%s', datestr(now,'dd-mm-yyyy_HH-MM'));
-% save(filename, 'measNoiseData');
+measNoiseData.time      = time;
+measNoiseData.z         = z;
+measNoiseData.nSamples  = 1000;
+measNoiseData.dataName  = 'exp_24-7_0-40s';
+measNoiseData.SigmaEst1 = SigmaZEst1;
+measNoiseData.sEst1     = sZEst1;
+measNoiseData.sEst2     = sZEst2;
+filename = sprintf('measNoiseData_%s',datestr(now,'dd-mm-yyyy_HH-MM'));
+save(filename,'measNoiseData');
