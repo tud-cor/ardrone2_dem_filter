@@ -4,6 +4,25 @@ clear;
 close all;
 
 
+%% Parameters to adjust
+% Derivative selection (how are the derivatives constructed?)
+% 0: simple derivatives (using current point and next point TODO)
+% 1: derivatives constructed using finite differences approach
+derSel = 0;
+
+% Model selection (which model has to be simulated?)
+% [white-box ; grey-box ; black-box ; nonlinear]
+modSel = [0;0;0;1];
+
+
+%% Check model selection
+nModSel = sum(modSel);
+if nModSel == 0
+    error(['Please select at least one model to compare with ' ...
+            'OptiTrack data.']);
+end
+
+
 %% Select simulation data
 % Load pre-processed simulation data file
 load hoverSpiralling25-100Hz15-120s.mat expData;
@@ -155,177 +174,243 @@ u = [T;tauPhi;tauTheta;tauPsi];
 % TAKE CARE The system output (OptiTrack) data is used to compare with the
 % simulated states of the model, since it is assumed that the OptiTrack
 % data does not contain a lot of noise
-[xExp,xExpSimpleDer] = getFullState(expData);
+[xExpFinDiff,xExpSimpleDer] = getFullState(expData);
+if ~derSel
+    xExp = xExpFinDiff;
+else
+    xExp = xExpSimpleDer;
+end
+
 
 
 %% Calculate MSE for white-box LTI system
-[xWB,mseWB] = ltiStepSim(sysd,t,xExp,u,param);
-% [xWB,mseWB] = ltiStepSim(sysd,t,xExpSimpleDer,u,param);
+if modSel(1)
+    [xWB,mseWB] = ltiStepSim(sysd,t,xExp,u,param);
+end
 
 
 %% Calculate MSE for grey-box LTI system
-% Load and discretize system estimate
-load sysGB_exp_24-7_7.mat;
-sysdGB = c2d(syscGB,param.sampleTime);
+if modSel(2)
+    % Load and discretize system estimate
+    load sysGB_exp_24-7_7.mat;
+    sysdGB = c2d(syscGB,param.sampleTime);
 
-% Simulate LTI system
-[xGB,mseGB] = ltiStepSim(sysdGB,t,xExp,u,param);
+    % Simulate LTI system
+    [xGB,mseGB] = ltiStepSim(sysdGB,t,xExp,u,param);
+end
 
 
 %% Calculate MSE for black-box LTI system
-% Load and discretize system estimate
-load sysBB_exp_24-7_7.mat;
-ssModel = ssUnfilt;
-syscBB = ss(ssModel.A,ssModel.B,ssModel.C,ssModel.D);
-sysdBB = c2d(syscBB,param.sampleTime);
+if modSel(3)
+    % Load and discretize system estimate
+    load sysBB_exp_24-7_7.mat;
+    ssModel = ssUnfilt;
+    syscBB = ss(ssModel.A,ssModel.B,ssModel.C,ssModel.D);
+    sysdBB = c2d(syscBB,param.sampleTime);
 
-% Simulate LTI system
-[xBB,mseBB] = ltiStepSim(sysdBB,t,xExp,u,param);
+    % Simulate LTI system
+    [xBB,mseBB] = ltiStepSim(sysdBB,t,xExp,u,param);
+end
+
+
+%% Calculate result for nonlinear system (using ODE45)
+if modSel(4)
+    xNonlin = zeros(nx,dur);
+    xNonlin(:,1) = xExpSimpleDer(:,1);
+    for i = 1:dur-1
+        tic;
+        x0 = xExpSimpleDer(:,i);
+        tspan       = [t(i),t(i+1)];
+        [tNonlinSim,xNonlinSim] = ode15s(@(tNonlinSim,xNonlinSim) ...
+                                  nonlinSim(tNonlinSim,t,xNonlinSim,u,...
+                                            omegaR,param),tspan,x0);
+        xNonlin(:,i+1) = xNonlinSim(end,:);
+        toc
+    end
+end
 
 
 %% Plot results and compare with OptiTrack data
 % quadrotor3DVisualization(t,x,'Simulated quadrotor movements');
 
+% Construct matrix with state values in the following format
+% (for selected models)
+% [| WB state 1 | GB state 1 | ... | WB state 2 | GB state 2 | ...]
+x = zeros(dur,nModSel*nx);
+legend1 = cell(nModSel+1,1);
+legend1{1} = 'OptiTrack';
+legend2 = cell(nModSel+1,1);
+if ~derSel
+    legend2{1} = 'Simple derivative';
+else
+    legend2{1} = 'Derivative using finite differences';
+end
+nModPlotted = 0;
+if modSel(1)
+    for i = 1:nx
+        x(:,(i-1)*nModSel+nModPlotted+1) = xWB(i,:)';
+    end
+    legend1{nModPlotted+2} = 'WB LTI model';
+    legend2{nModPlotted+2} = 'WB LTI model';
+    nModPlotted = nModPlotted + 1;
+end
+if modSel(2)
+    for i = 1:nx
+        x(:,(i-1)*nModSel+nModPlotted+1) = xGB(i,:)';
+    end
+    legend1{nModPlotted+2} = 'GB LTI model';
+    legend2{nModPlotted+2} = 'GB LTI model';
+    nModPlotted = nModPlotted + 1;
+end
+if modSel(3)
+    for i = 1:nx
+        x(:,(i-1)*nModSel+nModPlotted+1) = xBB(i,:)';
+    end
+    legend1{nModPlotted+2} = 'BB LTI model';
+    legend2{nModPlotted+2} = 'BB LTI model';
+    nModPlotted = nModPlotted + 1;
+end
+if modSel(4)
+    for i = 1:nx
+        x(:,(i-1)*nModSel+nModPlotted+1) = xNonlin(i,:)';
+    end
+    legend1{nModPlotted+2} = 'Nonlinear model';
+    legend2{nModPlotted+2} = 'Nonlinear model';
+    nModPlotted = nModPlotted + 1;
+end
+
+
 figure('Name','Position and attitude');
 subplot(3,2,1);
-hold on;
-plot(t,xWB(1,:));
-plot(t,xGB(1,:));
-% plot(t,xBB(1,:));
 plot(t,expData.output.otPos(1,:));
-legend('WB LTI model','GB LTI model','OptiTrack');
-% legend('WB LTI model','OptiTrack');
-% legend('WB LTI model','GB LTI model','BB LTI model','OptiTrack');
+hold on;
+plot(t,x(:,1:nModSel));
+legend(legend1);
 title('x');
+% plot(t,xWB(1,:));
+% plot(t,xGB(1,:));
+% plot(t,xBB(1,:));
+% plot(t,xNonlin(1,:));
 
 subplot(3,2,3);
-hold on;
-plot(t,xWB(2,:));
-plot(t,xGB(2,:));
-% plot(t,xBB(2,:));
 plot(t,expData.output.otPos(2,:));
-legend('WB LTI model','GB LTI model','OptiTrack');
-% legend('WB LTI model','OptiTrack');
-% legend('WB LTI model','GB LTI model','BB LTI model','OptiTrack');
+hold on;
+plot(t,x(:,nModSel+1:nModSel+nModSel));
+legend(legend1);
 title('y');
+% plot(t,xWB(2,:));
+% plot(t,xGB(2,:));
+% plot(t,xBB(2,:));
+% plot(t,xNonlin(2,:));
 
 subplot(3,2,5);
-hold on;
-plot(t,xWB(3,:));
-plot(t,xGB(3,:));
-% plot(t,xBB(3,:));
 plot(t,expData.output.otPos(3,:));
-legend('WB LTI model','GB LTI model','OptiTrack');
-% legend('WB LTI model','OptiTrack');
-% legend('WB LTI model','GB LTI model','BB LTI model','OptiTrack');
+hold on;
+plot(t,x(:,2*nModSel+1:2*nModSel+nModSel));
+legend(legend1);
 title('z');
-
+% plot(t,xWB(3,:));
+% plot(t,xGB(3,:));
+% plot(t,xBB(3,:));
+% plot(t,xNonlin(3,:));
 
 subplot(3,2,2);
-hold on;
-plot(t,xWB(7,:));
-plot(t,xGB(7,:));
-% plot(t,xBB(7,:));
 plot(t,expData.output.otOrient(1,:));
-legend('WB LTI model','GB LTI model','OptiTrack');
-% legend('WB LTI model','OptiTrack');
-% legend('WB LTI model','GB LTI model','BB LTI model','OptiTrack');
+hold on;
+plot(t,x(:,6*nModSel+1:6*nModSel+nModSel));
+legend(legend1);
 title('\phi');
+% plot(t,xWB(7,:));
+% plot(t,xGB(7,:));
+% plot(t,xBB(7,:));
+% plot(t,xNonlin(7,:));
 
 subplot(3,2,4);
-hold on;
-plot(t,xWB(8,:));
-plot(t,xGB(8,:));
-% plot(t,xBB(8,:));
 plot(t,expData.output.otOrient(2,:));
-legend('WB LTI model','GB LTI model','OptiTrack');
-% legend('WB LTI model','OptiTrack');
-% legend('WB LTI model','GB LTI model','BB LTI model','OptiTrack');
+hold on;
+plot(t,x(:,7*nModSel+1:7*nModSel+nModSel));
+legend(legend1);
 title('\theta');
+% plot(t,xWB(8,:));
+% plot(t,xGB(8,:));
+% plot(t,xBB(8,:));
+% plot(t,xNonlin(8,:));
 
 subplot(3,2,6);
-hold on;
-plot(t,xWB(9,:));
-plot(t,xGB(9,:));
-% plot(t,xBB(9,:));
 plot(t,expData.output.otOrient(3,:));
-legend('WB LTI model','GB LTI model','OptiTrack');
-% legend('WB LTI model','OptiTrack');
-% legend('WB LTI model','GB LTI model','BB LTI model','OptiTrack');
+hold on;
+plot(t,x(:,8*nModSel+1:8*nModSel+nModSel));
+legend(legend1);
 title('\psi');
-
+% plot(t,xWB(9,:));
+% plot(t,xGB(9,:));
+% plot(t,xBB(9,:));
+% plot(t,xNonlin(9,:));
 
 
 figure('Name','Linear and angular velocity');
 subplot(3,2,1);
+plot(t,xExp(4,:));
 hold on;
-plot(t,xWB(4,:),'-o');
-plot(t,xGB(4,:));
-% plot(t,xBB(4,:));
-plot(t,xExp(4,:),'-o');
-legend('WB LTI model','GB LTI model','Finite differences approach');
-% legend('WB LTI model','Finite differences approach');
-% legend('WB LTI model','GB LTI model','BB LTI model',...
-%        'Finite differences approach');
+plot(t,x(:,3*nModSel+1:3*nModSel+nModSel));
+legend(legend2);
 title('v_x');
+% plot(t,xWB(4,:));
+% plot(t,xGB(4,:));
+% plot(t,xBB(4,:));
+% plot(t,xNonlin(4,:));
 
 subplot(3,2,3);
-hold on;
-plot(t,xWB(5,:));
-plot(t,xGB(5,:));
-% plot(t,xBB(5,:));
 plot(t,xExp(5,:));
-legend('WB LTI model','GB LTI model','Finite differences approach');
-% legend('WB LTI model','Finite differences approach');
-% legend('WB LTI model','GB LTI model','BB LTI model',...
-%        'Finite differences approach');
+hold on;
+plot(t,x(:,4*nModSel+1:4*nModSel+nModSel));
+legend(legend2);
 title('v_y');
+% plot(t,xWB(5,:));
+% plot(t,xGB(5,:));
+% plot(t,xBB(5,:));
+% plot(t,xNonlin(5,:));
 
 subplot(3,2,5);
-hold on;
-plot(t,xWB(6,:));
-plot(t,xGB(6,:));
-% plot(t,xBB(6,:));
 plot(t,xExp(6,:));
-legend('WB LTI model','GB LTI model','Finite differences approach');
-% legend('WB LTI model','Finite differences approach');
-% legend('WB LTI model','GB LTI model','BB LTI model',...
-%        'Finite differences approach');
+hold on;
+plot(t,x(:,5*nModSel+1:5*nModSel+nModSel));
+legend(legend2);
 title('v_z');
-
+% plot(t,xWB(6,:));
+% plot(t,xGB(6,:));
+% plot(t,xBB(6,:));
+% plot(t,xNonlin(6,:));
 
 subplot(3,2,2);
-hold on;
-plot(t,xWB(10,:));
-plot(t,xGB(10,:));
-% plot(t,xBB(10,:));
 plot(t,xExp(10,:));
-legend('WB LTI model','GB LTI model','Finite differences approach');
-% legend('WB LTI model','Finite differences approach');
-% legend('WB LTI model','GB LTI model','BB LTI model',...
-%        'Finite differences approach');
+hold on;
+plot(t,x(:,9*nModSel+1:9*nModSel+nModSel));
+legend(legend2);
 title('v_{\phi}');
+% plot(t,xWB(10,:));
+% plot(t,xGB(10,:));
+% plot(t,xBB(10,:));
+% plot(t,xNonlin(10,:));
 
 subplot(3,2,4);
-hold on;
-plot(t,xWB(11,:));
-plot(t,xGB(11,:));
-% plot(t,xBB(11,:));
 plot(t,xExp(11,:));
-legend('WB LTI model','GB LTI model','Finite differences approach');
-% legend('WB LTI model','Finite differences approach');
-% legend('WB LTI model','GB LTI model','BB LTI model',...
-%        'Finite differences approach');
+hold on;
+plot(t,x(:,10*nModSel+1:10*nModSel+nModSel));
+legend(legend2);
 title('v_{\theta}');
+% plot(t,xWB(11,:));
+% plot(t,xGB(11,:));
+% plot(t,xBB(11,:));
+% plot(t,xNonlin(11,:));
 
 subplot(3,2,6);
-hold on;
-plot(t,xWB(12,:));
-plot(t,xGB(12,:));
-% plot(t,xBB(12,:));
 plot(t,xExp(12,:));
-legend('WB LTI model','GB LTI model','Finite differences approach');
-% legend('WB LTI model','Finite differences approach');
-% legend('WB LTI model','GB LTI model','BB LTI model',...
-%        'Finite differences approach');
+hold on;
+plot(t,x(:,11*nModSel+1:11*nModSel+nModSel));
+legend(legend2);
 title('v_{\psi}');
+% plot(t,xWB(12,:));
+% plot(t,xGB(12,:));
+% plot(t,xBB(12,:));
+% plot(t,xNonlin(12,:));
