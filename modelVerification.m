@@ -1,6 +1,3 @@
-%% TODO
-% Implement MSE and VAF in separate error function
-
 %% Initialisation
 clc;
 clear;
@@ -138,10 +135,15 @@ nUncon = size(con,1) - rank(con);
 obs = obsv(A,C);
 nUnobs = size(obs,2) - rank(obs);
 
-sysc = ss(A,B,C,D);
+sysC = ss(A,B,C,D);
 
 % Construct discrete-time linearised state space system
-sysd = c2d(sysc,param.sampleTime);
+sysD = c2d(sysC,param.sampleTime);
+
+% Define operating point corresponding to above linear system
+op.x    = zeros(nx,1);
+op.x(3) = 1;
+op.u    = [param.m*param.g;0;0;0];
 
 
 %% Simulation parameters
@@ -170,7 +172,7 @@ for i = 1:dur
                   param.cQ(2)*(sum(omegaR(1:2:3,i))-...
                                sum(omegaR(2:2:4,i)));
 end
-u = [T;tauPhi;tauTheta;tauPsi];
+uExp = [T;tauPhi;tauTheta;tauPsi];
 
 
 %% Construct full state from OptiTrack data
@@ -188,7 +190,9 @@ end
 
 %% Calculate MSE for white-box LTI system
 if modSel(1)
-    [xWB,mseWB] = ltiStepSim(sysd,t,xExp,u,param);
+    xWB   = ltiStepSim(sysD,t,xExp,uExp,op);
+    mseWB = getErr(xExp(:,2:end),xWB(:,2:end),'mse');
+    vafWB = getErr(xExp(:,2:end),xWB(:,2:end),'vaf');
 end
 
 
@@ -196,10 +200,12 @@ end
 if modSel(2)
     % Load and discretize system estimate
     load sysGB_exp_24-7_7.mat;
-    sysdGB = c2d(syscGB,param.sampleTime);
+    sysDGB = c2d(syscGB,param.sampleTime);
 
     % Simulate LTI system
-    [xGB,mseGB] = ltiStepSim(sysdGB,t,xExp,u,param);
+    xGB   = ltiStepSim(sysDGB,t,xExp,uExp,op);
+    mseGB = getErr(xExp(:,2:end),xGB(:,2:end),'mse');
+    vafGB = getErr(xExp(:,2:end),xGB(:,2:end),'vaf');
 end
 
 
@@ -208,11 +214,13 @@ if modSel(3)
     % Load and discretize system estimate
     load sysBB_exp_24-7_7.mat;
     ssModel = ssUnfilt;
-    syscBB = ss(ssModel.A,ssModel.B,ssModel.C,ssModel.D);
-    sysdBB = c2d(syscBB,param.sampleTime);
+    sysCBB  = ss(ssModel.A,ssModel.B,ssModel.C,ssModel.D);
+    sysDBB  = c2d(sysCBB,param.sampleTime);
 
     % Simulate LTI system
-    [xBB,mseBB] = ltiStepSim(sysdBB,t,xExp,u,param);
+    xBB = ltiStepSim(sysDBB,t,xExp,uExp,op);
+    mseBB = getErr(xExp(:,2:end),xBB(:,2:end),'mse');
+    vafBB = getErr(xExp(:,2:end),xBB(:,2:end),'vaf');
 end
 
 
@@ -221,14 +229,12 @@ if modSel(4)
     xNonlin = zeros(nx,dur);
     xNonlin(:,1) = xExpSimpleDer(:,1);
     for i = 1:dur-1
-        tic;
         x0 = xExpSimpleDer(:,i);
         tspan       = [t(i),t(i+1)];
         [tNonlinSim,xNonlinSim] = ode15s(@(tNonlinSim,xNonlinSim) ...
-                                  nonlinSim(tNonlinSim,t,xNonlinSim,u,...
-                                            omegaR,param),tspan,x0);
+                                  nonlinSim(tNonlinSim,t,xNonlinSim,...
+                                            uExp,omegaR,param),tspan,x0);
         xNonlin(:,i+1) = xNonlinSim(end,:);
-        toc
     end
 end
 
