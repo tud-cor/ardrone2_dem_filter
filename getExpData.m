@@ -26,7 +26,7 @@ topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [15,120];
+time = [0,15];
 
 
 %% Get data
@@ -34,33 +34,33 @@ topicsOut = storeBagdata(bag, topics, time);
 
 if topics.cmdVel
     cmdVelTime = topicsOut.cmdVel.time;
-    cmdVelLin = topicsOut.cmdVel.lin;
-    cmdVelAng = topicsOut.cmdVel.ang;
+    cmdVelLin  = topicsOut.cmdVel.lin;
+    cmdVelAng  = topicsOut.cmdVel.ang;
 end
 
 if topics.optitrack
-    optitrackStampTime = topicsOut.optitrack.stampTime;
+    optitrackStampTime  = topicsOut.optitrack.stampTime;
     optitrackRecordTime = topicsOut.optitrack.recordTime;
-    optitrackPos = topicsOut.optitrack.pos;
+    optitrackPos        = topicsOut.optitrack.pos;
     optitrackOrientQuat = topicsOut.optitrack.orient;
 end
 
 if topics.ardroneNavdata
-    ardroneNavdataStampTime = topicsOut.ardroneNavdata.stampTime;
+    ardroneNavdataStampTime  = topicsOut.ardroneNavdata.stampTime;
     ardroneNavdataRecordTime = topicsOut.ardroneNavdata.recordTime;
-    ardroneNavdataMotor = topicsOut.ardroneNavdata.motor;
-    ardroneNavdataRot = topicsOut.ardroneNavdata.rot;
-    ardroneNavdataVLin = topicsOut.ardroneNavdata.vLin;
-    ardroneNavdataALin = topicsOut.ardroneNavdata.aLin;
+    ardroneNavdataMotor      = topicsOut.ardroneNavdata.motor;
+    ardroneNavdataRot        = topicsOut.ardroneNavdata.rot;
+    ardroneNavdataVLin       = topicsOut.ardroneNavdata.vLin;
+    ardroneNavdataALin       = topicsOut.ardroneNavdata.aLin;
 end
 
 if topics.ardroneOdom
-    ardroneOdomStampTime = topicsOut.ardroneOdom.stampTime;
+    ardroneOdomStampTime  = topicsOut.ardroneOdom.stampTime;
     ardroneOdomRecordTime = topicsOut.ardroneOdom.recordTime;
-    ardroneOdomPos = topicsOut.ardroneOdom.pos;
+    ardroneOdomPos        = topicsOut.ardroneOdom.pos;
     ardroneOdomOrientQuat = topicsOut.ardroneOdom.orient;
-    ardroneOdomVLin = topicsOut.ardroneOdom.vLin;
-    ardroneOdomVAng = topicsOut.ardroneOdom.vAng;
+    ardroneOdomVLin       = topicsOut.ardroneOdom.vLin;
+    ardroneOdomVAng       = topicsOut.ardroneOdom.vAng;
 end
 
 
@@ -73,28 +73,28 @@ plot(optitrackStampTime,optitrackPos(2,:),'-o');
 plot(optitrackStampTime,optitrackPos(3,:),'-o');
 
 % Select data samples to use
-prompt = {'Enter index of 1st data sample:',...
-          'Enter index of last data sample:'};
+prompt   = {'Enter index of 1st data sample:',...
+            'Enter index of last data sample:'};
 dlgtitle = 'Data selection';
-dims = [1 35];
+dims     = [1 35];
 definput = {'1',num2str(length(optitrackStampTime))};
-answer = inputdlg(prompt,dlgtitle,dims,definput);
-otStart = round(str2double(answer{1}));
-otEnd = round(str2double(answer{2}));
+answer   = inputdlg(prompt,dlgtitle,dims,definput);
+otStart  = round(str2double(answer{1}));
+otEnd    = round(str2double(answer{2}));
 
 % Select proper OptiTrack data
-optitrackStampTime = optitrackStampTime(otStart:otEnd);
-optitrackPos = optitrackPos(:,otStart:otEnd);
+optitrackStampTime  = optitrackStampTime(otStart:otEnd);
+optitrackPos        = optitrackPos(:,otStart:otEnd);
 optitrackOrientQuat = optitrackOrientQuat(:,otStart:otEnd);
 
 % Search for closest value for otStart and otEnd time in
 % ardroneNavdataStampTime
 [~,arStart] = min(abs(ardroneNavdataStampTime-optitrackStampTime(1)));
-[~,arEnd] = min(abs(ardroneNavdataStampTime-optitrackStampTime(end)));
+[~,arEnd]   = min(abs(ardroneNavdataStampTime-optitrackStampTime(end)));
 
 % Select desired Motor PWM data
 ardroneNavdataStampTime = ardroneNavdataStampTime(arStart:arEnd);
-ardroneNavdataMotor = ardroneNavdataMotor(:,arStart:arEnd);
+ardroneNavdataMotor     = ardroneNavdataMotor(:,arStart:arEnd);
 
 
 %% Convert OptiTrack quaternions to ZYX Euler angles
@@ -131,26 +131,29 @@ title('\psi');
 
 %% Interpolate data
 % Sample time
-expData.sampleTime = 0.04;
+expData.sampleTime         = 0.04;
 expData.sampleTimeHighFreq = 0.01;
 
 % OptiTrack data
-data.time = optitrackStampTime;
+data.time  = optitrackStampTime;
 data.value = [optitrackPos;optitrackOrient];
+
 tmp = interpolate(expData.sampleTime,data);
-expData.output.otTime = tmp.time;
-expData.output.otPos = tmp.value(1:3,:);
+expData.output.otTime   = tmp.time;
+expData.output.otPos    = tmp.value(1:3,:);
 expData.output.otOrient = tmp.value(4:6,:);
+
 tmp = interpolate(expData.sampleTimeHighFreq,data);
-expData.output.highFreq.otTime = tmp.time;
-expData.output.highFreq.otPos = tmp.value(1:3,:);
+expData.output.highFreq.otTime   = tmp.time;
+expData.output.highFreq.otPos    = tmp.value(1:3,:);
 expData.output.highFreq.otOrient = tmp.value(4:6,:);
 
 % AR.Drone 2.0 motor PWM data
-data.time = ardroneNavdataStampTime;
+data.time  = ardroneNavdataStampTime;
 data.value = ardroneNavdataMotor;
+
 tmp = interpolate(expData.output.otTime,data);
-expData.input.time = tmp.time;
+expData.input.time  = tmp.time;
 expData.input.motor = tmp.value;
 
 
@@ -161,15 +164,15 @@ if expData.input.time(1) < expData.output.otTime(1)
     while expData.input.time(i) < expData.output.otTime(1)
         i = i + 1;
     end
-    expData.input.time = expData.input.time(i:end);
+    expData.input.time  = expData.input.time(i:end);
     expData.input.motor = expData.input.motor(:,i:end);
 elseif expData.input.time(1) > expData.output.otTime(1)
     i = 2;
     while expData.input.time(1) > expData.output.otTime(i)
         i = i + 1;
     end
-    expData.output.otTime = expData.output.otTime(i:end);
-    expData.output.otPos = expData.output.otPos(:,i:end);
+    expData.output.otTime   = expData.output.otTime(i:end);
+    expData.output.otPos    = expData.output.otPos(:,i:end);
     expData.output.otOrient = expData.output.otOrient(:,i:end);
 end
 
@@ -179,32 +182,32 @@ if expData.input.time(end) > expData.output.otTime(end)
     while expData.input.time(i) > expData.output.otTime(end)
         i = i - 1;
     end
-    expData.input.time = expData.input.time(1:i);
+    expData.input.time  = expData.input.time(1:i);
     expData.input.motor = expData.input.motor(:,1:i);
 elseif expData.input.time(end) < expData.output.otTime(end)
     i = length(expData.output.otTime);
     while expData.input.time(end) < expData.output.otTime(i)
         i = i - 1;
     end
-    expData.output.otTime = expData.output.otTime(1:i);
-    expData.output.otPos = expData.output.otPos(:,1:i);
+    expData.output.otTime   = expData.output.otTime(1:i);
+    expData.output.otPos    = expData.output.otPos(:,1:i);
     expData.output.otOrient = expData.output.otOrient(:,1:i);
 end
 
 startTime = min([min(expData.input.time),min(expData.output.otTime)]);
-expData.input.time	  = expData.input.time - startTime;
-expData.output.otTime  = expData.output.otTime - startTime;
+expData.input.time             = expData.input.time - startTime;
+expData.output.otTime          = expData.output.otTime - startTime;
 expData.output.highFreq.otTime = expData.output.highFreq.otTime - ...
                                  startTime;
 
 %% Ensure that the data sampled at a higher frequency has enough samples
 %  at the beginning and end of the data to construct the derivatives
-expData.input.time    = expData.input.time(2:end-1);
-expData.input.motor    = expData.input.motor(:,2:end-1);
+expData.input.time  = expData.input.time(2:end-1);
+expData.input.motor = expData.input.motor(:,2:end-1);
 
-expData.output.otTime  = expData.output.otTime(2:end-1);
-expData.output.otPos  = expData.output.otPos(:,2:end-1);
-expData.output.otOrient  = expData.output.otOrient(:,2:end-1);
+expData.output.otTime   = expData.output.otTime(2:end-1);
+expData.output.otPos    = expData.output.otPos(:,2:end-1);
+expData.output.otOrient = expData.output.otOrient(:,2:end-1);
 
 
 %% Save expData data

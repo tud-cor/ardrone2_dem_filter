@@ -1,3 +1,6 @@
+%% TODO
+% Implement MSE and VAF in separate error function
+
 %% Initialisation
 clc;
 clear;
@@ -8,11 +11,11 @@ close all;
 % Derivative selection (how are the derivatives constructed?)
 % 0: simple derivatives (using current point and next point TODO)
 % 1: derivatives constructed using finite differences approach
-derSel = 0;
+derSel = 1;
 
 % Model selection (which model has to be simulated?)
 % [white-box ; grey-box ; black-box ; nonlinear]
-modSel = [0;0;0;1];
+modSel = [1;0;0;0];
 
 
 %% Check model selection

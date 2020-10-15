@@ -25,14 +25,28 @@ n = tSim/ts+1;
 omega = 2*pi*f;
 
 t = linspace(-tOffset,tSim+tOffset,n+2*nOffset)';
+nTot = length(t);
 
-y = a*sin(omega*t);
+w = normrnd(0,0.1,[nTot,1]);
+
+y = a*sin(omega*t) + w;
 
 
 %% Calculate exact derivatives
 y1E = a*omega*cos(omega*t);
 y2E = -a*omega^2*sin(omega*t);
 y3E = -a*omega^3*cos(omega*t);
+
+
+%% Calculate simple derivative
+y1Sb = zeros(n,1); % Derivative using previous and current sample
+y1Sa = zeros(n,1); % Derivative using current and next sample
+y1Sm = zeros(n,1); % Mean of both simple derivative calculations
+for i = 1:n
+    y1Sb(i) = (y(nOffset+i)-y(nOffset+i-1))/ts;
+    y1Sa(i) = (y(nOffset+i+1)-y(nOffset+i))/ts;
+end
+y1Sm = (y1Sb+y1Sa)/2;
 
 
 %% Calculate derivatives using finite differences approach
@@ -62,15 +76,19 @@ legendDer{1} = 'Exact';
 legendDer{2} = 'Finite differences';
 
 figure('Name','Test signal');
-plot(t,y);
+plot(t,y,'-o');
 hold on;
 plot(tFD,yFR);
 
 figure('Name','First-order derivative');
-plot(t,y1E);
+plot(t,y1E,'-o');
 hold on;
-plot(tFD,y1F);
-legend(legendDer);
+% plot(tFD,y1Sb,'-o');
+% plot(tFD,y1Sa,'-o');
+plot(tFD,y1Sm,'-o');
+plot(tFD,y1F,'-o');
+legend('Exact','Simple before','Simple after','Simple mean',...
+       'Finite differences');
 
 figure('Name','Second-order derivative');
 plot(t,y2E);

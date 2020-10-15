@@ -50,6 +50,9 @@ for i = 1:nx
         stem(lagsX(i,:),acX(i,:),'filled');
         hold on
         plot(lagsX(i,:),boundsX(i,:)'*ones(size(lagsX(i,:))),'r');
+        xlabel('Lag');
+        ylabel('Autocorrelation value');
+        legend('Autocorrelation','Confidence interval');
     end
 end
 
@@ -112,8 +115,10 @@ if plotSMSE
         hold on;
         [~,idx] = min(mseResult.mseRef(i,:));
         xline(mseResult.sRef(idx),'Color',[0 0.4470 0.7410]);
-        legend(['MSE for sX ' num2str(sMin) ':' num2str(sStep) ':' ...
-                num2str(sMax) ':'],'sX');
+        xlabel('s (s)');
+        ylabel('MSE value');
+        legend(['MSE for s in range ' num2str(sMin) ':' num2str(sStep) ...
+                ':' num2str(sMax) ':'],'Estimated s');
     end
 end
 
