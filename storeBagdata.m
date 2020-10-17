@@ -1,4 +1,4 @@
-function [topicsOut] = storeBagdata(bag, topics, time)
+function [topicsOut] = storeBagdata(bag,topics,time)
 % STOREBAGDATA Store data of a rosbag in Matlab matrices.
 %
 %   Author: Dennis Benders
@@ -120,9 +120,9 @@ if topics.gazeboModelStates
     % Store data of model_states in arrays
     topicsOut.gazeboModelStates.time = zeros(1,lenGazeboModelStates);
     topicsOut.gazeboModelStates.pos = zeros(3,lenGazeboModelStates);
+    topicsOut.gazeboModelStates.vLin = zeros(3,lenGazeboModelStates);
     topicsOut.gazeboModelStates.orient = zeros(4,lenGazeboModelStates);
-    topicsOut.gazeboModelStates.vlin = zeros(3,lenGazeboModelStates);
-    topicsOut.gazeboModelStates.vang = zeros(3,lenGazeboModelStates);
+    topicsOut.gazeboModelStates.vAng = zeros(3,lenGazeboModelStates);
 
     for i = 1:lenGazeboModelStates
         topicsOut.gazeboModelStates.time(i) = ...
@@ -133,6 +133,12 @@ if topics.gazeboModelStates
             msgsGazeboModelStates{i}.Pose(2).Position.Y;
         topicsOut.gazeboModelStates.pos(3,i) = ...
             msgsGazeboModelStates{i}.Pose(2).Position.Z;
+        topicsOut.gazeboModelStates.vLin(1,i) = ...
+            msgsGazeboModelStates{i}.Twist(2).Linear.X;
+        topicsOut.gazeboModelStates.vLin(2,i) = ...
+            msgsGazeboModelStates{i}.Twist(2).Linear.Y;
+        topicsOut.gazeboModelStates.vLin(3,i) = ...
+            msgsGazeboModelStates{i}.Twist(2).Linear.Z;
         topicsOut.gazeboModelStates.orient(1,i) = ...
             msgsGazeboModelStates{i}.Pose(2).Orientation.X;
         topicsOut.gazeboModelStates.orient(2,i) = ...
@@ -141,12 +147,6 @@ if topics.gazeboModelStates
             msgsGazeboModelStates{i}.Pose(2).Orientation.Z;
         topicsOut.gazeboModelStates.orient(4,i) = ...
             msgsGazeboModelStates{i}.Pose(2).Orientation.W;
-        topicsOut.gazeboModelStates.vLin(1,i) = ...
-            msgsGazeboModelStates{i}.Twist(2).Linear.X;
-        topicsOut.gazeboModelStates.vLin(2,i) = ...
-            msgsGazeboModelStates{i}.Twist(2).Linear.Y;
-        topicsOut.gazeboModelStates.vLin(3,i) = ...
-            msgsGazeboModelStates{i}.Twist(2).Linear.Z;
         topicsOut.gazeboModelStates.vAng(1,i) = ...
             msgsGazeboModelStates{i}.Twist(2).Angular.X;
         topicsOut.gazeboModelStates.vAng(2,i) = ...
@@ -205,7 +205,97 @@ end
 %--------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------
-% Retreive information from ardrone/odometry if desired
+% Retreive information from ardrone/imu if desired
+if topics.ardroneImu
+    % Get bag data
+    bagArdroneImu = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/ardrone/imu');
+    msgsArdroneImu = readMessages(bagArdroneImu,'DataFormat','Struct');
+    lenArdroneImu = length(msgsArdroneImu);
+
+    % Store data of model_states in arrays
+    topicsOut.ardroneImu.stampTime = zeros(1,lenArdroneImu);
+    topicsOut.ardroneImu.recordTime = zeros(1,lenArdroneImu);
+    topicsOut.ardroneImu.orient = zeros(4,lenArdroneImu);
+    topicsOut.ardroneImu.vAng = zeros(3,lenArdroneImu);
+
+    for i = 1:lenArdroneImu
+        topicsOut.ardroneImu.stampTime(i) = ...
+            msgsArdroneImu{i}.Header.Stamp.Sec + ...
+            msgsArdroneImu{i}.Header.Stamp.Nsec/1000000000;
+        topicsOut.ardroneImu.recordTime(i) = ...
+            bagArdroneImu.MessageList.Time(i);
+        topicsOut.ardroneImu.orient(1,i) = ...
+            msgsArdroneImu{i}.Orientation.X;
+        topicsOut.ardroneImu.orient(2,i) = ...
+            msgsArdroneImu{i}.Orientation.Y;
+        topicsOut.ardroneImu.orient(3,i) = ...
+            msgsArdroneImu{i}.Orientation.Z;
+        topicsOut.ardroneImu.orient(4,i) = ...
+            msgsArdroneImu{i}.Orientation.W;
+        topicsOut.ardroneImu.vAng(1,i) = ...
+            msgsArdroneImu{i}.AngularVelocity.X;
+        topicsOut.ardroneImu.vAng(2,i) = ...
+            msgsArdroneImu{i}.AngularVelocity.Y;
+        topicsOut.ardroneImu.vAng(3,i) = ...
+            msgsArdroneImu{i}.AngularVelocity.Z;
+    end
+
+    % Remove unncessary data for later on in this function to save memory
+    clear bagArdroneImu msgsArdroneImu;
+end
+%--------------------------------------------------------------------------
+
+%--------------------------------------------------------------------------
+% Retreive information from ardrone/navdata if desired
+if topics.ardroneNav
+    % Get bag data
+    bagArdroneNav = select(bag,...
+        'Time',[bag.StartTime+time(1),endTime],...
+        'Topic','/ardrone/navdata');
+    msgsArdroneNav = readMessages(bagArdroneNav,...
+        'DataFormat','Struct');
+    lenArdroneNav = length(msgsArdroneNav);
+
+    % Store data of model_states in arrays
+    topicsOut.ardroneNav.stampTime = zeros(1,lenArdroneNav);
+    topicsOut.ardroneNav.recordTime = zeros(1,lenArdroneNav);
+    topicsOut.ardroneNav.motor = zeros(4,lenArdroneNav);
+    topicsOut.ardroneNav.altd = zeros(1,lenArdroneNav);
+    topicsOut.ardroneNav.vLin = zeros(3,lenArdroneNav);
+    topicsOut.ardroneNav.aLin = zeros(3,lenArdroneNav);
+    topicsOut.ardroneNav.rot = zeros(3,lenArdroneNav);
+
+    for i = 1:lenArdroneNav
+        topicsOut.ardroneNav.stampTime(i) = ...
+            msgsArdroneNav{i}.Header.Stamp.Sec + ...
+            msgsArdroneNav{i}.Header.Stamp.Nsec/1000000000;
+        topicsOut.ardroneNav.recordTime(i) = ...
+            bagArdroneNav.MessageList.Time(i);
+        topicsOut.ardroneNav.motor(1,i) = msgsArdroneNav{i}.Motor1;
+        topicsOut.ardroneNav.motor(2,i) = msgsArdroneNav{i}.Motor2;
+        topicsOut.ardroneNav.motor(3,i) = msgsArdroneNav{i}.Motor3;
+        topicsOut.ardroneNav.motor(4,i) = msgsArdroneNav{i}.Motor4;
+        topicsOut.ardroneNav.altd(i) = msgsArdroneNav{i}.Altd;
+        topicsOut.ardroneNav.rot(1,i) = msgsArdroneNav{i}.RotX;
+        topicsOut.ardroneNav.rot(2,i) = msgsArdroneNav{i}.RotY;
+        topicsOut.ardroneNav.rot(3,i) = msgsArdroneNav{i}.RotZ;
+        topicsOut.ardroneNav.vLin(1,i) = msgsArdroneNav{i}.Vx;
+        topicsOut.ardroneNav.vLin(2,i) = msgsArdroneNav{i}.Vy;
+        topicsOut.ardroneNav.vLin(3,i) = msgsArdroneNav{i}.Vz;
+        topicsOut.ardroneNav.aLin(1,i) = msgsArdroneNav{i}.Ax;
+        topicsOut.ardroneNav.aLin(2,i) = msgsArdroneNav{i}.Ay;
+        topicsOut.ardroneNav.aLin(3,i) = msgsArdroneNav{i}.Az;
+    end
+
+    % Remove unncessary data for later on in this function to save memory
+    clear bagArdroneNav msgsArdroneNav;
+end
+%--------------------------------------------------------------------------
+
+%--------------------------------------------------------------------------
+% % Retreive information from ardrone/odometry if desired
 if topics.ardroneOdom
     % Get bag data
     bagArdroneOdom = select(bag,...
@@ -218,9 +308,9 @@ if topics.ardroneOdom
     topicsOut.ardroneOdom.stampTime = zeros(1,lenArdroneOdom);
     topicsOut.ardroneOdom.recordTime = zeros(1,lenArdroneOdom);
     topicsOut.ardroneOdom.pos = zeros(3,lenArdroneOdom);
+    topicsOut.ardroneOdom.vLin = zeros(3,lenArdroneOdom);
     topicsOut.ardroneOdom.orient = zeros(4,lenArdroneOdom);
-    topicsOut.ardroneOdom.vlin = zeros(3,lenArdroneOdom);
-    topicsOut.ardroneOdom.vang = zeros(3,lenArdroneOdom);
+    topicsOut.ardroneOdom.vAng = zeros(3,lenArdroneOdom);
 
     for i = 1:lenArdroneOdom
         topicsOut.ardroneOdom.stampTime(i) = ...
@@ -234,6 +324,12 @@ if topics.ardroneOdom
             msgsArdroneOdom{i}.Pose.Pose.Position.Y;
         topicsOut.ardroneOdom.pos(3,i) = ...
             msgsArdroneOdom{i}.Pose.Pose.Position.Z;
+        topicsOut.ardroneOdom.vLin(1,i) = ...
+            msgsArdroneOdom{i}.Twist.Twist.Linear.X;
+        topicsOut.ardroneOdom.vLin(2,i) = ...
+            msgsArdroneOdom{i}.Twist.Twist.Linear.Y;
+        topicsOut.ardroneOdom.vLin(3,i) = ...
+            msgsArdroneOdom{i}.Twist.Twist.Linear.Z;
         topicsOut.ardroneOdom.orient(1,i) = ...
             msgsArdroneOdom{i}.Pose.Pose.Orientation.X;
         topicsOut.ardroneOdom.orient(2,i) = ...
@@ -242,12 +338,6 @@ if topics.ardroneOdom
             msgsArdroneOdom{i}.Pose.Pose.Orientation.Z;
         topicsOut.ardroneOdom.orient(4,i) = ...
             msgsArdroneOdom{i}.Pose.Pose.Orientation.W;
-        topicsOut.ardroneOdom.vLin(1,i) = ...
-            msgsArdroneOdom{i}.Twist.Twist.Linear.X;
-        topicsOut.ardroneOdom.vLin(2,i) = ...
-            msgsArdroneOdom{i}.Twist.Twist.Linear.Y;
-        topicsOut.ardroneOdom.vLin(3,i) = ...
-            msgsArdroneOdom{i}.Twist.Twist.Linear.Z;
         topicsOut.ardroneOdom.vAng(1,i) = ...
             msgsArdroneOdom{i}.Twist.Twist.Angular.X;
         topicsOut.ardroneOdom.vAng(2,i) = ...
@@ -258,51 +348,6 @@ if topics.ardroneOdom
 
     % Remove unncessary data for later on in this function to save memory
     clear bagArdroneOdom msgsArdroneOdom;
-end
-%--------------------------------------------------------------------------
-
-%--------------------------------------------------------------------------
-% Retreive information from ardrone/navdata if desired
-if topics.ardroneNavdata
-    % Get bag data
-    bagArdroneNavdata = select(bag,...
-        'Time',[bag.StartTime+time(1),endTime],...
-        'Topic','/ardrone/navdata');
-    msgsArdroneNavdata = readMessages(bagArdroneNavdata,...
-        'DataFormat','Struct');
-    lenArdroneNavdata = length(msgsArdroneNavdata);
-
-    % Store data of model_states in arrays
-    topicsOut.ardroneNavdata.stampTime = zeros(1,lenArdroneNavdata);
-    topicsOut.ardroneNavdata.recordTime = zeros(1,lenArdroneNavdata);
-    topicsOut.ardroneNavdata.motor = zeros(4,lenArdroneNavdata);
-    topicsOut.ardroneNavdata.rot = zeros(3,lenArdroneNavdata);
-    topicsOut.ardroneNavdata.vlin = zeros(3,lenArdroneNavdata);
-    topicsOut.ardroneNavdata.alin = zeros(3,lenArdroneNavdata);
-
-    for i = 1:lenArdroneNavdata
-        topicsOut.ardroneNavdata.stampTime(i) = ...
-            msgsArdroneNavdata{i}.Header.Stamp.Sec + ...
-            msgsArdroneNavdata{i}.Header.Stamp.Nsec/1000000000;
-        topicsOut.ardroneNavdata.recordTime(i) = ...
-            bagArdroneNavdata.MessageList.Time(i);
-        topicsOut.ardroneNavdata.motor(1,i) = msgsArdroneNavdata{i}.Motor1;
-        topicsOut.ardroneNavdata.motor(2,i) = msgsArdroneNavdata{i}.Motor2;
-        topicsOut.ardroneNavdata.motor(3,i) = msgsArdroneNavdata{i}.Motor3;
-        topicsOut.ardroneNavdata.motor(4,i) = msgsArdroneNavdata{i}.Motor4;
-        topicsOut.ardroneNavdata.rot(1,i) = msgsArdroneNavdata{i}.RotX;
-        topicsOut.ardroneNavdata.rot(2,i) = msgsArdroneNavdata{i}.RotY;
-        topicsOut.ardroneNavdata.rot(3,i) = msgsArdroneNavdata{i}.RotZ;
-        topicsOut.ardroneNavdata.vLin(1,i) = msgsArdroneNavdata{i}.Vx;
-        topicsOut.ardroneNavdata.vLin(2,i) = msgsArdroneNavdata{i}.Vy;
-        topicsOut.ardroneNavdata.vLin(3,i) = msgsArdroneNavdata{i}.Vz;
-        topicsOut.ardroneNavdata.aLin(1,i) = msgsArdroneNavdata{i}.Ax;
-        topicsOut.ardroneNavdata.aLin(2,i) = msgsArdroneNavdata{i}.Ay;
-        topicsOut.ardroneNavdata.aLin(3,i) = msgsArdroneNavdata{i}.Az;
-    end
-
-    % Remove unncessary data for later on in this function to save memory
-    clear bagArdroneNavdata msgsArdroneNavdata;
 end
 %--------------------------------------------------------------------------
 
@@ -318,7 +363,7 @@ if topics.rotorsMotorSpeed
 
     % Store data of ardrone/motor_speed in arrays
     topicsOut.motorSpeed.time = zeros(1,lenMotorSpeed);
-    topicsOut.motorSpeed.ang_vel = zeros(4,lenMotorSpeed);
+    topicsOut.motorSpeed.angVel = zeros(4,lenMotorSpeed);
 
     for i = 1:lenMotorSpeed
         topicsOut.motorSpeed.time(i) = bagMotorSpeed.MessageList.Time(i);

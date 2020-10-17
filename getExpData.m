@@ -21,6 +21,7 @@ topics.cmdVel = 0;
 topics.modelInput = 0;
 topics.gazeboModelStates = 0;
 topics.optitrack = 1;
+topics.ardroneImu = 0;
 topics.ardroneNavdata = 1;
 topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
@@ -30,7 +31,7 @@ time = [0,15];
 
 
 %% Get data
-topicsOut = storeBagdata(bag, topics, time);
+topicsOut = storeBagdata(bag,topics,time);
 
 if topics.cmdVel
     cmdVelTime = topicsOut.cmdVel.time;

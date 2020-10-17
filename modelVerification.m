@@ -88,9 +88,9 @@ param.l             = 0.178;	%m
 param.PwmToPwm      = 2.55;
 % omegaR = PwmToOmegaR(1)*pwm + PwmToOmegaR(2)
 param.PwmToOmegaR   = [3.7,130.9];
-% cT(1)*omegaR^2 + cT*omegaR
+% cT(1)*omegaR^2 + cT(2)*omegaR
 param.cT            = [8.6e-6,-3.2e-4];
-% cQ(1)*omegaR^2 + cq*omegaR
+% cQ(1)*omegaR^2 + cQ(2)*omegaR
 param.cQ            = [2.4e-7,-9.9e-6];
 
 

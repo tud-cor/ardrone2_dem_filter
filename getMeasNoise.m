@@ -144,7 +144,7 @@ clc;
 
 %% To speed up the process: code above is commented and a dedicated mat
 %  file is loaded
-load measNoiseTest.mat;
+load optiTrackNoiseTest.mat;
 
 
 %% Calculate noise characteristics of OptiTrack position and orientation
