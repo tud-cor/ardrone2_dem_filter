@@ -7,21 +7,41 @@ clc;
 %% Data to compare
 % Possible state    | Available on topic
 % --------------------------------------
-% x                 |                   ardrone/odometry (drifting)
-% y                 |                   ardrone/odometry (drifting)
-% z                 | ardrone/navdata + ardrone/odometry
+% x                 |                   ardrone/odometry (drifting) TODO check with coordinate transforms
+% y                 |                   ardrone/odometry (drifting) TODO check with coordinate transforms
+% z                 | ardrone/navdata + ardrone/odometry (same, but a little bit of offset!) TODO check with coordinate transforms
 
-% xDot              | ardrone/navdata + ardrone/odometry (same)
-% yDot              | ardrone/navdata + ardrone/odometry (same)
-% zDot              | ardrone/navdata + ardrone/odometry (same)
+% xDot              | ardrone/navdata + ardrone/odometry (same) TODO Check with Optitrack data for correctnes
+% yDot              | ardrone/navdata + ardrone/odometry (same) TODO Check with Optitrack data for correctnes
+% zDot              | ardrone/navdata + ardrone/odometry (same, but 0!)
 
-% phi               | ardrone/imu + ardrone/navdata + ardrone/odometry (wrong timestamps)
-% theta             | ardrone/imu + ardrone/navdata + ardrone/odometry (wrong timestamps)
-% psi               | ardrone/imu + ardrone/navdata + ardrone/odometry (2x; wrong timestamps)
+% phi               | ardrone/imu + ardrone/navdata + ardrone/odometry     TODO check with coordinate transform + initialization
+% theta             | ardrone/imu + ardrone/navdata + ardrone/odometry     TODO check with coordinate transform + initialization
+% psi               | ardrone/imu + ardrone/navdata + ardrone/odometry(2x) TODO check with coordinate transform + initialization
 
-% phiDot            | ardrone/imu + ardrone/odometry
-% thetaDot          | ardrone/imu + ardrone/odometry
-% psiDot            | ardrone/imu + ardrone/odometry
+% phiDot            | ardrone/imu + ardrone/odometry (odom is 0!) TODO check with coordinate transform
+% thetaDot          | ardrone/imu + ardrone/odometry (odom is 0!) TODO check with coordinate transform
+% psiDot            | ardrone/imu + ardrone/odometry (odom is 0!) TODO check with coordinate transform
+
+
+%% Data to be used to run the filters
+% Possible state    | Chosen topic
+% --------------------------------
+% x                 | 
+% y                 | 
+% z                 | 
+
+% xDot              | 
+% yDot              | 
+% zDot              | 
+
+% phi               | 
+% theta             | 
+% psi               | 
+
+% phiDot            | 
+% thetaDot          | 
+% psiDot            | 
 
 
 %% Set variables
@@ -177,14 +197,41 @@ ardroneOdomStampTime = ardroneOdomStampTime - optitrackStampTime(1);
 optitrackStampTime   = optitrackStampTime   - optitrackStampTime(1);
 
 
-%% TODO Zero data
-optitrackPos(3,:) = optitrackPos(3,:) - optitrackZeroPosZ;
-
-
 %% Convert quaternions to Euler angles
 optitrackOrient = quat2EulAndWrap(optitrackOrientQuat,0);
 ardroneImuOrient = quat2EulAndWrap(ardroneImuOrientQuat,0);
 ardroneOdomOrient = quat2EulAndWrap(ardroneOdomOrientQuat,0);
+
+
+%% TODO Zero data using average of first 9 seconds
+tAvg = 9;
+
+% Zero Optitrack data
+[~,otAvgEnd] = min(abs(optitrackStampTime-tAvg));
+optitrackPos = optitrackPos - mean(optitrackPos(:,1:otAvgEnd),2);
+optitrackOrient = optitrackOrient - mean(optitrackOrient(:,1:otAvgEnd),2);
+
+% Zero AR.Drone 2.0 IMU data
+[~,arAvgEnd] = min(abs(ardroneImuStampTime-tAvg));
+ardroneImuOrient = ardroneImuOrient - ...
+                   mean(ardroneImuOrient(:,1:arAvgEnd),2);
+ardroneImuVAng   = ardroneImuVAng - mean(ardroneImuVAng(:,1:arAvgEnd),2);
+
+% Zero AR.Drone 2.0 navdata data
+[~,arAvgEnd] = min(abs(ardroneNavStampTime-tAvg));
+ardroneNavAltd = ardroneNavAltd - mean(ardroneNavAltd(:,1:arAvgEnd),2);
+ardroneNavVLin = ardroneNavVLin - mean(ardroneNavVLin(:,1:arAvgEnd),2);
+ardroneNavRot  = ardroneNavRot - mean(ardroneNavRot(:,1:arAvgEnd),2);
+
+% Zero AR.Drone 2.0 odometry data
+[~,arAvgEnd] = min(abs(ardroneOdomStampTime-tAvg));
+ardroneOdomPos    = ardroneOdomPos - mean(ardroneOdomPos(:,1:arAvgEnd),2);
+ardroneOdomVLin   = ardroneOdomVLin - ...
+                    mean(ardroneOdomVLin(:,1:arAvgEnd),2);
+ardroneOdomOrient = ardroneOdomOrient - ...
+                    mean(ardroneOdomOrient(:,1:arAvgEnd),2);
+ardroneOdomVAng   = ardroneOdomVAng - ...
+                    mean(ardroneOdomVAng(:,1:arAvgEnd),2);
 
 
 %% Edit Optitrack data
@@ -196,7 +243,7 @@ ardroneOdomOrient = quat2EulAndWrap(ardroneOdomOrientQuat,0);
 %% Edit AR.Drone 2.0 navdata
 ardroneNavAltd = ardroneNavAltd/1000;
 ardroneNavVLin = ardroneNavVLin/1000;
-ardroneNavRot  = ardroneNavRot/180*pi;
+ardroneNavRot  = unwrap(ardroneNavRot/180*pi);
 
 
 %% Edit AR.Drone 2.0 odometry data
@@ -208,12 +255,12 @@ ardroneNavRot  = ardroneNavRot/180*pi;
 % nSamples = 
 % for i = 1:
 % Construct homogeneous transformation matrix (translational dynamics)
-R = zeros(4,4);
-R(1:3,1:3) = eul2rotm([psi,theta,phi]);
-R(1,4) = x;
-R(2,4) = y;
-R(3,4) = z;
-R(4,4) = 1;
+% R = zeros(4,4);
+% R(1:3,1:3) = eul2rotm([psi,theta,phi]);
+% R(1,4) = x;
+% R(2,4) = y;
+% R(3,4) = z;
+% R(4,4) = 1;
 
 % TODO: construct rotation matrix for rotational dynamics
 
@@ -291,7 +338,7 @@ subplot(3,1,1);
 plot(optitrackStampTime,optitrackOrient(2,:));
 hold on;
 plot(ardroneImuStampTime,ardroneImuOrient(1,:));
-% plot(ardroneNavStampTime,ardroneNavRot(1,:));
+plot(ardroneNavStampTime,ardroneNavRot(1,:));
 plot(ardroneOdomStampTime,ardroneOdomOrient(1,:));
 legend('Optitrack','AR.Drone 2.0 IMU','AR.Drone 2.0 navdata',...
        'AR.Drone 2.0 odometry');
@@ -303,7 +350,7 @@ subplot(3,1,2);
 plot(optitrackStampTime,-optitrackOrient(1,:));
 hold on;
 plot(ardroneImuStampTime,ardroneImuOrient(2,:));
-% plot(ardroneNavStampTime,ardroneNavRot(2,:));
+plot(ardroneNavStampTime,ardroneNavRot(2,:));
 plot(ardroneOdomStampTime,ardroneOdomOrient(2,:));
 legend('Optitrack','AR.Drone 2.0 IMU','AR.Drone 2.0 navdata',...
        'AR.Drone 2.0 odometry');
@@ -322,6 +369,36 @@ legend('Optitrack','AR.Drone 2.0 IMU','AR.Drone 2.0 navdata',...
 title('\psi');
 xlabel('Time (s)');
 ylabel('\psi (rad)');
+
+
+%% Compare angular velocity sources
+figure('Name','Angular velocity');
+subplot(3,1,1);
+plot(ardroneImuStampTime,ardroneImuVAng(1,:));
+hold on;
+plot(ardroneOdomStampTime,ardroneOdomVAng(1,:));
+legend('AR.Drone 2.0 IMU','AR.Drone 2.0 odometry');
+title('$\dot{\phi}$','Interpreter','latex');
+xlabel('Time (s)');
+ylabel('$\dot{\phi}$ (rad)','Interpreter','latex');
+
+subplot(3,1,2);
+plot(ardroneImuStampTime,ardroneImuVAng(2,:));
+hold on;
+plot(ardroneOdomStampTime,ardroneOdomVAng(2,:));
+legend('AR.Drone 2.0 IMU','AR.Drone 2.0 odometry');
+title('$\dot{\theta}$','Interpreter','latex');
+xlabel('Time (s)');
+ylabel('$\dot{\theta}$ (rad)','Interpreter','latex');
+
+subplot(3,1,3);
+plot(ardroneImuStampTime,ardroneImuVAng(3,:));
+hold on;
+plot(ardroneOdomStampTime,ardroneOdomVAng(3,:));
+legend('AR.Drone 2.0 IMU','AR.Drone 2.0 odometry');
+title('$\dot{\psi}$','Interpreter','latex');
+xlabel('Time (s)');
+ylabel('$\dot{\psi }$(rad)','Interpreter','latex');
 
 
 %% Reset plot styling settings
