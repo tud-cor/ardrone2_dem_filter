@@ -347,11 +347,11 @@ xlabel('Time (s)');
 ylabel('\phi (rad)');
 
 subplot(3,1,2);
-plot(optitrackStampTime,-optitrackOrient(1,:));
+plot(optitrackStampTime,optitrackOrient(1,:));
 hold on;
-plot(ardroneImuStampTime,ardroneImuOrient(2,:));
+plot(ardroneImuStampTime,-ardroneImuOrient(2,:));
 plot(ardroneNavStampTime,ardroneNavRot(2,:));
-plot(ardroneOdomStampTime,ardroneOdomOrient(2,:));
+plot(ardroneOdomStampTime,-ardroneOdomOrient(2,:));
 legend('Optitrack','AR.Drone 2.0 IMU','AR.Drone 2.0 navdata',...
        'AR.Drone 2.0 odometry');
 title('\theta');
