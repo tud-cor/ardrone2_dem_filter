@@ -24,7 +24,9 @@ clc;
 % topics.rotorsMotorSpeed = 0;
 % 
 % % Set time interval with respect to start of rosbag recording
-% time = [140,180];
+% % time = [0,75]; %exp 07-24_2
+% time = [135,180]; %exp 07-24_3
+% % time = [0,36]; %exp 07-24_8
 % 
 % 
 % %% Get data
@@ -51,18 +53,27 @@ clc;
 load checkOptitrackAnglesExp7_24_3.mat;
 
 
+%% Calculate initial yaw angle at beginning of experiment w.r.t. OptiTrack
+%  configuration
+tAvg = 3;
+[~,otAvgEnd] = min(abs(optitrackStampTime-tAvg));
+psiOffset = mean(optitrackOrient(3,1:otAvgEnd));
+
+
 %% Correct angle data
+% Approximately (assuming a configuration with orientation psi = pi/2):
 % phi_c = -theta_i
-optitrackOrientC(1,:) = -optitrackOrient(2,:);
-
 % theta_c = phi_i
-optitrackOrientC(2,:) = optitrackOrient(1,:);
-
 % psi_c psi_i + pi/2
-optitrackOrientC(3,:) = optitrackOrient(3,:) + pi/2;
+% optitrackOrientC = [0,-1,0;1,0,0;0,0,1]*optitrackOrient + [0;0;pi/2];
 
-% Zero angle data
-optitrackOrientC = optitrackOrientC - optitrackOrientC(:,1);
+% Correct phi and theta axes (scaling) and yaw values (offset and scaling)
+optitrackOrientC = rotz(-psiOffset/pi*180)*optitrackOrient + ...
+                   [0;0;pi/2];
+
+% Correct phi and theta values (offset)
+optitrackOrientC = optitrackOrientC - ...
+                   [mean(optitrackOrientC(1:2,1:otAvgEnd),2);0];
 
 
 %% Plot

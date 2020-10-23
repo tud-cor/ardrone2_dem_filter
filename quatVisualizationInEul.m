@@ -7,7 +7,7 @@ clc;
 %% Load quaternion data
 % Retrieve bag file
 cd ~/.ros;
-bag = rosbag("angleTestMoveDroneManually2.bag");
+bag = rosbag("ardrone2_exp_2020-07-24_3.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
@@ -17,14 +17,14 @@ topics.cmdVel = 0;
 % Simulation/flight data topics
 topics.modelInput = 0;
 topics.gazeboModelStates = 0;
-topics.optitrack = 0;
+topics.optitrack = 1;
 topics.ardroneImu = 0;
 topics.ardroneNav = 0;
-topics.ardroneOdom = 1;
+topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [17,41];
+time = [135,180];
 
 
 %% Get data
@@ -32,8 +32,8 @@ topicsOut = storeBagdata(bag,topics,time);
 
 
 %% Set data
-t = topicsOut.ardroneOdom.stampTime - topicsOut.ardroneOdom.stampTime(1);
-orientQuat = topicsOut.ardroneOdom.orient;
+t = topicsOut.optitrack.stampTime - topicsOut.optitrack.stampTime(1);
+orientQuat = topicsOut.optitrack.orient;
 
 
 %% Convert to Euler angles
@@ -41,10 +41,19 @@ orient = quat2EulAndWrap(orientQuat,0);
 
 
 %% Plot
-figure('Name','Orientation');
+figure('Name','Orientation in ZYX Euler angles');
 plot(t,orient(1,:));
 hold on;
 plot(t,orient(2,:));
 plot(t,orient(3,:));
 yline(0);
-legend('phi','theta','psi','0 ref');
+legend('phi','theta','psi','0 ref','FontSize',20);
+title('quat2eul','FontSize',30);
+xlabel('Time (s)','FontSize',25);
+ylabel('Angle (rad)','FontSize',25);
+
+
+[~,idx] = min(abs(t-min(3,time(2))))
+phiOffset = mean(orient(1,1:idx))
+thetaOffset = mean(orient(2,1:idx))
+psiOffset = mean(orient(3,1:idx))

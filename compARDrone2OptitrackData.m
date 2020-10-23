@@ -4,6 +4,10 @@ close all;
 clc;
 
 
+%% Constant parameters
+floatTol = 1e-6; %number with a smaller accuracy are treated as 0
+
+
 %% Data to compare
 % Possible state    | Available on topic
 % --------------------------------------
@@ -11,8 +15,8 @@ clc;
 % y                 |                   ardrone/odometry (drifting) TODO check with coordinate transforms
 % z                 | ardrone/navdata + ardrone/odometry (same, but a little bit of offset!) TODO check with coordinate transforms
 
-% xDot              | ardrone/navdata + ardrone/odometry (same) TODO Check with Optitrack data for correctnes
-% yDot              | ardrone/navdata + ardrone/odometry (same) TODO Check with Optitrack data for correctnes
+% xDot              | ardrone/navdata + ardrone/odometry (same) TODO Check with Optitrack data for correctness
+% yDot              | ardrone/navdata + ardrone/odometry (same) TODO Check with Optitrack data for correctness
 % zDot              | ardrone/navdata + ardrone/odometry (same, but 0!)
 
 % phi               | ardrone/imu + ardrone/navdata + ardrone/odometry     TODO check with coordinate transform + initialization
@@ -44,209 +48,205 @@ clc;
 % psiDot            | 
 
 
-%% Set variables
-% % Retrieve bag file
-% cd ~/.ros;
-% bag = rosbag("ardrone2_exp_2020-07-24_8.bag");
-% cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
-% 
-% % Select topics that need to be stored
-% % Controller signal topics
-% topics.cmdVel = 0;
-% 
-% % Simulation/flight data topics
-% topics.modelInput = 0;
-% topics.gazeboModelStates = 0;
-% topics.optitrack = 1;
-% topics.ardroneImu = 1;
-% topics.ardroneNav = 1;
-% topics.ardroneOdom = 1;
-% topics.rotorsMotorSpeed = 0;
-% 
-% % Set time interval with respect to start of rosbag recording
-% % time = [18,25];
-% time = [0,20];
-% 
-% 
-% %% Get data
-% topicsOut = storeBagdata(bag,topics,time);
-% 
-% if topics.optitrack
-%     optitrackStampTime  = topicsOut.optitrack.stampTime;
-%     optitrackPos        = topicsOut.optitrack.pos;
-%     optitrackOrientQuat = topicsOut.optitrack.orient;
-% end
-% 
-% if topics.ardroneImu
-%     ardroneImuStampTime  = topicsOut.ardroneImu.stampTime;
-%     ardroneImuOrientQuat = topicsOut.ardroneImu.orient;
-%     ardroneImuVAng       = topicsOut.ardroneImu.vAng;
-% end
-% 
-% if topics.ardroneNav
-%     ardroneNavStampTime  = topicsOut.ardroneNav.stampTime;
-%     ardroneNavAltd       = topicsOut.ardroneNav.altd;
-%     ardroneNavVLin       = topicsOut.ardroneNav.vLin;
-%     ardroneNavRot        = topicsOut.ardroneNav.rot;
-% end
-% 
-% if topics.ardroneOdom
-%     ardroneOdomStampTime  = topicsOut.ardroneOdom.stampTime;
-%     ardroneOdomPos        = topicsOut.ardroneOdom.pos;
-%     ardroneOdomVLin       = topicsOut.ardroneOdom.vLin;
-%     ardroneOdomOrientQuat = topicsOut.ardroneOdom.orient;
-%     ardroneOdomVAng       = topicsOut.ardroneOdom.vAng;
-% end
-% 
-% 
-% %% Save data to .mat for code speedup
-% save('compARDrone2OptiTrackData.mat',...
-%      'optitrackStampTime','optitrackPos','optitrackOrientQuat',...
-%      'ardroneImuStampTime','ardroneImuOrientQuat','ardroneImuVAng',...
-%      'ardroneNavStampTime','ardroneNavAltd',...
-%      'ardroneNavVLin','ardroneNavRot',...
-%      'ardroneOdomStampTime','ardroneOdomPos','ardroneOdomVLin',...
-%      'ardroneOdomOrientQuat','ardroneOdomVAng');
+%% Load data
+load expData7_24_8.mat;
+
+% Originally recorded data
+origOtTime     = expData.origData.otTime;
+origOtPos      = expData.origData.otPos;
+origOtOrient   = expData.origData.otOrient;
+
+origImuTime    = expData.origData.imuTime;
+origImuOrient  = expData.origData.imuOrient;
+origImuVAng    = expData.origData.imuVAng;
+
+origNavTime    = expData.origData.navTime;
+origNavAltd    = expData.origData.navAltd;
+origNavVLin    = expData.origData.navVLin;
+origNavRot     = expData.origData.navRot;
+
+origOdomTime   = expData.origData.odomTime;
+origOdomPos    = expData.origData.odomPos;
+origOdomVLin   = expData.origData.odomVLin;
+origOdomOrient = expData.origData.odomOrient;
+origOdomVAng   = expData.origData.odomVAng;
+
+% Interpolated data
+t = expData.output.time;
+
+otPos    = expData.output.otPos;
+otOrient = expData.output.otOrient;
+
+imuOrient = expData.output.imuOrient;
+imuVAng   = expData.output.imuVAng;
+
+navAltd = expData.output.navAltd;
+navVLin = expData.output.navVLin;
+navRot  = expData.output.navRot;
+
+odomPos    = expData.output.odomPos;
+odomVLin   = expData.output.odomVLin;
+odomOrient = expData.output.odomOrient;
+odomVAng   = expData.output.odomVAng;
+
+
+%% Plot original data to determine how to subtract the offset from the
+%  signals
+% figure('Name','OptiTrack');
+% subplot(2,1,1);
+% plot(origOtTime,origOtPos(1,:));
+% hold on;
+% plot(origOtTime,origOtPos(2,:));
+% plot(origOtTime,origOtPos(3,:));
+% yline(0);
+% legend('x','y','z','0 ref');
+% subplot(2,1,2);
+% plot(origOtTime,origOtOrient(1,:));
+% hold on;
+% plot(origOtTime,origOtOrient(2,:));
+% plot(origOtTime,origOtOrient(3,:));
+% yline(0);
+% legend('\phi','\theta','\psi','0 ref');
 % 
 % 
-%% Select data from .mat for code speedup
-load compARDrone2OptiTrackData.mat;
+% figure('Name','AR.Drone 2.0 IMU');
+% subplot(2,1,1);
+% plot(origImuTime,origImuOrient(1,:));
+% hold on;
+% plot(origImuTime,origImuOrient(2,:));
+% plot(origImuTime,origImuOrient(3,:));
+% yline(0);
+% legend('\phi','\theta','\psi','0 ref');
+% subplot(2,1,2);
+% plot(origImuTime,origImuVAng(1,:));
+% hold on;
+% plot(origImuTime,origImuVAng(2,:));
+% plot(origImuTime,origImuVAng(3,:));
+% yline(0);
+% legend('$\dot{\phi}$','$\dot{\theta}$','$\dot{\psi}$','0 ref',...
+%        'Interpreter','latex');
+% 
+% 
+% figure('Name','AR.Drone 2.0 navdata');
+% subplot(3,1,1);
+% plot(origNavTime,origNavAltd);
+% yline(0);
+% legend('z','0 ref');
+% subplot(3,1,2);
+% plot(origNavTime,origNavVLin(1,:));
+% hold on;
+% plot(origNavTime,origNavVLin(2,:));
+% plot(origNavTime,origNavVLin(3,:));
+% yline(0);
+% legend('$\dot{x}$','$\dot{y}$','$\dot{z}$','0 ref',...
+%        'Interpreter','latex');
+% subplot(3,1,3);
+% plot(origNavTime,origNavRot(1,:));
+% hold on;
+% plot(origNavTime,origNavRot(2,:));
+% plot(origNavTime,origNavRot(3,:));
+% yline(0);
+% legend('\phi','\theta','\psi','0 ref');
+% 
+% 
+% figure('Name','AR.Drone 2.0 odometry');
+% subplot(4,1,1);
+% plot(origOdomTime,origOdomPos(1,:));
+% hold on;
+% plot(origOdomTime,origOdomPos(2,:));
+% plot(origOdomTime,origOdomPos(3,:));
+% yline(0);
+% legend('x','y','z','0 ref');
+% subplot(4,1,2);
+% plot(origOdomTime,origOdomVLin(1,:));
+% hold on;
+% plot(origOdomTime,origOdomVLin(2,:));
+% plot(origOdomTime,origOdomVLin(3,:));
+% yline(0);
+% legend('$\dot{x}$','$\dot{y}$','$\dot{z}$','0 ref',...
+%        'Interpreter','latex');
+% subplot(4,1,3);
+% plot(origOdomTime,origOdomOrient(1,:));
+% hold on;
+% plot(origOdomTime,origOdomOrient(2,:));
+% plot(origOdomTime,origOdomOrient(3,:));
+% yline(0);
+% legend('\phi','\theta','\psi','0 ref');
+% subplot(4,1,4);
+% plot(origOdomTime,origOdomVAng(1,:));
+% hold on;
+% plot(origOdomTime,origOdomVAng(2,:));
+% plot(origOdomTime,origOdomVAng(3,:));
+% yline(0);
+% legend('$\dot{\phi}$','$\dot{\theta}$','$\dot{\psi}$','0 ref',...
+%        'Interpreter','latex');
 
 
-%% Select suitable time frame
-% Plot position data to determine the time frame visually
-figure('Name','OptiTrack position data');
-hold on;
-plot(optitrackStampTime,optitrackPos(1,:),'-o');
-plot(optitrackStampTime,optitrackPos(2,:),'-o');
-plot(optitrackStampTime,optitrackPos(3,:),'-o');
-
-% Select data samples to use
-prompt   = {'Enter index of 1st data sample:',...
-            'Enter index of last data sample:'};
-dlgtitle = 'Data selection';
-dims     = [1 35];
-definput = {'1',num2str(length(optitrackStampTime))};
-answer   = inputdlg(prompt,dlgtitle,dims,definput);
-otStart  = round(str2double(answer{1}));
-otEnd    = round(str2double(answer{2}));
-
-% Select corresponding time frame in OptiTrack data
-optitrackStampTime  = optitrackStampTime(otStart:otEnd);
-optitrackPos        = optitrackPos(:,otStart:otEnd);
-optitrackOrientQuat = optitrackOrientQuat(:,otStart:otEnd);
-
-% Select corresponding time frame in ardroneImu data
-[~,arStart] = min(abs(ardroneImuStampTime-optitrackStampTime(1)));
-[~,arEnd]   = min(abs(ardroneImuStampTime-optitrackStampTime(end)));
-ardroneImuStampTime  = ardroneImuStampTime(arStart:arEnd);
-ardroneImuOrientQuat = ardroneImuOrientQuat(:,arStart:arEnd);
-ardroneImuVAng       = ardroneImuVAng(:,arStart:arEnd);
-
-% Select corresponding time frame in ardroneNav data
-[~,arStart] = min(abs(ardroneNavStampTime-optitrackStampTime(1)));
-[~,arEnd]   = min(abs(ardroneNavStampTime-optitrackStampTime(end)));
-ardroneNavStampTime = ardroneNavStampTime(arStart:arEnd);
-ardroneNavAltd      = ardroneNavAltd(arStart:arEnd);
-ardroneNavVLin      = ardroneNavVLin(:,arStart:arEnd);
-ardroneNavRot       = ardroneNavRot(:,arStart:arEnd);
-
-% Select corresponding time frame in ardroneOdom data
-[~,arStart] = min(abs(ardroneOdomStampTime-optitrackStampTime(1)));
-[~,arEnd]   = min(abs(ardroneOdomStampTime-optitrackStampTime(end)));
-ardroneOdomStampTime  = ardroneOdomStampTime(arStart:arEnd);
-ardroneOdomPos        = ardroneOdomPos(:,arStart:arEnd);
-ardroneOdomVLin       = ardroneOdomVLin(:,arStart:arEnd);
-ardroneOdomOrientQuat = ardroneOdomOrientQuat(:,arStart:arEnd);
-ardroneOdomVAng       = ardroneOdomVAng(:,arStart:arEnd);
-
-% Ensure that all AR.Drone 2.0 signals have equal length by truncating
-% Often the odometry are too short, so only check on these messages
-% Correct Optitrack data too
-nImu  = length(ardroneImuStampTime);
-nNav  = length(ardroneNavStampTime);
-nOdom = length(ardroneOdomStampTime);
-if nOdom ~= nImu || nOdom ~= nNav
-    % Select corresponding time frame in OptiTrack data
-    [~,otEnd]   = min(abs(optitrackStampTime-ardroneOdomStampTime(end)));
-    while optitrackStampTime(otEnd) < ardroneOdomStampTime(end)
-        otEnd = otEnd + 1;
-    end
-    optitrackStampTime  = optitrackStampTime(1:otEnd);
-    optitrackPos        = optitrackPos(:,1:otEnd);
-    optitrackOrientQuat = optitrackOrientQuat(:,1:otEnd);
-
-    % Select corresponding time frame in ardroneImu data
-    [~,arEnd]   = min(abs(ardroneImuStampTime-ardroneOdomStampTime(end)));
-    ardroneImuStampTime  = ardroneImuStampTime(1:arEnd);
-    ardroneImuOrientQuat = ardroneImuOrientQuat(:,1:arEnd);
-    ardroneImuVAng       = ardroneImuVAng(:,1:arEnd);
-
-    % Select corresponding time frame in ardroneNav data
-    [~,arEnd]   = min(abs(ardroneNavStampTime-ardroneOdomStampTime(end)));
-    ardroneNavStampTime = ardroneNavStampTime(1:arEnd);
-    ardroneNavAltd      = ardroneNavAltd(1:arEnd);
-    ardroneNavVLin      = ardroneNavVLin(:,1:arEnd);
-    ardroneNavRot       = ardroneNavRot(:,1:arEnd);
-end
-
-% Align time frames and start at 0
-ardroneImuStampTime  = ardroneImuStampTime  - optitrackStampTime(1);
-ardroneNavStampTime  = ardroneNavStampTime  - optitrackStampTime(1);
-ardroneOdomStampTime = ardroneOdomStampTime - optitrackStampTime(1);
-optitrackStampTime   = optitrackStampTime   - optitrackStampTime(1);
+%% Ensure proper offset and scaling of linear and angular quantities
+% OptiTrack
+tAvg = 3;
+[~,otAvgEnd] = min(abs(origOtTime-tAvg));
+otPos = otPos - mean(origOtPos(:,1:otAvgEnd),2);
+otOrient(1:2,:) = otOrient(1:2,:) - mean(origOtOrient(1:2,1:otAvgEnd),2);
+psiOffset = mean(otOrient(3,1:otAvgEnd));
 
 
-%% Convert quaternions to Euler angles
-optitrackOrient = quat2EulAndWrap(optitrackOrientQuat,0);
-ardroneImuOrient = quat2EulAndWrap(ardroneImuOrientQuat,0);
-ardroneOdomOrient = quat2EulAndWrap(ardroneOdomOrientQuat,0);
+%% Edit linear quantities (position/linear velocity)
+navAltd = navAltd/1000;
+navVLin = navVLin/1000;
 
 
-%% TODO Zero data using average of first 9 seconds
-tAvg = 9;
+%% Edit angular quantities (orientation/angular velocity)
+% OptiTrack
+otOrient = [0,-1,0;1,0,0;0,0,1]*otOrient + [0;0;pi/2];
+otOrient = otOrient - otOrient(:,1);
+otOrient = unwrap(otOrient);
 
-% Zero Optitrack data
-[~,otAvgEnd] = min(abs(optitrackStampTime-tAvg));
-optitrackPos = optitrackPos - mean(optitrackPos(:,1:otAvgEnd),2);
-optitrackOrient = optitrackOrient - mean(optitrackOrient(:,1:otAvgEnd),2);
+% AR.Drone 2.0 IMU
+imuOrient = [-1,0,0;0,-1,0;0,0,1]*imuOrient + [0;0;0];
+imuOrient = imuOrient - imuOrient(:,1);
+imuOrient = unwrap(imuOrient);
 
-% Zero AR.Drone 2.0 IMU data
-[~,arAvgEnd] = min(abs(ardroneImuStampTime-tAvg));
-ardroneImuOrient = ardroneImuOrient - ...
-                   mean(ardroneImuOrient(:,1:arAvgEnd),2);
-ardroneImuVAng   = ardroneImuVAng - mean(ardroneImuVAng(:,1:arAvgEnd),2);
+% AR.Drone 2.0 navdata
+navOrient = navRot/180*pi;
+navOrient = navOrient - navOrient(:,1);
+navOrient = unwrap(navOrient);
 
-% Zero AR.Drone 2.0 navdata data
-[~,arAvgEnd] = min(abs(ardroneNavStampTime-tAvg));
-ardroneNavAltd = ardroneNavAltd - mean(ardroneNavAltd(:,1:arAvgEnd),2);
-ardroneNavVLin = ardroneNavVLin - mean(ardroneNavVLin(:,1:arAvgEnd),2);
-ardroneNavRot  = ardroneNavRot - mean(ardroneNavRot(:,1:arAvgEnd),2);
-
-% Zero AR.Drone 2.0 odometry data
-[~,arAvgEnd] = min(abs(ardroneOdomStampTime-tAvg));
-ardroneOdomPos    = ardroneOdomPos - mean(ardroneOdomPos(:,1:arAvgEnd),2);
-ardroneOdomVLin   = ardroneOdomVLin - ...
-                    mean(ardroneOdomVLin(:,1:arAvgEnd),2);
-ardroneOdomOrient = ardroneOdomOrient - ...
-                    mean(ardroneOdomOrient(:,1:arAvgEnd),2);
-ardroneOdomVAng   = ardroneOdomVAng - ...
-                    mean(ardroneOdomVAng(:,1:arAvgEnd),2);
+% AR.Drone 2.0 odometry
+odomOrient = [-1,0,0;0,-1,0;0,0,1]*odomOrient + [0;0;0];
+odomOrient = odomOrient - odomOrient(:,1);
+odomOrient = unwrap(odomOrient);
 
 
-%% Edit Optitrack data
-
-
-%% Edit AR.Drone 2.0 IMU data
-
-
-%% Edit AR.Drone 2.0 navdata
-ardroneNavAltd = ardroneNavAltd/1000;
-ardroneNavVLin = ardroneNavVLin/1000;
-ardroneNavRot  = unwrap(ardroneNavRot/180*pi);
-
-
-%% Edit AR.Drone 2.0 odometry data
+% %% TODO Zero data using average of first 9 seconds
+% tAvg = 9;
+% 
+% % Zero Optitrack data
+% [~,otAvgEnd] = min(abs(optitrackStampTime-tAvg));
+% optitrackPos = optitrackPos - mean(optitrackPos(:,1:otAvgEnd),2);
+% optitrackOrient = optitrackOrient - mean(optitrackOrient(:,1:otAvgEnd),2);
+% 
+% % Zero AR.Drone 2.0 IMU data
+% [~,arAvgEnd] = min(abs(ardroneImuStampTime-tAvg));
+% ardroneImuOrient = ardroneImuOrient - ...
+%                    mean(ardroneImuOrient(:,1:arAvgEnd),2);
+% ardroneImuVAng   = ardroneImuVAng - mean(ardroneImuVAng(:,1:arAvgEnd),2);
+% 
+% % Zero AR.Drone 2.0 navdata data
+% [~,arAvgEnd] = min(abs(ardroneNavStampTime-tAvg));
+% ardroneNavAltd = ardroneNavAltd - mean(ardroneNavAltd(:,1:arAvgEnd),2);
+% ardroneNavVLin = ardroneNavVLin - mean(ardroneNavVLin(:,1:arAvgEnd),2);
+% ardroneNavRot  = ardroneNavRot - mean(ardroneNavRot(:,1:arAvgEnd),2);
+% 
+% % Zero AR.Drone 2.0 odometry data
+% [~,arAvgEnd] = min(abs(ardroneOdomStampTime-tAvg));
+% ardroneOdomPos    = ardroneOdomPos - mean(ardroneOdomPos(:,1:arAvgEnd),2);
+% ardroneOdomVLin   = ardroneOdomVLin - ...
+%                     mean(ardroneOdomVLin(:,1:arAvgEnd),2);
+% ardroneOdomOrient = ardroneOdomOrient - ...
+%                     mean(ardroneOdomOrient(:,1:arAvgEnd),2);
+% ardroneOdomVAng   = ardroneOdomVAng - ...
+%                     mean(ardroneOdomVAng(:,1:arAvgEnd),2);
 
 
 %% TODO Convert AR.Drone 2.0 on-board data to inertial frame
@@ -265,81 +265,74 @@ ardroneNavRot  = unwrap(ardroneNavRot/180*pi);
 % TODO: construct rotation matrix for rotational dynamics
 
 
-
-%% Create plot styling settings
-% set(0,'defaultAxesTickLabelInterpreter','latex');
-% set(0,'defaultlegendinterpreter','latex');
-
-
-%% Compare position sources
+%% Compare position, linear velocity, orientation and angular velocity of
+%  OptiTrack and different sensors in AR.Drone 2.0
 figure('Name','Position');
 subplot(3,1,1);
-plot(optitrackStampTime,optitrackPos(1,:));
+plot(t,otPos(1,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomPos(1,:));
+plot(t,odomPos(1,:));
 legend('Optitrack','AR.Drone 2.0 odometry');
 title('x');
 xlabel('Time (s)');
 ylabel('x (m)');
 
 subplot(3,1,2);
-plot(optitrackStampTime,optitrackPos(2,:));
+plot(t,otPos(2,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomPos(2,:));
+plot(t,odomPos(2,:));
 legend('Optitrack','AR.Drone 2.0 odometry');
 title('y');
 xlabel('Time (s)');
 ylabel('y (m)');
 
 subplot(3,1,3);
-plot(optitrackStampTime,optitrackPos(3,:));
+plot(t,otPos(3,:));
 hold on;
-plot(ardroneNavStampTime,ardroneNavAltd);
-plot(ardroneOdomStampTime,ardroneOdomPos(3,:));
+plot(t,navAltd);
+plot(t,odomPos(3,:));
 legend('Optitrack','AR.Drone 2.0 navdata','AR.Drone 2.0 odometry');
 title('z');
 xlabel('Time (s)');
 ylabel('z (m)');
 
 
-%% Compare linear velocity sources
 figure('Name','Linear velocity');
 subplot(3,1,1);
-plot(ardroneNavStampTime,ardroneNavVLin(1,:));
+plot(t,navVLin(1,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomVLin(1,:));
+plot(t,odomVLin(1,:));
 legend('AR.Drone 2.0 navdata','AR.Drone 2.0 odometry');
 title('$\dot{x}$','Interpreter','latex');
 xlabel('Time (s)');
 ylabel('$\dot{x}$ (m/s)','Interpreter','latex');
 
 subplot(3,1,2);
-plot(ardroneNavStampTime,ardroneNavVLin(2,:));
+plot(t,navVLin(2,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomVLin(2,:));
+plot(t,odomVLin(2,:));
 legend('AR.Drone 2.0 navdata','AR.Drone 2.0 odometry');
 title('$\dot{y}$','Interpreter','latex');
 xlabel('Time (s)');
 ylabel('$\dot{y}$ (m/s)','Interpreter','latex');
 
 subplot(3,1,3);
-plot(ardroneNavStampTime,ardroneNavVLin(3,:));
+plot(t,navVLin(3,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomVLin(3,:));
+plot(t,odomVLin(3,:));
 legend('AR.Drone 2.0 navdata','AR.Drone 2.0 odometry');
 title('$\dot{z}$','Interpreter','latex');
 xlabel('Time (s)');
 ylabel('$\dot{z}$ (m/s)','Interpreter','latex');
 
 
-%% Compare orientation sources
 figure('Name','Orientation');
 subplot(3,1,1);
-plot(optitrackStampTime,optitrackOrient(2,:));
+plot(t,otOrient(1,:));
 hold on;
-plot(ardroneImuStampTime,ardroneImuOrient(1,:));
-plot(ardroneNavStampTime,ardroneNavRot(1,:));
-plot(ardroneOdomStampTime,ardroneOdomOrient(1,:));
+plot(t,imuOrient(1,:));
+plot(t,navOrient(1,:));
+plot(t,odomOrient(1,:));
 legend('Optitrack','AR.Drone 2.0 IMU','AR.Drone 2.0 navdata',...
        'AR.Drone 2.0 odometry');
 title('\phi');
@@ -347,11 +340,11 @@ xlabel('Time (s)');
 ylabel('\phi (rad)');
 
 subplot(3,1,2);
-plot(optitrackStampTime,optitrackOrient(1,:));
+plot(t,otOrient(2,:));
 hold on;
-plot(ardroneImuStampTime,-ardroneImuOrient(2,:));
-plot(ardroneNavStampTime,ardroneNavRot(2,:));
-plot(ardroneOdomStampTime,-ardroneOdomOrient(2,:));
+plot(t,imuOrient(2,:));
+plot(t,navOrient(2,:));
+plot(t,odomOrient(2,:));
 legend('Optitrack','AR.Drone 2.0 IMU','AR.Drone 2.0 navdata',...
        'AR.Drone 2.0 odometry');
 title('\theta');
@@ -359,11 +352,11 @@ xlabel('Time (s)');
 ylabel('\theta (rad)');
 
 subplot(3,1,3);
-plot(optitrackStampTime,optitrackOrient(3,:));
+plot(t,otOrient(3,:));
 hold on;
-plot(ardroneImuStampTime,ardroneImuOrient(3,:));
-plot(ardroneNavStampTime,ardroneNavRot(3,:));
-plot(ardroneOdomStampTime,ardroneOdomOrient(3,:));
+plot(t,imuOrient(3,:));
+plot(t,navOrient(3,:));
+plot(t,odomOrient(3,:));
 legend('Optitrack','AR.Drone 2.0 IMU','AR.Drone 2.0 navdata',...
        'AR.Drone 2.0 odometry');
 title('\psi');
@@ -371,36 +364,31 @@ xlabel('Time (s)');
 ylabel('\psi (rad)');
 
 
-%% Compare angular velocity sources
 figure('Name','Angular velocity');
 subplot(3,1,1);
-plot(ardroneImuStampTime,ardroneImuVAng(1,:));
+plot(t,imuVAng(1,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomVAng(1,:));
+plot(t,odomVAng(1,:));
 legend('AR.Drone 2.0 IMU','AR.Drone 2.0 odometry');
 title('$\dot{\phi}$','Interpreter','latex');
 xlabel('Time (s)');
 ylabel('$\dot{\phi}$ (rad)','Interpreter','latex');
 
 subplot(3,1,2);
-plot(ardroneImuStampTime,ardroneImuVAng(2,:));
+plot(t,imuVAng(2,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomVAng(2,:));
+plot(t,odomVAng(2,:));
 legend('AR.Drone 2.0 IMU','AR.Drone 2.0 odometry');
 title('$\dot{\theta}$','Interpreter','latex');
 xlabel('Time (s)');
 ylabel('$\dot{\theta}$ (rad)','Interpreter','latex');
 
 subplot(3,1,3);
-plot(ardroneImuStampTime,ardroneImuVAng(3,:));
+plot(t,imuVAng(3,:));
 hold on;
-plot(ardroneOdomStampTime,ardroneOdomVAng(3,:));
+plot(t,odomVAng(3,:));
 legend('AR.Drone 2.0 IMU','AR.Drone 2.0 odometry');
 title('$\dot{\psi}$','Interpreter','latex');
 xlabel('Time (s)');
 ylabel('$\dot{\psi }$(rad)','Interpreter','latex');
 
-
-%% Reset plot styling settings
-% set(0,'defaultAxesTickLabelInterpreter','none');
-% set(0,'defaultlegendinterpreter','none');
