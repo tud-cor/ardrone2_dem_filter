@@ -3,14 +3,20 @@ clear;
 close all;
 clc;
 
-% % Parameters
-% eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
-% 
-% 
-% %% Set variables
+% For OptiTrack noise:
+% - optitrackNoiseTest (from ardrone2_exp_2020-07-24_4.bag)
+
+% For gyro noise:
+% - gyroNoiseTest (from ardrone2DroneSensorNoise.bag)
+
+% Parameters
+eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
+
+
+%% Set variables
 % % Retrieve bag file
 % cd ~/.ros;
-% bag = rosbag("ardrone2_exp_2020-07-24_4.bag");
+% bag = rosbag("ardrone2DroneSensorNoise2.bag");
 % cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 % 
 % % Select topics that need to be stored
@@ -20,8 +26,9 @@ clc;
 % % Simulation/flight data topics
 % topics.modelInput = 0;
 % topics.gazeboModelStates = 0;
-% topics.optitrack = 1;
-% topics.ardroneNavdata = 0;
+% topics.optitrack = 0;
+% topics.ardroneImu = 1;
+% topics.ardroneNav = 0;
 % topics.ardroneOdom = 0;
 % topics.rotorsMotorSpeed = 0;
 % 
@@ -45,13 +52,20 @@ clc;
 %     optitrackOrientQuat = topicsOut.optitrack.orient;
 % end
 % 
-% if topics.ardroneNavdata
-%     ardroneNavdataStampTime = topicsOut.ardroneNavdata.stampTime;
-%     ardroneNavdataRecordTime = topicsOut.ardroneNavdata.recordTime;
-%     ardroneNavdataMotor = topicsOut.ardroneNavdata.motor;
-%     ardroneNavdataRot = topicsOut.ardroneNavdata.rot;
-%     ardroneNavdataVLin = topicsOut.ardroneNavdata.vLin;
-%     ardroneNavdataALin = topicsOut.ardroneNavdata.aLin;
+% if topics.ardroneImu
+%     ardroneImuStampTime  = topicsOut.ardroneImu.stampTime;
+%     ardroneImuRecordTime  = topicsOut.ardroneImu.recordTime;
+%     ardroneImuOrientQuat = topicsOut.ardroneImu.orient;
+%     ardroneImuVAng       = topicsOut.ardroneImu.vAng;
+% end
+% 
+% if topics.ardroneNav
+%     ardroneNavStampTime = topicsOut.ardroneNav.stampTime;
+%     ardroneNavRecordTime = topicsOut.ardroneNav.recordTime;
+%     ardroneNavMotor = topicsOut.ardroneNav.motor;
+%     ardroneNavRot = topicsOut.ardroneNav.rot;
+%     ardroneNavVLin = topicsOut.ardroneNav.vLin;
+%     ardroneNavALin = topicsOut.ardroneNav.aLin;
 % end
 % 
 % if topics.ardroneOdom
@@ -62,10 +76,10 @@ clc;
 %     ardroneOdomVLin = topicsOut.ardroneOdom.vLin;
 %     ardroneOdomVAng = topicsOut.ardroneOdom.vAng;
 % end
-% 
-% 
+
+
 % %% Select suitable time frames
-% % Plot position data to search for time where x and y are constant
+% % Plot data to search for time where quantities are constant
 % figure('Name','OptiTrack position data');
 % hold on;
 % plot(optitrackStampTime,optitrackPos(1,:),'-o');
@@ -118,6 +132,29 @@ clc;
 % subplot(3,1,3);
 % plot(optitrackStampTime,optitrackOrient(3,:),'-o');
 % title('\psi');
+
+
+% %% Select suitable time frames
+% % Plot data to search for time where quantities are constant
+% figure('Name','AR.Drone 2.0 IMU angular velocity');
+% hold on;
+% plot(ardroneImuStampTime,ardroneImuVAng(1,:),'-o');
+% plot(ardroneImuStampTime,ardroneImuVAng(2,:),'-o');
+% plot(ardroneImuStampTime,ardroneImuVAng(3,:),'-o');
+% 
+% % Select data samples to use
+% prompt = {'Enter index of 1st data sample:',...
+%           'Enter index of last data sample:'};
+% dlgtitle = 'Data selection';
+% dims = [1 35];
+% definput = {'1',num2str(length(ardroneImuStampTime))};
+% answer = inputdlg(prompt,dlgtitle,dims,definput);
+% imuStart = round(str2double(answer{1}));
+% imuEnd = round(str2double(answer{2}));
+% 
+% % Select proper OptiTrack data
+% ardroneImuStampTime = ardroneImuStampTime(imuStart:imuEnd);
+% ardroneImuVAng = ardroneImuVAng(:,imuStart:imuEnd);
 % 
 % 
 % %% Interpolate data
@@ -125,9 +162,16 @@ clc;
 % fs = 120;
 % measNoiseData.sampleTime = 1/fs;
 % 
-% % OptiTrack data
-% data.time = optitrackStampTime;
-% data.value = [optitrackPos;optitrackOrient];
+% % % OptiTrack data
+% % data.time = optitrackStampTime;
+% % data.value = [optitrackPos;optitrackOrient];
+% % tmp = interpolate(measNoiseData.sampleTime,data);
+% % time = tmp.time;
+% % z = tmp.value;
+% 
+% % AR.Drone 2.0 IMU data
+% data.time = ardroneImuStampTime;
+% data.value = ardroneImuVAng;
 % tmp = interpolate(measNoiseData.sampleTime,data);
 % time = tmp.time;
 % z = tmp.value;
@@ -136,15 +180,32 @@ clc;
 % %% Ensure data start at time 0 and data is zeroed
 % time = time - time(1);
 % z = z - z(:,1);
-% figure('Name','Position');
+% 
+% % OptiTrack data
+% % figure('Name','Position');
+% % plot(time,z(1:3,:)');
+% % figure('Name','Orientation');
+% % plot(time,z(4:6,:)');
+% 
+% % AR.Drone 2.0 IMU data
+% figure('Name','Angular velocity');
 % plot(time,z(1:3,:)');
-% figure('Name','Orientation');
-% plot(time,z(4:6,:)');
+% 
+% 
+% %% Save data to speed up
+% % OptiTrack data
+% % save('optiTrackNoiseTest.mat','time','z');
+% 
+% % AR.Drone 2.0 IMU data
+% save('ardroneImuNoiseTest.mat','time','z');
 
 
-%% To speed up the process: code above is commented and a dedicated mat
-%  file is loaded
-load optiTrackNoiseTest.mat;
+%% Load data to speed up
+% OptiTrack data
+% load optiTrackNoiseTest.mat;
+
+% AR.Drone 2.0 IMU data
+load ardroneImuNoiseTest.mat;
 
 
 %% Calculate noise characteristics of OptiTrack position and orientation
@@ -160,20 +221,20 @@ load optiTrackNoiseTest.mat;
 % end
 
 time = time(1:1000);
-z = z(:,1:1000);
+z = z(2,1:1000);
 
-[SigmaZEst1,sZEst1] = estimateNoiseCharacteristics(time,z,0,0);
+[SigmaZEst1,sZEstGaussian] = estimateNoiseCharacteristics(time,z,1,1);
 
-[sZEst2] = estimateSmoothness(time,z);
+[sZEstFriston] = estimateSmoothness(time,z);
 
 
 %% Save expData data
 measNoiseData.time      = time;
 measNoiseData.z         = z;
 measNoiseData.nSamples  = 1000;
-measNoiseData.dataName  = 'exp_24-7_0-40s';
+measNoiseData.dataName  = 'ardrone2DroneSensorNoise';
 measNoiseData.SigmaEst1 = SigmaZEst1;
-measNoiseData.sEst1     = sZEst1;
-measNoiseData.sEst2     = sZEst2;
+measNoiseData.sEst1     = sZEstGaussian;
+measNoiseData.sEst2     = sZEstFriston;
 filename = sprintf('measNoiseData_%s',datestr(now,'dd-mm-yyyy_HH-MM'));
 save(filename,'measNoiseData');

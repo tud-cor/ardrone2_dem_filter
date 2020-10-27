@@ -79,26 +79,49 @@ for i = 1:nDur
 end
 u = T;
 
+% Convert to input around operating point
+uOp = param.m*param.g;
+uLin = u - uOp;
 
-%% Construct output data
-% % Remove sensor offsets
+
+%% Construct ground truth state data
+% Remove sensor offsets
 tAvg = 3;
-
 [~,otAvgEnd] = min(abs(expData.origData.otTime-tAvg));
 x = expData.output.otPos(3,:) - mean(expData.origData.otPos(3,1:otAvgEnd));
 
-% Store output data
-y = expData.output.odomPos(3,:);
+% Convert to state around operating point
+xOp = mean(x);
+xLin = x - xOp;
+
+
+%% Construct output data
+% Remove sensor offsets
+[~,odomAvgEnd] = min(abs(expData.origData.odomTime-tAvg));
+y = expData.output.odomPos(3,:) - ...
+    mean(expData.output.odomPos(3,1:odomAvgEnd));
+
+% Convert to output around operating point
+yOp = mean(x);
+yLin = y - yOp;
+
+% Ensure that output and ground truth data are aligned at the start
+yLin = yLin + (xLin(1)-yLin(1));
 
 % Calculate noise properties of output noise
-sigma = zeros(ny,ny);
-s     = zeros(ny,1);
-[sigma,s] = estimateNoiseCharacteristics(t,y,1,1);
-s2 = estimateSmoothness(t,y);
+ySigma = 0.0406;
+yS = 0.1;
+yS2 = 0.0119;
+% ySigma = zeros(ny,ny);
+% yS     = zeros(ny,1);
+% [ySigma,yS] = estimateNoiseCharacteristics(t,yLin,1,1);
+% yS2 = estimateSmoothness(t,yLin);
 
 
 %% Save data
-save('ardrone2FlightData.mat',...
+filename = sprintf('demCode/ardrone2FlightDataZ_%s',...
+                   datestr(now,'dd-mm-yyyy_HH-MM'));
+save(filename,...
      't','ts',...
-     'u','x','y','sigma','s','s2',...
+     'uLin','xLin','yLin','ySigma','yS','yS2',...
      'A','B','C');

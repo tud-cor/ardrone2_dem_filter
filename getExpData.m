@@ -6,12 +6,13 @@ clc;
 
 %% Adjustable parameters
 % Name of rosbag in ./ros
-bagname = 'ardrone2_exp_2020-07-24_3.bag';
+bagname = 'ardrone2_exp_2020-07-24_8.bag';
 
 % Time interval with respect to start of rosbag recording
-time = [140,180]; %exp7-24_3 -> use samples 1300-4500
+% time = [140,180]; %exp7-24_3 -> use samples 1300-4500
 % time = [0,15]; %exp7-24_7
 % time = [0,36]; %exp7-24_8
+time = [0,40];
 
 % Topic selection
 topics.cmdVel = 0;
@@ -19,7 +20,7 @@ topics.modelInput = 0;
 topics.gazeboModelStates = 0;
 topics.rotorsMotorSpeed = 0;
 topics.optitrack = 1;
-topics.ardroneImu = 0;
+topics.ardroneImu = 1;
 topics.ardroneNav = 1;
 topics.ardroneOdom = 1;
 
@@ -194,17 +195,20 @@ hold on;
 plot(optitrackStampTime,optitrackPos(1,:),'-o');
 plot(optitrackStampTime,optitrackPos(2,:),'-o');
 plot(optitrackStampTime,optitrackPos(3,:),'-o');
+keyboard;
 
 % Select data samples to use
-prompt   = {'Enter index of 1st data sample:',...
-            'Enter index of last data sample:'};
-dlgtitle = 'Data selection';
-dims     = [1 35];
-definput = {num2str(sampleThresOt),...
-            num2str(length(optitrackStampTime)-sampleThresOt)};
-answer   = inputdlg(prompt,dlgtitle,dims,definput);
-otStart  = round(str2double(answer{1}));
-otEnd    = round(str2double(answer{2}));
+prompt      = {'Enter index of 1st data sample:',...
+               'Enter index of last data sample:'};
+dlgtitle    = 'Data selection';
+dims        = [1 35];
+definput    = {num2str(optitrackStampTime(sampleThresOt)),...
+               num2str(optitrackStampTime(end-sampleThresOt))};
+answer      = inputdlg(prompt,dlgtitle,dims,definput);
+startTime   = round(str2double(answer{1}));
+endTime     = round(str2double(answer{2}));
+[~,otStart] = min(abs(optitrackStampTime-startTime));
+[~,otEnd]   = min(abs(optitrackStampTime-endTime));
 if otStart < sampleThresOt
     error(['Please give a higher index of the 1st sample to ensure '...
            'data consistency after interpolation']);
@@ -350,5 +354,5 @@ end
 
 
 %% Save expData data
-filename = sprintf('bagdata_%s', datestr(now,'dd-mm-yyyy_HH-MM'));
-save(filename, 'expData');
+filename = sprintf('bagdata_%s',datestr(now,'dd-mm-yyyy_HH-MM'));
+save(filename,'expData');
