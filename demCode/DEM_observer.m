@@ -65,12 +65,14 @@ brain.s = model.s;
 % Dataset, so model.p and model.d can be ignored
 model.p = 6; %embedding order states in model
 model.d = 2; %embedding order inputs in model
-brain.p = 6; %embedding order states; orig:6
+brain.p = 2; %embedding order states; orig:6
 brain.d = 0; %embedding order inputs; orig:2
 
 % TODO Standard deviations - probably tune
 % model.sigma_z is estimated from data; orig:exp(-4)
 model.sigma_w = model.sigma_z; %orig:exp(-4)
+% model.sigma_w = 0.001;
+% model.sigma_z = 0.1;
 brain.sigma_v = 10; %prior of standard deviation of input; orig:exp(4)
 brain.sigma_w = model.sigma_w;
 brain.sigma_z = model.sigma_z;
@@ -87,7 +89,6 @@ model.prior_cause = 0.01*ones(brain.nv,brain.nt); %orig:0.5*...
 brain.Y_embed = generalized_process(model.process_y,model.prior_cause,...
                                     model.t,model.sam_time,...
                                     brain.nv,brain.ny,brain.p,brain.d);
-
 
 %% Run filters
 output = observer(model,brain,if_UIO,UIO_gamma,if_cause,if_dataset,...

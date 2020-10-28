@@ -12,6 +12,6 @@ x = xLin';
 y = yLin';
 sigma = ySigma;
 s = yS;
-% sigma = 1e-4;
+% sigma = 0.1;
 % s = 0.01;
 end

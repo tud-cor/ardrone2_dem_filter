@@ -144,11 +144,19 @@ uLin = uLin - 0.022;
 % cntU = cntU + 1;
 % end
 % end
+% 
 % q = expData.output.imuVAng(2,:);
-% cntY = 0;
-% for i = 1:length(q)-1
-% if q(i+1) - q(i) > 0
-% cntY = cntY + 1;
+% p = 1;
+% o = 6;
+% nOffset = ceil((p+0)/2);
+% E = f_finitediffmat(ts,1,6,1,'c');
+% for i = nOffset+1:length(q)-nOffset
+%     a(i) = E(2,:)*q(i-nOffset:i+nOffset)';
+% end
+% cntA = 0;
+% for i = 1:length(a)
+% if a(i) > 0
+% cntA = cntA + 1;
 % end
 % end
 
