@@ -148,4 +148,4 @@ end
 
 %% Plot data
 print_results(SSE,if_UIO,if_cause);
-plot_results(output,model,brain,if_UIO,if_cause);
+plot_results(output,model,brain,if_UIO,if_cause,xh);

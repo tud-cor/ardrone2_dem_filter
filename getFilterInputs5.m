@@ -3,6 +3,9 @@ clear;
 close all;
 clc;
 
+% Parameters
+degToRad = 2*pi/180;
+
 
 %% System parameters
 % Environmental constants
@@ -160,7 +163,9 @@ otOrientC = rotz(-psiOffset/pi*180)*expData.output.otOrient + [0;0;pi/2];
 
 x = otOrientC(2,:) - mean(expData.origData.otOrient(2,1:otAvgEnd));
 
-% x = expData.output.navOrient(2,:) - mean(expData.origData.navOrient
+% [~,navAvgEnd] = min(abs(expData.origData.navTime - expData.origData.navTime - tAvg));
+% x = expData.output.navRot(2,:)*degToRad - ...
+%     mean(expData.origData.navRot(2,1:navAvgEnd))*degToRad;
 
 % Convert to state around operating point
 xOp = [0;0;0];
