@@ -6,13 +6,13 @@ clc;
 
 %% Adjustable parameters
 % Name of rosbag in ./ros
-bagname = 'ardrone2_exp_2020-07-24_8.bag';
+bagname = 'ardrone2_exp_2020-10-29_25_batP1.bag';
 
 % Time interval with respect to start of rosbag recording
 % time = [140,180]; %exp7-24_3 -> use samples 1300-4500
 % time = [0,15]; %exp7-24_7
 % time = [0,36]; %exp7-24_8
-time = [0,40];
+time = [0,80]; %exp10-29_25 - wind mode 2
 
 % Topic selection
 topics.cmdVel = 0;
@@ -29,8 +29,11 @@ highFreq = 0;
 
 
 %% Constant parameters
-eulThres = 6;    %minimum difference in Euler angle to compensate for jumps
-floatTol = 1e-6; %number with a smaller accuracy are treated as 0
+deg2rad = 2*pi/180; %conversion factor from degrees to radians
+eulThres = 6;       %minimum difference in Euler angle to compensate for jumps
+floatTol = 1e-6;    %number with a smaller accuracy are treated as 0
+fs = 120;           %maximum sample frequency in Hz (limited by OptiTrack)
+g = 9.81;           %gravitational constant
 sampleThresOt = 10; %minimum amount of samples in the beginning and end of
 %                    Optitrack data that should be ignored in order to
 %                    successfully interpolate the data
@@ -42,7 +45,8 @@ cd ~/.ros;
 bag = rosbag(bagname);
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
-topicsOut = storeBagdata(bag,topics,time);
+% topicsOut = storeBagdata(bag,topics,time);
+load getExpData10_29_25.mat;
 % load getExpData7_24_8.mat;
 
 if topics.cmdVel
@@ -60,6 +64,7 @@ end
 
 if topics.ardroneImu
     ardroneImuStampTime  = topicsOut.ardroneImu.stampTime;
+    ardroneImuALin       = topicsOut.ardroneImu.aLin;
     ardroneImuOrientQuat = topicsOut.ardroneImu.orient;
     ardroneImuVAng       = topicsOut.ardroneImu.vAng;
 end
@@ -84,32 +89,92 @@ if topics.ardroneOdom
 end
 
 
-%% Convert quaternions to ZYX Euler angles
-optitrackOrient   = quat2EulAndWrap(optitrackOrientQuat,0);
+%% Ensure that all linear positions start at 0 and are given in [m]
+
+% TODO Check convention of odometry position!
+
+ardroneNavAltd = ardroneNavAltd/1000;
+
+% Remove offsets
+optitrackPos = optitrackPos - optitrackPos(:,1);
+ardroneNavAltd = ardroneNavAltd - ardroneNavAltd(1);
+ardroneOdomPos = ardroneOdomPos - ardroneOdomPos(:,1);
+
+
+%% Ensure that all linear velocities are given in [m/s]
+ardroneNavVLin = ardroneNavVLin/1000;
+
+% No adjustments to odometry
+
+
+%% Ensure that all linear accelerations are given in [m/s^2]
+% No adjustments to IMU (take care: z is starting at ~9.81 m/s^2)
+
+% (take care: z is starting at ~9.81 m/s^2)
+ardroneNavALin = ardroneNavALin*g;
+
+
+%% Ensure that all orientations are given in ZYX Euler angles, start at 0
+%  and are given in [rad]
+
+% TODO Convert all angles from AR.Drone 2.0 to inertial frame!
+
+% Convert quaternion from ROS convention (x,y,z,w)
+%                    to MATLAB convention (w,x,y,z)
+optitrackOrientQuat      = [optitrackOrientQuat(4,:);...
+                            optitrackOrientQuat(1:3,:)];
 if topics.ardroneImu
-    ardroneImuOrient  = quat2EulAndWrap(ardroneImuOrientQuat,0);
+    ardroneImuOrientQuat = [ardroneImuOrientQuat(4,:);...
+                            ardroneImuOrientQuat(1:3,:)];
 end
-ardroneOdomOrient = quat2EulAndWrap(ardroneOdomOrientQuat,0);
+ardroneOdomOrientQuat    = [ardroneOdomOrientQuat(4,:);...
+                            ardroneOdomOrientQuat(1:3,:)];
+
+% Convert quaternions to ZYX Euler angles: [Z;Y;X]
+optitrackOrient      = quat2eul(optitrackOrientQuat','ZYX')';
+if topics.ardroneImu
+    ardroneImuOrient = quat2eul(ardroneImuOrientQuat','ZYX')';
+end
+ardroneOdomOrient    = quat2eul(ardroneOdomOrientQuat','ZYX')';
+
+
+% Convert navdata to radians and to [Z;Y;X] convention
+ardroneNavOrient = ardroneNavRot*deg2rad;
+ardroneNavOrient = [ardroneNavOrient(3,:);ardroneNavOrient(2,:);...
+                    ardroneNavOrient(1,:)];
+
+% Remove offsets
+optitrackOrient   = optitrackOrient - optitrackOrient(:,1);
+ardroneImuOrient  = ardroneImuOrient - ardroneImuOrient(:,1);
+ardroneOdomOrient = ardroneOdomOrient - ardroneOdomOrient(:,1);
+ardroneNavOrient  = ardroneNavOrient - ardroneNavOrient(:,1);
+
+
+%% Ensure all angular velocities are given in [rad/s]
+% No adjustments to IMU
+
+% Odometry is 0!
 
 
 %% Save original data in expData struct with aligned times starting at 0
 % Save data
-expData.origData.otTime     = optitrackStampTime;
-expData.origData.otPos      = optitrackPos;
-expData.origData.otOrient   = optitrackOrient;
+expData.origData.otTime   = optitrackStampTime;
+expData.origData.otPos    = optitrackPos;
+expData.origData.otOrient = optitrackOrient;
 
 if topics.ardroneImu
-    expData.origData.imuTime    = ardroneImuStampTime;
-    expData.origData.imuOrient  = ardroneImuOrient;
-    expData.origData.imuVAng    = ardroneImuVAng;
+    expData.origData.imuTime   = ardroneImuStampTime;
+    expData.origData.imuALin   = ardroneImuALin;
+    expData.origData.imuOrient = ardroneImuOrient;
+    expData.origData.imuVAng   = ardroneImuVAng;
 end
 
-expData.origData.navTime    = ardroneNavStampTime;
-expData.origData.navMotor   = ardroneNavMotor;
-expData.origData.navAltd    = ardroneNavAltd;
-expData.origData.navVLin    = ardroneNavVLin;
-expData.origData.navALin    = ardroneNavALin;
-expData.origData.navRot     = ardroneNavRot;
+expData.origData.navTime   = ardroneNavStampTime;
+expData.origData.navMotor  = ardroneNavMotor;
+expData.origData.navAltd   = ardroneNavAltd;
+expData.origData.navVLin   = ardroneNavVLin;
+expData.origData.navALin   = ardroneNavALin;
+expData.origData.navOrient = ardroneNavOrient;
 
 expData.origData.odomTime   = ardroneOdomStampTime;
 expData.origData.odomPos    = ardroneOdomPos;
@@ -190,11 +255,12 @@ end
 
 %% Select suitable time frames
 % Plot position data to search for time where x and y are constant
+optitrackPlotTime = optitrackStampTime - optitrackStampTime(1);
 figure('Name','OptiTrack position data');
 hold on;
-plot(optitrackStampTime,optitrackPos(1,:),'-o');
-plot(optitrackStampTime,optitrackPos(2,:),'-o');
-plot(optitrackStampTime,optitrackPos(3,:),'-o');
+plot(optitrackPlotTime,optitrackPos(1,:),'-o');
+plot(optitrackPlotTime,optitrackPos(2,:),'-o');
+plot(optitrackPlotTime,optitrackPos(3,:),'-o');
 keyboard;
 
 % Select data samples to use
@@ -202,11 +268,11 @@ prompt      = {'Enter index of 1st data sample:',...
                'Enter index of last data sample:'};
 dlgtitle    = 'Data selection';
 dims        = [1 35];
-definput    = {num2str(optitrackStampTime(sampleThresOt)),...
-               num2str(optitrackStampTime(end-sampleThresOt))};
+definput    = {num2str(optitrackPlotTime(sampleThresOt)),...
+               num2str(optitrackPlotTime(end-sampleThresOt))};
 answer      = inputdlg(prompt,dlgtitle,dims,definput);
-startTime   = round(str2double(answer{1}));
-endTime     = round(str2double(answer{2}));
+startTime   = round(str2double(answer{1})) + optitrackStampTime(1);
+endTime     = round(str2double(answer{2})) + optitrackStampTime(1);
 [~,otStart] = min(abs(optitrackStampTime-startTime));
 [~,otEnd]   = min(abs(optitrackStampTime-endTime));
 if otStart < sampleThresOt
@@ -228,6 +294,7 @@ if topics.ardroneImu
     [imuStart,imuEnd]   = findStartEndIdx(ardroneImuStampTime,...
                                            optitrackStampTime,floatTol);
     ardroneImuStampTime = ardroneImuStampTime(imuStart:imuEnd);
+    ardroneImuALin      = ardroneImuALin(:,imuStart:imuEnd);
     ardroneImuOrient    = ardroneImuOrient(:,imuStart:imuEnd);
     ardroneImuVAng      = ardroneImuVAng(:,imuStart:imuEnd);
 end
@@ -240,7 +307,7 @@ ardroneNavMotor     = ardroneNavMotor(:,navStart:navEnd);
 ardroneNavAltd      = ardroneNavAltd(navStart:navEnd);
 ardroneNavVLin      = ardroneNavVLin(:,navStart:navEnd);
 ardroneNavALin      = ardroneNavALin(:,navStart:navEnd);
-ardroneNavRot       = ardroneNavRot(:,navStart:navEnd);
+ardroneNavOrient    = ardroneNavOrient(:,navStart:navEnd);
 
 % Find AR.Drone 2.0 odometry data that fits within the Optitrack data
 [odomStart,odomEnd]  = findStartEndIdx(ardroneOdomStampTime,...
@@ -262,11 +329,12 @@ optitrackStampTime   = optitrackStampTime   - optitrackStampTime(1);
 
 %% Interpolate data
 % Sampling time
+ts = 1/fs;
 if highFreq
-    expData.sampleTime         = 0.04;
-    expData.sampleTimeHighFreq = 0.01;
+    expData.sampleTime         = 4*ts;
+    expData.sampleTimeHighFreq = ts;
 else
-    expData.sampleTime = 0.01;
+    expData.sampleTime = ts;
 end
 
 
@@ -290,26 +358,26 @@ end
 % AR.Drone 2.0 IMU data
 if topics.ardroneImu
     data.time  = ardroneImuStampTime;
-    data.value = [ardroneImuOrient;ardroneImuVAng];
+    data.value = [ardroneImuALin;ardroneImuOrient;ardroneImuVAng];
 
     tmp = interpolate(expData.output.time,data);
-    expData.output.imuOrient = tmp.value(1:3,:);
-    expData.output.imuVAng   = tmp.value(4:6,:);
+    expData.output.imuALin   = tmp.value(1:3,:);
+    expData.output.imuOrient = tmp.value(4:6,:);
+    expData.output.imuVAng   = tmp.value(7:9,:);
 end
 
 
 % AR.Drone 2.0 navdata
 data.time  = ardroneNavStampTime;
 data.value = [ardroneNavMotor;ardroneNavAltd;ardroneNavVLin;...
-              ardroneNavALin;ardroneNavRot];
+              ardroneNavALin;ardroneNavOrient];
 
 tmp = interpolate(expData.output.time,data);
-expData.input.time   = tmp.time;
-expData.input.navMotor  = tmp.value(1:4,:);
-expData.output.navAltd  = tmp.value(5,:);
-expData.output.navVLin  = tmp.value(6:8,:);
-expData.output.navALin  = tmp.value(9:11,:);
-expData.output.navRot   = tmp.value(12:14,:);
+expData.input.navMotor   = tmp.value(1:4,:);
+expData.output.navAltd   = tmp.value(5,:);
+expData.output.navVLin   = tmp.value(6:8,:);
+expData.output.navALin   = tmp.value(9:11,:);
+expData.output.navOrient = tmp.value(12:14,:);
 
 
 % AR.Drone 2.0 odometry
@@ -337,14 +405,15 @@ if highFreq
     expData.output.otOrient = expData.output.otOrient(:,2:end-1);
 
     if topics.ardroneImu
+        expData.output.imuALin   = expData.output.imuALin(:,2:end-1);
         expData.output.imuOrient = expData.output.imuOrient(:,2:end-1);
         expData.output.imuVAng   = expData.output.imuVAng(:,2:end-1);
     end
 
-    expData.output.navAltd  = expData.output.navAltd(2:end-1);
-    expData.output.navVLin  = expData.output.navVLin(:,2:end-1);
-    expData.output.navALin  = expData.output.navALin(:,2:end-1);
-    expData.output.navRot   = expData.output.navRot(:,2:end-1);
+    expData.output.navAltd   = expData.output.navAltd(2:end-1);
+    expData.output.navVLin   = expData.output.navVLin(:,2:end-1);
+    expData.output.navALin   = expData.output.navALin(:,2:end-1);
+    expData.output.navOrient = expData.output.navOrient(:,2:end-1);
 
     expData.output.odomPos    = expData.output.odomPos(:,2:end-1);
     expData.output.odomVLin   = expData.output.odomVLin(:,2:end-1);

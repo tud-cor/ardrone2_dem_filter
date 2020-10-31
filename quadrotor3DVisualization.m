@@ -1,7 +1,7 @@
 function quadrotor3DVisualization(sampleTime,state,plotTitle)
 % t: time array
 % x: {x,y,z} position in inertial frame
-%    {phi,theta,psi} ZYX Euler angles
+%    {psi,theta,phi} ZYX Euler angles
 
 % Standard parameters
 l = 0.178;  %rotor arm length
@@ -71,13 +71,13 @@ for t = 1:size(state,2)
     y = state(2,t);
     z = state(3,t);
     if size(state,1) < 12
-        phi = state(4,t);
+        psi = state(4,t);
         theta = state(5,t);
-        psi = state(6,t);
+        phi = state(6,t);
     else
-        phi = state(7,t);
+        psi = state(7,t);
         theta = state(8,t);
-        psi = state(9,t);
+        phi = state(9,t);
     end
 
     % Construct homogeneous transformation matrix

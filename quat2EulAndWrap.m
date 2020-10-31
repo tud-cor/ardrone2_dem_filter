@@ -6,7 +6,7 @@ eulThres = 6;
 x = x';
 orient = zeros(size(x,1),3);
 for i = 1:size(x,1)
-    orient(i,:) = quat2eul(x(i,:));
+    orient(i,:) = quat2eul(x(i,:),'ZYX');
 end
 orient = orient';
 

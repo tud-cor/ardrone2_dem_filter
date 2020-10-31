@@ -217,6 +217,7 @@ if topics.ardroneImu
     % Store data of model_states in arrays
     topicsOut.ardroneImu.stampTime = zeros(1,lenArdroneImu);
     topicsOut.ardroneImu.recordTime = zeros(1,lenArdroneImu);
+    topicsOut.ardroneImu.aLin = zeros(3,lenArdroneImu);
     topicsOut.ardroneImu.orient = zeros(4,lenArdroneImu);
     topicsOut.ardroneImu.vAng = zeros(3,lenArdroneImu);
 
@@ -226,6 +227,12 @@ if topics.ardroneImu
             msgsArdroneImu{i}.Header.Stamp.Nsec/1000000000;
         topicsOut.ardroneImu.recordTime(i) = ...
             bagArdroneImu.MessageList.Time(i);
+        topicsOut.ardroneImu.aLin(1,i) = ...
+            msgsArdroneImu{i}.LinearAcceleration.X;
+        topicsOut.ardroneImu.aLin(2,i) = ...
+            msgsArdroneImu{i}.LinearAcceleration.Y;
+        topicsOut.ardroneImu.aLin(3,i) = ...
+            msgsArdroneImu{i}.LinearAcceleration.Z;
         topicsOut.ardroneImu.orient(1,i) = ...
             msgsArdroneImu{i}.Orientation.X;
         topicsOut.ardroneImu.orient(2,i) = ...

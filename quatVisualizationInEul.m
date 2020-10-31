@@ -7,7 +7,7 @@ clc;
 %% Load quaternion data
 % Retrieve bag file
 cd ~/.ros;
-bag = rosbag("ardrone2_exp_2020-07-24_3.bag");
+bag = rosbag("ardrone2_exp_2020-10-29_25_batP1.bag");
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % Select topics that need to be stored
@@ -24,7 +24,7 @@ topics.ardroneOdom = 0;
 topics.rotorsMotorSpeed = 0;
 
 % Set time interval with respect to start of rosbag recording
-time = [135,180];
+time = [10,120];
 
 
 %% Get data
@@ -33,19 +33,24 @@ topicsOut = storeBagdata(bag,topics,time);
 
 %% Set data
 t = topicsOut.optitrack.stampTime - topicsOut.optitrack.stampTime(1);
-orientQuat = topicsOut.optitrack.orient;
+
+% Convert quaternion from ROS convention (x,y,z,w)
+%                    to MATLAB convention (w,x,y,z)
+orientQuat = [topicsOut.optitrack.orient(4,:);...
+              topicsOut.optitrack.orient(1:3,:)];
 
 
 %% Convert to Euler angles
-orient = quat2EulAndWrap(orientQuat,0);
+orient = quat2eul(orientQuat','ZYX')';
+% orient = quat2EulAndWrap(orientQuat,0);
 
 
 %% Plot
 figure('Name','Orientation in ZYX Euler angles');
-plot(t,orient(1,:));
+plot(t,orient(3,:));
 hold on;
 plot(t,orient(2,:));
-plot(t,orient(3,:));
+plot(t,orient(1,:));
 yline(0);
 legend('phi','theta','psi','0 ref','FontSize',20);
 title('quat2eul','FontSize',30);
