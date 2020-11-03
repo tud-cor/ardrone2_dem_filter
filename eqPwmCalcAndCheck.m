@@ -79,8 +79,8 @@ roots(p)
 % save('hoverBatA1.mat','t','ardroneNavMotor','ardroneNavAltd','navStart','navEnd');
 
 
-% load hoverBatP1.mat;
-load hoverBatA1.mat;
+load hoverBatP1.mat;
+% load hoverBatA1.mat;
 
 
 % Calculate average PWM
