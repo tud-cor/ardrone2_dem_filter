@@ -4,85 +4,134 @@ close all;
 clc;
 
 % Select grey-box identification method
-% 0: greyest
-% 1: ssest
-select = 1;
+% 0: greyest (for estimating complex relationships between unknown
+%             variables in linear/nonlinear models)
+% 1: ssest   (for estimating matrix elements in a structured matrix system
+%             description)
+select = 0;
 
 
-%% Select data
-% Load pre-processed experiment data file
-load hoverSpiralling25-100Hz15-120s.mat expData;
+%% Select experiment data
+% % Load pre-processed experiment data file
+% load expData10_29_2.mat expData;
+% 
+% % Select samples
+% startSample = 1;
+% endSample = 1800;
+% 
+% % y = [expData.output.otPos(2,startSample:endSample);...
+% %      expData.output.otOrient(3,startSample:endSample)]';
+% y = expData.output.otPos(3,startSample:endSample)' - ...
+%     mean(expData.output.otPos(3,startSample:endSample));
+% 
+% u = expData.input.navMotor(:,startSample:endSample)';
+% 
+% ts = expData.sampleTime;
+% 
+% data = iddata(y,u,ts);
 
-% Select samples
-startSample = 1;
-endSample = 2600;
 
-pos    = expData.output.otPos(:,startSample:endSample);
-orient = expData.output.otOrient(:,startSample:endSample);
-y = [pos;orient]';
+%% Select hovering data
+load hoverBatA1.mat;
+fs = 120;
+ts = 1/fs;
+data.time  = t;
+data.value = [ardroneNavMotor;ardroneNavAltd];
 
-uMotor = expData.input.motor(:,startSample:endSample);
-u = uMotor';
+tmp   = interpolate(ts,data);
+motor = tmp.value(1:4,:);
+altd  = tmp.value(5,:)/1000;
 
-ts = expData.sampleTime;
+startSample = 820;
+endSample = 4260;
+
+y = altd(startSample:endSample)' - mean(altd(startSample:endSample));
+
+u = motor(:,startSample:endSample)';
 
 data = iddata(y,u,ts);
 
 
 %% Set system parameters
 % Fixed parameters
-g = 9.81;
 nu = 4;
-nx = 12;
-ny = 6;
+nx = 2;
+ny = 1;
+
+g = 9.81;
+l = 0.178;
+m = 0.497;
+cM1 = 3.7;
+cM2 = 130.9;
+cA1 = cM1/2.55;
+cA2 = cM2;
+pwmEq = 170;
 
 % Varying parameters
-m = 0.481;
 ixx = 3.4e-3;
 iyy = 4.0e-3;
 izz = 6.9e-3;
-
-% Set mass minimum and maximum
-mMin = 0.46;
-mMax = 0.52;
+cT1 = 8.6e-06;
+cT2 = -3.2e-4;
+cQ1 = 2.4e-7;
+cQ2 = -9.9e-6;
 
 % Set inertia minimum and maximum
 ixxMin = 1e-3;
-ixxMax = 1;
+ixxMax = 1e-2;
 iyyMin = 1e-3;
-iyyMax = 1;
+iyyMax = 1e-2;
 izzMin = 1e-3;
-izzMax = 1;
+izzMax = 1e-2;
+
+% Set thrust coefficients minimum and maximum
+cT1Min = 1e-8;
+cT1Max = 1e-4;
+cT2Min = -1e-4;
+cT2Max = -1e-6;
+
+% cT1Min = -10;
+% cT1Max = 10;
+% cT2Min = -10;
+% cT2Max = 10;
 
 
 %% Get identified model
 if ~select
     % Create idgrey object
     odeFcn = 'greyBoxIDFcn';
-    varParam = {'m',m;'ixx',ixx;'iyy',iyy;'izz',izz};
+    varParam = {'ixx',ixx;'iyy',iyy;'izz',izz;...
+                'cT1',cT1;'cT2',cT2};
     fcnType = 'c';
-    fixedParam = {g,nu,nx,ny};
+    fixedParam = {nu,nx,ny,g,l,m,cA1,cA2,pwmEq,cQ1,cQ2};
     estModel = idgrey(odeFcn,varParam,fcnType,fixedParam);
 
-    % Set mass constraints
-    estModel.Structure.Parameters(1).Minimum = 1/mMax;
-    estModel.Structure.Parameters(1).Maximum = 1/mMin;
-
     % Set inertia constraints
-    estModel.Structure.Parameters(2).Minimum = 1/ixxMax;
-    estModel.Structure.Parameters(2).Maximum = 1/ixxMin;
-    estModel.Structure.Parameters(3).Minimum = 1/iyyMax;
-    estModel.Structure.Parameters(3).Maximum = 1/iyyMin;
-    estModel.Structure.Parameters(4).Minimum = 1/izzMax;
-    estModel.Structure.Parameters(4).Maximum = 1/izzMin;
+    estModel.Structure.Parameters(1).Minimum = ixxMin;
+    estModel.Structure.Parameters(1).Maximum = ixxMax;
+    estModel.Structure.Parameters(2).Minimum = iyyMin;
+    estModel.Structure.Parameters(2).Maximum = iyyMax;
+    estModel.Structure.Parameters(3).Minimum = izzMin;
+    estModel.Structure.Parameters(3).Maximum = izzMax;
+
+    % Set thrust coefficients constraints
+    estModel.Structure.Parameters(4).Minimum = cT1Min;
+    estModel.Structure.Parameters(4).Maximum = cT1Max;
+    estModel.Structure.Parameters(5).Minimum = cT2Min;
+    estModel.Structure.Parameters(5).Maximum = cT2Max;
 
     % Perform grey-box parameter estimation
     greyestOpt = greyestOptions;
     greyestOpt.InitialState = 'estimate';
     greyestOpt.DisturbanceModel = 'estimate';
+    greyestOpt.Focus = 'prediction';
     greyestOpt.EnforceStability = false;
+    greyestOpt.EstimateCovariance = true;
+%     greyestOpt.SearchMethod = 'fmincon';
     sysGB = greyest(data,estModel,greyestOpt);
     syscGB = ss(sysGB.A,sysGB.B,sysGB.C,sysGB.D);
+    paramEst = getpvec(sysGB);
+    paramCov = getcov(sysGB);
 else
     % Set system matrices
     A = [0, 0, 0, 1, 0, 0, 0 , 0, 0, 0, 0, 0;
@@ -152,5 +201,33 @@ else
 end
 
 
+%% Show estimated thrust characteristic
+load thrust_torque_comp_theses.mat;
+omegaR = linspace(0,500)';
+
+cT1Est = paramEst(4);
+cT2Est = paramEst(5);
+
+% Thrust
+Tq = omegaR.^2*thrustPoly.p1;
+T2wc = [omegaR.^2,omegaR]*thrustPoly.p2;
+T2 = [omegaR.^2,omegaR,ones(length(omegaR),1)]*thrustPoly.p3;
+TEst = [omegaR.^2,omegaR]*[cT1Est;cT2Est];
+
+T2Lin = [2*omegaR,ones(length(omegaR),1)]*...
+        [thrustPoly.p3(1:2,:),[cT1Est;cT2Est]];
+
+figure('Name','Nonlinear thrust curves');
+plot(omegaR,[T2wc(:,1),T2(:,2:3),TEst],'-o');
+legend('Own work','Delft thesis','Twente thesis','Estimated',...
+       'location','northwest');
+figure('Name','Linearized thrust curves');
+plot(omegaR,T2Lin);
+legend('Own work','Delft thesis','Twente thesis','Estimated',...
+       'location','northwest');
+
+
 %% Save data
-save('sysGB_exp_24-7_7.mat','syscGB');
+filename = sprintf('sysGB_exp_24-7_7_%s.mat',...
+                   datestr(now,'dd-mm-yyyy_HH-MM'));
+% save(filename,'syscGB');

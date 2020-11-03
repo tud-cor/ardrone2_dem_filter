@@ -6,13 +6,15 @@ clc;
 
 %% Adjustable parameters
 % Name of rosbag in ./ros
-bagname = 'ardrone2_exp_2020-10-29_25_batP1.bag';
+bagname = 'ardrone2_exp_2020-10-29_2_batA2.bag';
 
 % Time interval with respect to start of rosbag recording
 % time = [140,180]; %exp7-24_3 -> use samples 1300-4500
+% time = [30,68]; %exp7-24_5
 % time = [0,15]; %exp7-24_7
 % time = [0,36]; %exp7-24_8
-time = [0,80]; %exp10-29_25 - wind mode 2
+time = [28,50]; %exp10_29_2
+% time = [0,80]; %exp10-29_25 - wind mode 2
 
 % Topic selection
 topics.cmdVel = 0;
@@ -20,7 +22,7 @@ topics.modelInput = 0;
 topics.gazeboModelStates = 0;
 topics.rotorsMotorSpeed = 0;
 topics.optitrack = 1;
-topics.ardroneImu = 1;
+topics.ardroneImu = 0;
 topics.ardroneNav = 1;
 topics.ardroneOdom = 1;
 
@@ -45,8 +47,8 @@ cd ~/.ros;
 bag = rosbag(bagname);
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
-% topicsOut = storeBagdata(bag,topics,time);
-load getExpData10_29_25.mat;
+topicsOut = storeBagdata(bag,topics,time);
+% load getExpData10_29_25.mat;
 % load getExpData7_24_8.mat;
 
 if topics.cmdVel
@@ -96,9 +98,11 @@ end
 ardroneNavAltd = ardroneNavAltd/1000;
 
 % Remove offsets
-optitrackPos = optitrackPos - optitrackPos(:,1);
-ardroneNavAltd = ardroneNavAltd - ardroneNavAltd(1);
-ardroneOdomPos = ardroneOdomPos - ardroneOdomPos(:,1);
+% TODO only do this if position data of OptiTrack needs to be aligned with
+% that coming from AR.Drone 2.0
+% optitrackPos = optitrackPos - optitrackPos(:,1);
+% ardroneNavAltd = ardroneNavAltd - ardroneNavAltd(1);
+% ardroneOdomPos = ardroneOdomPos - ardroneOdomPos(:,1);
 
 
 %% Ensure that all linear velocities are given in [m/s]
@@ -144,10 +148,15 @@ ardroneNavOrient = [ardroneNavOrient(3,:);ardroneNavOrient(2,:);...
                     ardroneNavOrient(1,:)];
 
 % Remove offsets
-optitrackOrient   = optitrackOrient - optitrackOrient(:,1);
-ardroneImuOrient  = ardroneImuOrient - ardroneImuOrient(:,1);
-ardroneOdomOrient = ardroneOdomOrient - ardroneOdomOrient(:,1);
-ardroneNavOrient  = ardroneNavOrient - ardroneNavOrient(:,1);
+% TODO only do this if orientation data of OptiTrack needs to be aligned
+% with that coming from AR.Drone 2.0 -> using rotation matrices, not the
+% method implemented below!
+% optitrackOrient   = optitrackOrient - optitrackOrient(:,1);
+% if topics.ardroneImu
+%     ardroneImuOrient  = ardroneImuOrient - ardroneImuOrient(:,1);
+% end
+% ardroneOdomOrient = ardroneOdomOrient - ardroneOdomOrient(:,1);
+% ardroneNavOrient  = ardroneNavOrient - ardroneNavOrient(:,1);
 
 
 %% Ensure all angular velocities are given in [rad/s]
@@ -264,8 +273,8 @@ plot(optitrackPlotTime,optitrackPos(3,:),'-o');
 keyboard;
 
 % Select data samples to use
-prompt      = {'Enter index of 1st data sample:',...
-               'Enter index of last data sample:'};
+prompt      = {'Enter time of 1st data sample:',...
+               'Enter time of last data sample:'};
 dlgtitle    = 'Data selection';
 dims        = [1 35];
 definput    = {num2str(optitrackPlotTime(sampleThresOt)),...
