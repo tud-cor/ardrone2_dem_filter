@@ -1,4 +1,4 @@
-function [A,B,C,D,K,x0] = greyBoxIDFcn(ixx,iyy,izz,cT1,cT2,ts,nu,nx,ny,g,l,m,cA1,cA2,pwmEq,cQ1,cQ2)
+function [A,B,C,D,K,x0] = greyBoxIDFcn(cT1,cT2,ts,nu,nx,ny,g,l,m,ixx,iyy,izz,cA1,cA2,pwmEq,cQ1,cQ2)
 % Determine derivative terms for thrust and torque w.r.t. PWM
 cTDer      = 2*cT1*cA1^2*pwmEq + 2*cT1*cA1*cA2 + cT2*cA1;
 cTPhiDer   = sqrt(2)/2*l*(2*cT1*cA1^2*pwmEq + 2*cT1*cA1*cA2+cT2*cA1);

@@ -60,6 +60,7 @@ ny = 1;
 
 g = 9.81;
 l = 0.178;
+% m = 0.481;
 m = 0.497;
 cM1 = 3.7;
 cM2 = 130.9;
@@ -68,8 +69,11 @@ cA2 = cM2;
 pwmEq = 170;
 
 % Varying parameters
-ixx = 3.4e-3;
-iyy = 4.0e-3;
+% ixx = 3.4e-3;
+% iyy = 4.0e-3;
+% izz = 6.9e-3;
+ixx = 3.5e-3;
+iyy = 4.1e-3;
 izz = 6.9e-3;
 cT1 = 8.6e-06;
 cT2 = -3.2e-4;
@@ -85,40 +89,39 @@ izzMin = 1e-3;
 izzMax = 1e-2;
 
 % Set thrust coefficients minimum and maximum
-cT1Min = 1e-8;
-cT1Max = 1e-4;
-cT2Min = -1e-4;
-cT2Max = -1e-6;
+% cT1Min = 1e-8;
+% cT1Max = 1e-4;
+% cT2Min = -1e-4;
+% cT2Max = -1e-6;
 
-% cT1Min = -10;
-% cT1Max = 10;
-% cT2Min = -10;
-% cT2Max = 10;
+cT1Min = -100;
+cT1Max = 100;
+cT2Min = -100;
+cT2Max = 100;
 
 
 %% Get identified model
 if ~select
     % Create idgrey object
     odeFcn = 'greyBoxIDFcn';
-    varParam = {'ixx',ixx;'iyy',iyy;'izz',izz;...
-                'cT1',cT1;'cT2',cT2};
+    varParam = {'cT1',cT1;'cT2',cT2};
     fcnType = 'c';
-    fixedParam = {nu,nx,ny,g,l,m,cA1,cA2,pwmEq,cQ1,cQ2};
+    fixedParam = {nu,nx,ny,g,l,m,ixx,iyy,izz,cA1,cA2,pwmEq,cQ1,cQ2};
     estModel = idgrey(odeFcn,varParam,fcnType,fixedParam);
 
     % Set inertia constraints
-    estModel.Structure.Parameters(1).Minimum = ixxMin;
-    estModel.Structure.Parameters(1).Maximum = ixxMax;
-    estModel.Structure.Parameters(2).Minimum = iyyMin;
-    estModel.Structure.Parameters(2).Maximum = iyyMax;
-    estModel.Structure.Parameters(3).Minimum = izzMin;
-    estModel.Structure.Parameters(3).Maximum = izzMax;
+%     estModel.Structure.Parameters(1).Minimum = ixxMin;
+%     estModel.Structure.Parameters(1).Maximum = ixxMax;
+%     estModel.Structure.Parameters(2).Minimum = iyyMin;
+%     estModel.Structure.Parameters(2).Maximum = iyyMax;
+%     estModel.Structure.Parameters(3).Minimum = izzMin;
+%     estModel.Structure.Parameters(3).Maximum = izzMax;
 
     % Set thrust coefficients constraints
-    estModel.Structure.Parameters(4).Minimum = cT1Min;
-    estModel.Structure.Parameters(4).Maximum = cT1Max;
-    estModel.Structure.Parameters(5).Minimum = cT2Min;
-    estModel.Structure.Parameters(5).Maximum = cT2Max;
+    estModel.Structure.Parameters(1).Minimum = cT1Min;
+    estModel.Structure.Parameters(1).Maximum = cT1Max;
+    estModel.Structure.Parameters(2).Minimum = cT2Min;
+    estModel.Structure.Parameters(2).Maximum = cT2Max;
 
     % Perform grey-box parameter estimation
     greyestOpt = greyestOptions;
@@ -205,8 +208,8 @@ end
 load thrust_torque_comp_theses.mat;
 omegaR = linspace(0,500)';
 
-cT1Est = paramEst(4);
-cT2Est = paramEst(5);
+cT1Est = paramEst(1);
+cT2Est = paramEst(2);
 
 % Thrust
 Tq = omegaR.^2*thrustPoly.p1;
@@ -219,11 +222,11 @@ T2Lin = [2*omegaR,ones(length(omegaR),1)]*...
 
 figure('Name','Nonlinear thrust curves');
 plot(omegaR,[T2wc(:,1),T2(:,2:3),TEst],'-o');
-legend('Own work','Delft thesis','Twente thesis','Estimated',...
+legend('Own work','Delft thesis','Eindhoven thesis','Estimated',...
        'location','northwest');
 figure('Name','Linearized thrust curves');
 plot(omegaR,T2Lin);
-legend('Own work','Delft thesis','Twente thesis','Estimated',...
+legend('Own work','Delft thesis','Eindhoven thesis','Estimated',...
        'location','northwest');
 
 
