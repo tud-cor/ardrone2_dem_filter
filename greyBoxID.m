@@ -51,6 +51,30 @@ u = motor(:,startSample:endSample)';
 
 data = iddata(y,u,ts);
 
+% t = tmp.time(startSample:endSample);
+% 
+% % Shift u forward
+% s = 0;
+% if s > 0
+%     y = y(s+1:end);
+%     u = u(1:end-s,:);
+%     t = t(1:end-s);
+% else
+%     y = y(1:end+s);
+%     u = u(-s+1:end,:);
+%     t = t(1:end+s);
+% end
+% 
+% cTPEs = [2.69656325287645e-05;
+%          0.00243270089457810;
+%          -2.77555756156289e-17];
+% plot(t,y);
+% hold on;
+% pwm = sum(u,2)-4*171.4937;
+% T = [pwm.^2,pwm,ones(length(pwm),1)]*cTPEs;
+% plot(t,T);
+% yline(0);
+
 
 %% Set system parameters
 % Fixed parameters

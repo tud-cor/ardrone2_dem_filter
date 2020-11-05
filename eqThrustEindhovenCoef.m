@@ -65,7 +65,7 @@ title('Eindhoven \omega_r-thrust curve');
 %% Create PWM characteristic coefficients from omegaR-thrust relation
 cTP2 = [cTAvg(1)*cMAvg(1)^2;
         2*cTAvg(1)*cMAvg(1)*cMAvg(2) + cTAvg(2)*cMAvg(1);
-        cTAvg(1)*cMAvg(2)^2 + cTAvg(2)*cMAvg(2)];
+        cTAvg(1)*cMAvg(2)^2 + cTAvg(2)*cMAvg(2) + cTAvg(3)];
 
 
 %% Plot PWM-thrust relation

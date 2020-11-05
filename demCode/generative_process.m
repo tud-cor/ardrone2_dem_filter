@@ -20,10 +20,18 @@ brain.Dv = kron(T,eye(brain.nv));
 
 brain.D_A = brain.Da-brain.At;
 
-model.Pz = eye(brain.ny)/model.sigma_z^2;
-model.Pw = eye(brain.nx)/model.sigma_w^2;
-brain.Pz = eye(brain.ny)/brain.sigma_z^2;
-brain.Pw = eye(brain.nx)/brain.sigma_w^2;
+% model.Pz = eye(brain.ny)/model.sigma_z^2;
+% model.Pw = eye(brain.nx)/model.sigma_w^2;
+% brain.Pz = eye(brain.ny)/brain.sigma_z^2;
+% brain.Pw = eye(brain.nx)/brain.sigma_w^2;
+
+model.Pz = eye(brain.ny)/((1e-6)^2);
+model.Pw = [3104279,-23387.57,-186236.9,2182.047;
+            -23387.57,26337.17,-8661.889,347.0058;
+            -186236.9,-8661.889,980470.4,-3420.207;
+            2182.047,347.0058,-3420.207,109.3188];
+brain.Pz = model.Pz;
+brain.Pw = model.Pw;
 
 % sigma_brain_w = (diag([1.2341e-04,1.2341e-04,1.2341e-04]));
 % sigma_brain_z = 7.5046e-06;

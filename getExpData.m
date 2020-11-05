@@ -6,15 +6,15 @@ clc;
 
 %% Adjustable parameters
 % Name of rosbag in ./ros
-bagname = 'ardrone2_exp_2020-10-29_2_batA2.bag';
+bagname = 'ardrone2_exp_2020-10-29_25_batP1.bag';
 
 % Time interval with respect to start of rosbag recording
 % time = [140,180]; %exp7-24_3 -> use samples 1300-4500
 % time = [30,68]; %exp7-24_5
 % time = [0,15]; %exp7-24_7
 % time = [0,36]; %exp7-24_8
-time = [28,50]; %exp10_29_2
-% time = [0,80]; %exp10-29_25 - wind mode 2
+% time = [28,50]; %exp10_29_2
+time = [0,80]; %exp10-29_25 - wind mode 2
 
 % Topic selection
 topics.cmdVel = 0;
@@ -22,7 +22,7 @@ topics.modelInput = 0;
 topics.gazeboModelStates = 0;
 topics.rotorsMotorSpeed = 0;
 topics.optitrack = 1;
-topics.ardroneImu = 0;
+topics.ardroneImu = 1;
 topics.ardroneNav = 1;
 topics.ardroneOdom = 1;
 
@@ -47,8 +47,8 @@ cd ~/.ros;
 bag = rosbag(bagname);
 cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
-topicsOut = storeBagdata(bag,topics,time);
-% load getExpData10_29_25.mat;
+% topicsOut = storeBagdata(bag,topics,time);
+load getExpData10_29_25.mat;
 % load getExpData7_24_8.mat;
 
 if topics.cmdVel
@@ -134,7 +134,7 @@ end
 ardroneOdomOrientQuat    = [ardroneOdomOrientQuat(4,:);...
                             ardroneOdomOrientQuat(1:3,:)];
 
-% Convert quaternions to ZYX Euler angles: [Z;Y;X]
+% Convert quaternions to ZYX Euler angles: [Z;Y;X] ([psi;theta;phi])
 optitrackOrient      = quat2eul(optitrackOrientQuat','ZYX')';
 if topics.ardroneImu
     ardroneImuOrient = quat2eul(ardroneImuOrientQuat','ZYX')';
@@ -142,7 +142,7 @@ end
 ardroneOdomOrient    = quat2eul(ardroneOdomOrientQuat','ZYX')';
 
 
-% Convert navdata to radians and to [Z;Y;X] convention
+% Convert navdata to radians and to [Z;Y;X] ([psi;theta;phi]) convention
 ardroneNavOrient = ardroneNavRot*deg2rad;
 ardroneNavOrient = [ardroneNavOrient(3,:);ardroneNavOrient(2,:);...
                     ardroneNavOrient(1,:)];
@@ -160,6 +160,7 @@ ardroneNavOrient = [ardroneNavOrient(3,:);ardroneNavOrient(2,:);...
 
 
 %% Ensure all angular velocities are given in [rad/s]
+%  with convention [phiDot;thetaDot;psiDot]
 % No adjustments to IMU
 
 % Odometry is 0!

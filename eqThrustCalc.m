@@ -3,9 +3,6 @@ clear;
 close all;
 clc;
 
-%% TODO
-% - Fix Eindhoven thesis PWM-thrust coefficients
-
 
 %% Set average PWM at equilibrium
 % Parrot battery
@@ -32,43 +29,7 @@ cTO = [8.6e-6;
 % Derive average PWM-thrust coefficients
 cTPO = [cTO(1)*cA1^2;
         2*cTO(1)*cA1*cA2 + cTO(2)*cA1;
-        cTO(1)*cA2^2 + cTO(2)*cA2];
-
-
-%% Estimate coefficients
-% Parrot battery mass
-mBatP = 0.481;
-
-% Akku-King battery mass
-mBatA = 0.497;
-
-
-% Solve for thrust coefficients for 1 rotor
-% Parrot battery
-c1BatP = cA1^2*pwmEqBatP^2 + 2*cA1*cA2*pwmEqBatP + cA2^2;
-c2BatP = cA1*pwmEqBatP + cA2;
-
-cT1BatP = mBatP*g/(4*c1BatP)*(1/(1-c2BatP/c1BatP*cA2));
-cT2BatP = -cA2*cT1BatP;
-
-% Akku-King battery
-c1BatA = cA1^2*pwmEqBatA^2 + 2*cA1*cA2*pwmEqBatA + cA2^2;
-c2BatA = cA1*pwmEqBatA + cA2;
-
-cT1BatA = mBatA*g/(4*c1BatA)*(1/(1-c2BatA/c1BatA*cA2));
-cT2BatA = -cA2*cT1BatA;
-
-
-% Derive average omegaR-thrust coefficients
-cT1 = mean([cT1BatP,cT1BatA]);
-cT2 = mean([cT2BatP,cT2BatA]);
-cTEs = [cT1;cT2;0];
-
-
-% Derive average PWM-thrust coefficients
-cTPEs = [cT1*cA1^2;
-         2*cT1*cA1*cA2 + cT2*cA1;
-         cT1*cA2^2 + cT2*cA2];
+        cTO(1)*cA2^2 + cTO(2)*cA2 + cTO(3)];
 
 
 %% Determine coefficients of Eindhoven thesis
@@ -106,13 +67,59 @@ cTD = [8.386e-6;
 % Derive average PWM-thrust coefficients (assuming same cAs as in own work)
 cTPD = [cTD(1)*cA1^2;
         2*cTD(1)*cA1*cA2 + cTD(2)*cA1;
-        cTD(1)*cA2^2 + cTD(2)*cA2];
+        cTD(1)*cA2^2 + cTD(2)*cA2 + cTD(3)];
+
+
+%% Estimate coefficients using ground and hovering constraint
+% Parrot battery mass
+mBatP = 0.481;
+
+% Akku-King battery mass
+mBatA = 0.497;
+
+
+% Solve for thrust coefficients for 1 rotor
+% Parrot battery
+c1BatP = cA1^2*pwmEqBatP^2 + 2*cA1*cA2*pwmEqBatP + cA2^2;
+c2BatP = cA1*pwmEqBatP + cA2;
+
+cT1BatP = mBatP*g/(4*c1BatP)*(1/(1-c2BatP/c1BatP*cA2));
+cT2BatP = -cA2*cT1BatP;
+
+% Akku-King battery
+c1BatA = cA1^2*pwmEqBatA^2 + 2*cA1*cA2*pwmEqBatA + cA2^2;
+c2BatA = cA1*pwmEqBatA + cA2;
+
+cT1BatA = mBatA*g/(4*c1BatA)*(1/(1-c2BatA/c1BatA*cA2));
+cT2BatA = -cA2*cT1BatA;
+
+
+% Derive average omegaR-thrust coefficients
+cT1 = mean([cT1BatP,cT1BatA]);
+cT2 = mean([cT2BatP,cT2BatA]);
+cTEs = [cT1;cT2;0];
+
+
+% Derive average PWM-thrust coefficients
+cTPEs = [cT1*cA1^2;
+         2*cT1*cA1*cA2 + cT2*cA1;
+         cT1*cA2^2 + cT2*cA2 + cTEs(3)];
+
+
+%% Adjustable coefficients for tests
+cTTest = [4.23698793156840e-07;
+          -0.000320038148822668;
+          0];
+
+cTPTest = [cTTest(1)*cA1^2;
+           2*cTTest(1)*cA1*cA2 + cTTest(2)*cA1;
+           cTTest(1)*cA2^2 + cTTest(2)*cA2 + cTTest(3)];
 
 
 %% Create coefficients vectors
 %  [Own work, Eindhoven thesis, Delft thesis]
-cT  = [cTO,cTE,cTD,cTEs];
-cTP = [cTPO,cTPE,cTPD,cTPEs];
+cT  = [cTO,cTE,cTD,cTEs,cTTest];
+cTP = [cTPO,cTPE,cTPD,cTPEs,cTPTest];
 
 
 %% Plot omegaR-thrust curve of different sources
@@ -146,7 +153,7 @@ c = [0,      0.4470, 0.7410;
 
 figure('Name','Nonlinear and linear thrust curves');
 hold on;
-for i = 1:4
+for i = 1:size(T,2)
     plot(omegaR,T(:,i),'-o','Color',c(i,:));
     plot(omegaRLin,TLinBatP(:,i),'--','Color',c(i,:));
     plot(omegaRLin,TLinBatA(:,i),'.-','Color',c(i,:));
@@ -202,7 +209,7 @@ pTLinBatA = pwmLin*[2*pwmEqBatA,1]*cTP(1:2,:) + ...
 % Plot
 figure('Name','Nonlinear and linear thrust curves per PWM value');
 hold on;
-for i = 1:4
+for i = 1:size(pT,2)
     plot(pwm,pT(:,i),'-o','Color',c(i,:));
     plot(pwmLin,pTLinBatP(:,i),'--','Color',c(i,:));
     plot(pwmLin,pTLinBatA(:,i),'.-','Color',c(i,:));
