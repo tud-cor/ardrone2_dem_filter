@@ -19,6 +19,12 @@ cM2 = 130.9;
 cA1 = cM1/2.55;
 cA2 = cM2;
 
+% Parrot battery mass
+mBatP = 0.481;
+
+% Akku-King battery mass
+mBatA = 0.497;
+
 
 %% Determine coefficients of own work
 % Set average omegaR-thrust coefficients
@@ -71,34 +77,27 @@ cTPD = [cTD(1)*cA1^2;
 
 
 %% Estimate coefficients using ground and hovering constraint
-% Parrot battery mass
-mBatP = 0.481;
-
-% Akku-King battery mass
-mBatA = 0.497;
-
-
-% Solve for thrust coefficients for 1 rotor
+% Solve for thrust coefficients for 1 rotor (assuming rotors are the same)
 % Parrot battery
-c1BatP = cA1^2*pwmEqBatP^2 + 2*cA1*cA2*pwmEqBatP + cA2^2;
-c2BatP = cA1*pwmEqBatP + cA2;
-
-cT1BatP = mBatP*g/(4*c1BatP)*(1/(1-c2BatP/c1BatP*cA2));
-cT2BatP = -cA2*cT1BatP;
+cP = zeros(2,2);
+cP(1,1) = cA2^2;
+cP(1,2) = cA2;
+cP(2,1) = cA1^2*pwmEqBatP^2 + 2*cA1*cA2*pwmEqBatP + cA2^2;
+cP(2,2) = cA1*pwmEqBatP + cA2;
+cTP = cP\[0;mBatP*g/4];
 
 % Akku-King battery
-c1BatA = cA1^2*pwmEqBatA^2 + 2*cA1*cA2*pwmEqBatA + cA2^2;
-c2BatA = cA1*pwmEqBatA + cA2;
-
-cT1BatA = mBatA*g/(4*c1BatA)*(1/(1-c2BatA/c1BatA*cA2));
-cT2BatA = -cA2*cT1BatA;
-
+cA = zeros(2,2);
+cA(1,1) = cA2^2;
+cA(1,2) = cA2;
+cA(2,1) = cA1^2*pwmEqBatA^2 + 2*cA1*cA2*pwmEqBatA + cA2^2;
+cA(2,2) = cA1*pwmEqBatA + cA2;
+cTA = cA\[0;mBatA*g/4];
 
 % Derive average omegaR-thrust coefficients
-cT1 = mean([cT1BatP,cT1BatA]);
-cT2 = mean([cT2BatP,cT2BatA]);
-cTEs = [cT1;cT2;0];
-
+cTEs = [mean([cTP,cTA],2);0];
+cT1 = cTEs(1);
+cT2 = cTEs(2);
 
 % Derive average PWM-thrust coefficients
 cTPEs = [cT1*cA1^2;
@@ -106,9 +105,27 @@ cTPEs = [cT1*cA1^2;
          cT1*cA2^2 + cT2*cA2 + cTEs(3)];
 
 
+%% Estimate coefficients using 2 hovering constraints
+cH(1,1) = cA1^2*pwmEqBatP^2 + 2*cA1*cA2*pwmEqBatP + cA2^2;
+cH(1,2) = cA1*pwmEqBatP + cA2;
+cH(2,1) = cA1^2*pwmEqBatA^2 + 2*cA1*cA2*pwmEqBatA + cA2^2;
+cH(2,2) = cA1*pwmEqBatA + cA2;
+cTH = cH\[mBatP*g/4;mBatA*g/4];
+
+% Derive average omegaR-thrust coefficients
+cTEs2 = [cTH;0];
+cT1 = cTEs2(1);
+cT2 = cTEs2(2);
+
+% Derive average PWM-thrust coefficients
+cTPEs2 = [cT1*cA1^2;
+          2*cT1*cA1*cA2 + cT2*cA1;
+          cT1*cA2^2 + cT2*cA2 + cTEs2(3)];
+
+
 %% Adjustable coefficients for tests
-cTTest = [4.23698793156840e-07;
-          -0.000320038148822668;
+cTTest = [1.28e-05;
+          -1.68e-3;
           0];
 
 cTPTest = [cTTest(1)*cA1^2;
@@ -118,8 +135,8 @@ cTPTest = [cTTest(1)*cA1^2;
 
 %% Create coefficients vectors
 %  [Own work, Eindhoven thesis, Delft thesis]
-cT  = [cTO,cTE,cTD,cTEs,cTTest];
-cTP = [cTPO,cTPE,cTPD,cTPEs,cTPTest];
+cT  = [cTO,cTE,cTD,cTEs,cTEs2,cTTest];
+cTP = [cTPO,cTPE,cTPD,cTPEs,cTPEs2,cTPTest];
 
 
 %% Plot omegaR-thrust curve of different sources
@@ -145,23 +162,27 @@ TLinBatA = omegaRLin*[2*omegaRHoverBatA,1]*cT(1:2,:) + ...
          [-omegaRHoverBatA^2,1]*cT([1,3],:);
 
 % Plot
-c = [0,      0.4470, 0.7410;
-     0.8500, 0.3250, 0.0980;
-     0.9290, 0.6940, 0.1250;
-     0.4940, 0.1840, 0.5560;
-     0.4660, 0.6740, 0.1880];
+cP = [0,      0.4470, 0.7410;
+      0.8500, 0.3250, 0.0980;
+      0.9290, 0.6940, 0.1250;
+      0.4940, 0.1840, 0.5560;
+      0.4660, 0.6740, 0.1880;
+      0.3010, 0.7450, 0.9330;
+      0.6350, 0.0780, 0.1840];
 
 figure('Name','Nonlinear and linear thrust curves');
 hold on;
 for i = 1:size(T,2)
-    plot(omegaR,T(:,i),'-o','Color',c(i,:));
-    plot(omegaRLin,TLinBatP(:,i),'--','Color',c(i,:));
-    plot(omegaRLin,TLinBatA(:,i),'.-','Color',c(i,:));
+    plot(omegaR,T(:,i),'-o','Color',cP(i,:));
+    plot(omegaRLin,TLinBatP(:,i),'--','Color',cP(i,:));
+    plot(omegaRLin,TLinBatA(:,i),'.-','Color',cP(i,:));
 end
 legend('Own work','Own work lin batP','Own work lin batP',...
        'Eindhoven','Eindhovenlin batP','Eindhoven lin batA',...
        'Delft','Delft lin batP','Delft lin batA',...
        'Estimated','Estimated lin batP','Estimated lin batA',...
+       'Estimated 2','Estimated 2 lin batP','Estimated 2 lin batA',...
+       'Quick test','Quick test lin batP','Quick test lin batA',...
        'location','northwest');
 xlabel('\omega_r (rad/s)');
 ylabel('Thrust (N)');
@@ -210,9 +231,9 @@ pTLinBatA = pwmLin*[2*pwmEqBatA,1]*cTP(1:2,:) + ...
 figure('Name','Nonlinear and linear thrust curves per PWM value');
 hold on;
 for i = 1:size(pT,2)
-    plot(pwm,pT(:,i),'-o','Color',c(i,:));
-    plot(pwmLin,pTLinBatP(:,i),'--','Color',c(i,:));
-    plot(pwmLin,pTLinBatA(:,i),'.-','Color',c(i,:));
+    plot(pwm,pT(:,i),'-o','Color',cP(i,:));
+    plot(pwmLin,pTLinBatP(:,i),'--','Color',cP(i,:));
+    plot(pwmLin,pTLinBatA(:,i),'.-','Color',cP(i,:));
 end
 xline(pwmEqBatP);
 yline(mBatP*g/4);
@@ -222,6 +243,8 @@ legend('Own work','Own work lin batP','Own work lin batP',...
        'Eindhoven','Eindhoven lin batP','Eindhoven lin batA',...
        'Delft','Delft lin batP','Delft lin batA',...
        'Estimated','Estimated lin batP','Estimated lin batA',...
+       'Estimated 2','Estimated 2 lin batP','Estimated 2 lin batA',...
+       'Quick test','Quick test lin batP','Quick test lin batA',...
        'location','northwest');
 xlabel('AR.Drone 2.0 PWM (-)');
 ylabel('Thrust (N)');

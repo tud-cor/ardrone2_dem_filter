@@ -66,8 +66,8 @@ brain.s = model.s;
 % Dataset, so model.p and model.d can be ignored
 model.p = 6; %embedding order states in model
 model.d = 2; %embedding order inputs in model
-brain.p = 1; %embedding order states; orig:6
-brain.d = 3; %embedding order inputs; orig:2
+brain.p = 2; %embedding order states; orig:6
+brain.d = 1; %embedding order inputs; orig:2
 
 % TODO Standard deviations - probably tune
 % Pz and Pw are defined in generative_process.m
@@ -105,18 +105,18 @@ else
     t_trim = 1:brain.nt;
 end
 
-SSE.DEM.x	 = sum(sum((output.DEM_x(t_trim,1:brain.nx)-...
-                        model.ideal_x(t_trim,:)).^2));
-SSE.kalman.x = sum(sum((output.kalman_x(:,t_trim)'-...
-                        model.ideal_x(t_trim,:)).^2));
-SSE.DEM.v    = sum(sum((output.DEM_x(t_trim,brain.nx*(brain.p+1)+1)-...
-                        model.real_cause(:,t_trim)').^2));
-if xh
-    SSE.DEM.xh	  = sum(sum((output.DEM_x(t_trim,xh)-...
-                             model.ideal_x(t_trim,xh)).^2));
-    SSE.kalman.xh = sum(sum((output.kalman_x(xh,t_trim)'-...
-                             model.ideal_x(t_trim,xh)).^2));
-end
+% SSE.DEM.x	 = sum(sum((output.DEM_x(t_trim,1:brain.nx)-...
+%                         model.ideal_x(t_trim,:)).^2));
+% SSE.kalman.x = sum(sum((output.kalman_x(:,t_trim)'-...
+%                         model.ideal_x(t_trim,:)).^2));
+% SSE.DEM.v    = sum(sum((output.DEM_x(t_trim,brain.nx*(brain.p+1)+1)-...
+%                         model.real_cause(:,t_trim)').^2));
+% if xh
+%     SSE.DEM.xh	  = sum(sum((output.DEM_x(t_trim,xh)-...
+%                              model.ideal_x(t_trim,xh)).^2));
+%     SSE.kalman.xh = sum(sum((output.kalman_x(xh,t_trim)'-...
+%                              model.ideal_x(t_trim,xh)).^2));
+% end
 
 if if_cause == 1
     SSE.DEMv.x	  = sum(sum((output.DEMv_x(t_trim,1:brain.nx)-...
@@ -131,12 +131,12 @@ if if_cause == 1
     end
 end
 
-if if_UIO == 1
-    SSE.UIO.x = sum(sum((output.UIO_x_est(:,t_trim)-...
-                         model.ideal_x(t_trim,:)').^2));
-    SSE.UIO.v = sum((output.UIO_v_est(:,t_trim)-...
-                     model.real_cause(:,t_trim)).^2);
-end
+% if if_UIO == 1
+%     SSE.UIO.x = sum(sum((output.UIO_x_est(:,t_trim)-...
+%                          model.ideal_x(t_trim,:)').^2));
+%     SSE.UIO.v = sum((output.UIO_v_est(:,t_trim)-...
+%                      model.real_cause(:,t_trim)).^2);
+% end
 
 % SSE_mean_x(i,:) = mean([SSE.kalman.x' SSE.UIO.x' SSE.DEM.x' ...
 %                         SSE.kalmanv.x' SSE.DEMv.x']);

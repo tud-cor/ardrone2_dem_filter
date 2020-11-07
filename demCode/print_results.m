@@ -27,9 +27,9 @@ if xh
         fprintf('\n');
     end
 
-    fprintf('Sum of Squared Errors (SSE) - unknown input\n');
-    fprintf('DEM all states   : %9.4f        DEM hidden state(s)   : %9.4f        DEM input: %9.4f\n',SSE.DEM.x,SSE.DEM.xh,SSE.DEM.v);
-    fprintf('Kalman all states: %9.4f        Kalman hidden state(s): %9.4f\n',SSE.kalman.x,SSE.kalman.xh);
+%     fprintf('Sum of Squared Errors (SSE) - unknown input\n');
+%     fprintf('DEM all states   : %9.4f        DEM hidden state(s)   : %9.4f        DEM input: %9.4f\n',SSE.DEM.x,SSE.DEM.xh,SSE.DEM.v);
+%     fprintf('Kalman all states: %9.4f        Kalman hidden state(s): %9.4f\n',SSE.kalman.x,SSE.kalman.xh);
 else
     if if_cause
         fprintf('Sum of Squared Errors (SSE) - known input\n');
@@ -39,8 +39,8 @@ else
         fprintf('\n');
     end
 
-    fprintf('Sum of Squared Errors (SSE) - unknown input\n');
-    fprintf('DEM all states   : %9.4f        DEM input: %9.4f\n',SSE.DEM.x,SSE.DEM.v);
-    fprintf('Kalman all states: %9.4f\n',SSE.kalman.x);
+%     fprintf('Sum of Squared Errors (SSE) - unknown input\n');
+%     fprintf('DEM all states   : %9.4f        DEM input: %9.4f\n',SSE.DEM.x,SSE.DEM.v);
+%     fprintf('Kalman all states: %9.4f\n',SSE.kalman.x);
 end
 end

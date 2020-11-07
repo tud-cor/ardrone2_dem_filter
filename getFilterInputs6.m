@@ -8,6 +8,16 @@ degToRad = 2*pi/180; %conversion from degrees to radians
 pwmEq    = 169.5916; %Parrot battery PWM equilibrium
 % pwmEq    = 171.4937; %Akku-King battery PWM equilibrium
 
+% Changeable
+% Model input definition
+% 0: PWM values as input
+% 1: using PWM values, derive torque around x-axis
+uSelect = 1;
+
+% Selection of PWM-thrust coefficients, see below
+
+% State and input selection, see below
+
 
 %% System parameters
 % Environmental constants
@@ -25,7 +35,6 @@ ixz    = 0;        %kgm^2
 iyy    = 4.0e-3;   %kgm^2
 iyz    = 0;        %kgm^2
 izz    = 6.9e-3;   %kgm^2
-irotor = 2.030e-5;	%kgm^2 TODO: value from Q. Li (2014)
 
 % Dimensions
 l      = 0.178;	%m
@@ -39,15 +48,14 @@ cA = [cM(1)/2.55,cM(2)];
 
 % cT(1)*omegaR^2 + cT(2)*omegaR
 cTO = [8.6e-6,-3.2e-4]; %Own work
-cTE = [1.11052992314982e-05,-0.000764005119869328]; %Eindhoven thesis
-cTEs = [1.28081830181367e-05,-0.00167659115707409]; %Estimated
+cTEs = [1.28e-05,-1.68e-3]; %Estimated
 
 % cQ(1)*omegaR^2 + cQ(2)*omegaR
 cQ = [2.4e-7,-9.9e-6];
 
 
 % Choose coefficients
-cT = cTEs;
+cT = cTO;
 
 % Determine derivative terms for thrust and torque w.r.t. PWM
 cTDer      = 2*cT(1)*cA(1)^2*pwmEq + 2*cT(1)*cA(1)*cA(2) + cT(2)*cA(1);
@@ -57,11 +65,33 @@ cTThetaDer = sqrt(2)/2*l*(2*cT(1)*cA(1)^2*pwmEq + ...
                           2*cT(1)*cA(1)*cA(2)+cT(2)*cA(1));
 cTPsiDer   = 2*cQ(1)*cA(1)^2*pwmEq + 2*cQ(1)*cA(1)*cA(2) + cQ(2)*cA(1);
 
+% % Try PWM-thrust coefficients from Eindhoven thesis
+% cTP  = [1.5618e-4, 1.0395e-2, 0.13894;
+%         1.8150e-4, 8.7242e-3, 0.14425;
+%         1.3478e-4, 7.3295e-3, 0.11698;
+%         1.4306e-4, 5.7609e-3, 0.13362];
+% cTPhiDer1 = cTP(1,1)*pwmEq + cTP(1,2);
+% cTPhiDer2 = cTP(2,1)*pwmEq + cTP(2,2);
+% cTPhiDer3 = cTP(3,1)*pwmEq + cTP(3,2);
+% cTPhiDer4 = cTP(4,1)*pwmEq + cTP(4,2);
+% bPhiDot1   = 1/ixx*cTPhiDer1;
+% bPhiDot2   = 1/ixx*cTPhiDer2;
+% bPhiDot3   = 1/ixx*cTPhiDer3;
+% bPhiDot4   = 1/ixx*cTPhiDer4;
+
 % Construct elements of B-matrix
 bZDot     = 1/m*cTDer;
 bPhiDot   = 1/ixx*cTPhiDer;
 bThetaDot = 1/iyy*cTThetaDer;
 bPsiDot   = 1/izz*cTPsiDer;
+
+
+%% Load experiment data
+load expData10_29_25_mod6.mat;
+
+t    = expData.output.time;
+ts   = expData.sampleTime;
+nDur = length(t);
 
 
 %% LTI state-space description and discretize - complete
@@ -82,18 +112,33 @@ A = [0, 0, 0, 1, 0, 0, 0,  0, 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0;
      0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0];
-B = [0,          0,          0,         0;
-     0,          0,          0,         0;
-     0,          0,          0,         0;
-     0,          0,          0,         0;
-     0,          0,          0,         0;
-     bZDot,      bZDot,      bZDot,     bZDot;
-     0,          0,          0,         0;
-     0,          0,          0,         0;
-     0,          0,          0,         0;
-     bPhiDot,    -bPhiDot,   -bPhiDot,  bPhiDot;
-     -bThetaDot, -bThetaDot, bThetaDot, bThetaDot;
-     bPsiDot,    -bPsiDot,   bPsiDot,   -bPsiDot];
+if ~uSelect
+    B = [0,          0,          0,         0;
+         0,          0,          0,         0;
+         0,          0,          0,         0;
+         0,          0,          0,         0;
+         0,          0,          0,         0;
+         bZDot,      bZDot,      bZDot,     bZDot;
+         0,          0,          0,         0;
+         0,          0,          0,         0;
+         0,          0,          0,         0;
+         bPhiDot,    -bPhiDot,   -bPhiDot,  bPhiDot;
+         -bThetaDot, -bThetaDot, bThetaDot, bThetaDot;
+         bPsiDot,    -bPsiDot,   bPsiDot,   -bPsiDot];
+else
+    B = [0, 0,     0,     0;
+         0, 0,     0,     0;
+         0, 0,     0,     0;
+         0, 0,     0,     0;
+         0, 0,     0,     0;
+         m, 0,     0,     0;
+         0, 0,     0,     0;
+         0, 0,     0,     0;
+         0, 0,     0,     0;
+         0, 1/ixx, 0,     0;
+         0, 0,     1/iyy, 0;
+         0, 0,     0,     1/izz];
+end
 C = zeros(ny,nx);
 C(1:3,1:3) = eye(3);
 C(4:6,7:9) = eye(3);
@@ -111,14 +156,20 @@ nUnobs = size(obs,2) - rank(obs);
 % Construct continuous-time linearised state space system
 % (option 6 in notes: only y,yDot,phi,phiDot)
 xSel = [2,5,7,10];
+if ~uSelect
+    uSel = 1:4;
+else
+    uSel = 2;
+end
 
 nx = length(xSel);
-nu = 4;
+nu = length(uSel);
 ny = nx;
 
 A6 = A(xSel,xSel);
-B6 = B(xSel,:);
+B6 = B(xSel,uSel);
 C6 = eye(nx);
+% C6 = [1,0,0;0,0,0;0,0,1];
 D6 = zeros(ny,nu);
 
 % Linearized system analysis
@@ -129,15 +180,31 @@ obs6    = obsv(A6,C6);
 nUnobs6 = size(obs6,2) - rank(obs6);
 
 
-%% Load experiment data
-load expData10_29_25_mod6.mat;
+%% Construct input data
+pwm = expData.input.navMotor;
+if ~uSelect
+    u = pwm;
+    uOp = pwmEq;
+else
+    u = zeros(3,nDur); %ignoring yaw
+    for i = 1:nDur
+        f	 = cT(1)*cA(1)^2*pwm(:,i).^2 + ...
+               (2*cT(1)*cA(1)*cA(2) + cT(2)*cA(1))*pwm(:,i) + ...
+               kron(ones(4,1),cT(1)*cA(2)^2 + cT(2)*cA(2));
+        u(1,i) = f(1) + f(2) + f(3) + f(4);
+        u(2,i) = sqrt(1/2)*l*(f(1)-f(2)-f(3)+f(4));
+        u(3,i) = sqrt(1/2)*l*(-f(1)-f(2)+f(3)+f(4));
+    end
+    u = u(uSel,:);
+    uOp = [m*g;0;0];
+    uOp = uOp(uSel);
+end
 
-t    = expData.output.time;
-ts   = expData.sampleTime;
-nDur = length(t);
+% Convert to input around operating point
+uLin = u - uOp;
 
 
-%% Convert AR.Drone 2.0 on-board data to inertial frame
+%% Convert AR.Drone 2.0 on-board data to inertial frame EDIT: do not use!
 % For each sample in AR.Drone 2.0 data:
 % - Convert linear coordinates from body frame to inertial frame
 % - Convert angular coordinates from body frame to inertial frame
@@ -200,59 +267,24 @@ imuVAngI(:,i) = RrBI*imuVAng(:,i);
 end
 
 
-%% Construct input data
-u = expData.input.navMotor;
-% pwmToolbox  = rotorSpeed/param.PwmToPwm;
-% omegaR      = param.PwmToOmegaR(1)*pwmToolbox+param.PwmToOmegaR(2);
-% f           = zeros(4,1);
-% tauTheta    = zeros(1,nDur);
-% for i = 1:nDur
-%     f	 = param.cT(1)*omegaR(:,i).^2 + param.cT(2)*omegaR(:,i);
-%     tauTheta(i) = sqrt(1/2)*param.l*(-f(1)-f(2)+f(3)+f(4));
-% end
-% u = tauTheta;
-
-% Convert to input around operating point (PWM when using Parrot battery)
-uOp  = pwmEq;
-uLin = u - uOp;
-
-
 %% Construct ground truth output data
 yPos   = expData.output.otPos(2,:);
-yDot   = navVLinI(2,:);
+yDot   = navVLin(2,:);
 phi    = expData.output.otOrient(3,:);
-phiDot = imuVAngI(1,:);
+phiDot = imuVAng(1,:);
 y = [yPos;yDot;phi;phiDot];
+% y = [yPos;yDot];
+% y = [yDot;phiDot];
 
 % Convert to output around operating point
 yOp = [mean(yPos);0;0;0];
+% yOp = [mean(yPos);0];
+% yOp = [0;0];
 yLin = y - yOp;
 
 % Set state data equal to output data
 xLin = yLin;
-
-
-%% Plot state/output data
-figure('Name','y and derivatives');
-subplot(3,1,1);
-plot(t,yLin(1,:));
-subplot(3,1,2);
-plot(t,yLin(2,:));
-subplot(3,1,3);
-plot(t,imuALinI(2,:));
-
-figure('Name','phi and derivative');
-subplot(2,1,1);
-plot(t,yLin(3,:));
-subplot(2,1,2);
-plot(t,yLin(4,:));
-subplot(2,1,1);
-
-figure('Name','phiDot and model input');
-subplot(2,1,1);
-plot(t,yLin(4,:));
-subplot(2,1,2);
-plot(t,cTPhiDer*[1,-1,-1,1]*uLin);
+% xLin = [yDot;phi;phiDot];
 
 
 %% Estimate measurement noise properties
@@ -274,17 +306,9 @@ end
 
 % Calculate precision matrix of process noise
 wCov = getCov4x4(w);
+% wCov = cov(w(1,:),w(2,:));
+% wCov = getCov3x3(w);
 wPi  = inv(wCov);
-
-
-%% Plot process noise data
-figure;
-for i = 1:nx
-    subplot(nx,1,i);
-    plot(t,xLin(i,:));
-    hold on;
-    plot(t(1:end-1),w(i,:));
-end
 
 
 %% Estimate smoothness
@@ -304,9 +328,58 @@ s3 = sqrt(wPiTS(4,3)/(2*wPiS(2,1)));
 s4 = sqrt(wPiTS(4,4)/(2*wPiS(2,2)));
 
 % s = mean([s1,s2,s3,s4]);
-s = 0.006;
+s = 0.1;
 
-% s2 = estimateSmoothness(t(1:end-1),w);
+% [sigmaEst,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
+% sEst2 = estimateSmoothness(t(1:end-1),w);
+
+
+%% Plot data
+% Plot state/output data
+% figure('Name','y and derivatives');
+% subplot(3,1,1);
+% plot(t,yLin(1,:));
+% subplot(3,1,2);
+% plot(t,yLin(2,:));
+% subplot(3,1,3);
+% plot(t,imuALinI(2,:));
+
+% figure('Name','phi and derivative');
+% subplot(2,1,1);
+% plot(t,yLin(3,:));
+% subplot(2,1,2);
+% plot(t,yLin(4,:));
+% subplot(2,1,1);
+
+% figure('Name','phi and velocity mismatch');
+% subplot(2,1,1);
+% plot(t,xLin(2,:));
+% subplot(2,1,2);
+% plot(t,xLin(3,:));
+
+% figure('Name','phiDot and model input');
+% subplot(2,1,1);
+% plot(t,yLin(4,:));
+% subplot(2,1,2);
+% plot(t,sysD.B(4,:)*uLin);
+% plot(t,sysD.B(4,:)*uLin);
+
+
+% Plot process noise data
+% figure('Name','Process noise');
+% for i = 1:nx
+%     subplot(nx,1,i);
+%     plot(t,xLin(i,:));
+%     hold on;
+%     plot(t(1:end-1),w(i,:));
+% end
+
+figure('Name','Process noise roll rate');
+hold on;
+plot(t,xLin(4,:));
+plot(t,sysD.B(4,:)*uLin);
+plot(t(1:end-1),w(4,:));
+yline(0);
 
 
 %% Save data
@@ -317,7 +390,7 @@ A = A6;
 B = B6;
 C = C6;
 
-save(filename,...
-     't','ts',...
-     'uLin','xLin','yLin','wPi','zPi','s',...
-     'A','B','C');
+% save(filename,...
+%      't','ts',...
+%      'uLin','xLin','yLin','wPi','zPi','s',...
+%      'A','B','C');

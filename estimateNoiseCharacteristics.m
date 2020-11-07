@@ -35,7 +35,7 @@ nLags    = 100;
 nStdFilt = 1;
 sMin     = 1e-16;
 sStep    = 1e-4;
-sMax     = 10*ts;
+sMax     = 50*ts;
 acX      = zeros(nx,nLags+1);
 lagsX    = zeros(nx,nLags+1);
 boundsX  = zeros(nx,2);
@@ -64,14 +64,15 @@ end
 % only take the lags into account until the autocorrelation goes below 0,
 % or goes up again
 nLagsFit = zeros(nx,1);
-for i = 1:nx
-    for j = 2:nLags+1
-        if acX(i,j) - acX(i,j-1) > 0 || acX(i,j) < 0
-            break;
-        end
-    end
-    nLagsFit(i) = j-1;
-end
+% for i = 1:nx
+%     for j = 2:nLags+1
+%         if acX(i,j) - acX(i,j-1) > 0 || acX(i,j) < 0
+%             break;
+%         end
+%     end
+%     nLagsFit(i) = j-1;
+% end
+keyboard;
 
 % Select random number generation (rng)
 rng(1);
