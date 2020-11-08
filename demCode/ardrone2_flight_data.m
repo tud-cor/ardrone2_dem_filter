@@ -15,8 +15,10 @@ function [t,ts,u,x,y,s,A,B,C] = ardrone2_flight_data
 
 
 % load ardrone2FlightData6.mat t ts uLin xLin yLin s A B C;
-load ardrone2FlightData6_EindhovenCoef_PWMapart t ts uLin xLin yLin s A B C;
+% load ardrone2FlightData6_EindhovenCoef_PWMapart t ts uLin xLin yLin s A B C;
+load ardrone2FlightData6_timeFrameSelect t ts uLin xLin yLin s A B C;
 u = uLin;
 x = xLin';
 y = yLin';
+% s = 0.01;
 end

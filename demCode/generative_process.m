@@ -20,23 +20,15 @@ brain.Dv = kron(T,eye(brain.nv));
 
 brain.D_A = brain.Da-brain.At;
 
-% model.Pz = eye(brain.ny)/model.sigma_z^2;
-% model.Pw = eye(brain.nx)/model.sigma_w^2;
-% brain.Pz = eye(brain.ny)/brain.sigma_z^2;
-% brain.Pw = eye(brain.nx)/brain.sigma_w^2;
-
 model.Pz = eye(brain.ny)/((1e-6)^2);
-model.Pw = [3104279,-23387.57,-186236.9,2182.047;
-            -23387.57,26337.17,-8661.889,347.0058;
-            -186236.9,-8661.889,980470.4,-3420.207;
-            2182.047,347.0058,-3420.207,109.3188];
+model.Pw = [1252777,-3157.906;
+            -3157.906,74.41885];
+% model.Pw = [3104279,-23387.57,-186236.9,2182.047;
+%             -23387.57,26337.17,-8661.889,347.0058;
+%             -186236.9,-8661.889,980470.4,-3420.207;
+%             2182.047,347.0058,-3420.207,109.3188];
 brain.Pz = model.Pz;
 brain.Pw = model.Pw;
-
-% sigma_brain_w = (diag([1.2341e-04,1.2341e-04,1.2341e-04]));
-% sigma_brain_z = 7.5046e-06;
-% P_brain_w = diag(1./(diag(sigma_brain_w).^2));
-% P_brain_z = diag(1./(diag(sigma_brain_z).^2));
 
 % EDIT Precision of process noises, measurement noise, input noise
 [brain.W0,brain.V0y,brain.V0v] = precision_matrix(brain.s,brain.Pw,...

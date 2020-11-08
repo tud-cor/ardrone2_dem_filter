@@ -48,7 +48,7 @@ cA = [cM(1)/2.55,cM(2)];
 
 % cT(1)*omegaR^2 + cT(2)*omegaR
 cTO = [8.6e-6,-3.2e-4]; %Own work
-cTEs = [1.281e-05,-1.677e-3]; %Estimated
+cTEs = [1.28e-05,-1.68e-3]; %Estimated
 
 % cQ(1)*omegaR^2 + cQ(2)*omegaR
 cQ = [2.4e-7,-9.9e-6];
@@ -64,20 +64,6 @@ cTPhiDer   = sqrt(2)/2*l*(2*cT(1)*cA(1)^2*pwmEq + ...
 cTThetaDer = sqrt(2)/2*l*(2*cT(1)*cA(1)^2*pwmEq + ...
                           2*cT(1)*cA(1)*cA(2)+cT(2)*cA(1));
 cTPsiDer   = 2*cQ(1)*cA(1)^2*pwmEq + 2*cQ(1)*cA(1)*cA(2) + cQ(2)*cA(1);
-
-% % Try PWM-thrust coefficients from Eindhoven thesis
-% cTP  = [1.5618e-4, 1.0395e-2, 0.13894;
-%         1.8150e-4, 8.7242e-3, 0.14425;
-%         1.3478e-4, 7.3295e-3, 0.11698;
-%         1.4306e-4, 5.7609e-3, 0.13362];
-% cTPhiDer1 = cTP(1,1)*pwmEq + cTP(1,2);
-% cTPhiDer2 = cTP(2,1)*pwmEq + cTP(2,2);
-% cTPhiDer3 = cTP(3,1)*pwmEq + cTP(3,2);
-% cTPhiDer4 = cTP(4,1)*pwmEq + cTP(4,2);
-% bPhiDot1   = 1/ixx*cTPhiDer1;
-% bPhiDot2   = 1/ixx*cTPhiDer2;
-% bPhiDot3   = 1/ixx*cTPhiDer3;
-% bPhiDot4   = 1/ixx*cTPhiDer4;
 
 % Construct elements of B-matrix
 bZDot     = 1/m*cTDer;
@@ -203,69 +189,6 @@ end
 uLin = u - uOp;
 
 
-%% Convert AR.Drone 2.0 on-board data to inertial frame EDIT: do not use!
-% For each sample in AR.Drone 2.0 data:
-% - Convert linear coordinates from body frame to inertial frame
-% - Convert angular coordinates from body frame to inertial frame
-navVLin = expData.output.navVLin;
-imuALin = expData.output.imuALin;
-imuVAng = expData.output.imuVAng;
-
-nSamples = length(t);
-
-navVLinI          = zeros(3,nSamples);
-origImuALinOffset = expData.origData.imuALin(:,1) - [0;0;g];
-imuALinComp       = zeros(3,nSamples);
-imuALinComp2      = zeros(3,nSamples);
-imuALinI          = zeros(3,nSamples);
-
-imuVAngI  = zeros(3,nSamples);
-odomVAngI = zeros(3,nSamples);
-
-for i = 1:nSamples
-% Get current orientation
-psi   = expData.output.otOrient(1,i);
-theta = expData.output.otOrient(2,i);
-phi   = expData.output.otOrient(3,i);
-
-% Construct homogeneous transformation matrix (translational dynamics)
-% RBI: convert coordinates expressed in B to coordinates expressed in I
-% RIB: convert coordinates expressed in I to coordinates expressed in B
-RBI = eul2rotm([psi,theta,phi],'ZYX');
-RIB = RBI';
-
-
-% Construct rotation matrix for rotational dynamics
-% RrBI: convert ZYX Euler angles expressed in B to ZYX Euler angles
-%       expressed in I
-RrBI = zeros(3,3);
-RrBI(1,1) = 1;
-RrBI(1,2) = sin(phi)*tan(theta);
-RrBI(1,3) = cos(phi)*tan(theta);
-RrBI(2,2) = cos(phi);
-RrBI(2,3) = -sin(phi);
-RrBI(3,2) = sin(phi)/cos(theta);
-RrBI(3,3) = cos(phi)/cos(theta);
-
-
-% Compensate for gravity effects in accelerometer data
-% Assumption 1: no coriolis effects
-% Assumption 2: IMU is placed with perfect orientation in drone
-imuALinComp(:,i) = imuALin(:,1) - RIB*[0;0;g];
-imuALinComp2(:,i) = imuALinComp(:,i) - origImuALinOffset;
-
-
-% Express linear quantities in I
-% TODO: check if velocity data is already in inertial frame - probably yes!
-navVLinI(:,i) = rotz(rad2deg(psi))*navVLin(:,i);
-imuALinI(:,i) = RBI*imuALinComp2(:,i);
-
-
-% Express angular quantities in I
-imuVAngI(:,i) = RrBI*imuVAng(:,i);
-end
-
-
 %% Construct ground truth output data
 yPos   = expData.output.otPos(2,:);
 yDot   = expData.output.navVLin(2,:);
@@ -286,24 +209,6 @@ xLin = yLin;
 % xLin = [yDot;phi;phiDot];
 
 
-%% Select time frames
-tFrame = [9.8,13.15];
-[~,tStart] = min(abs(t-tFrame(1)));
-[~,tEnd] = min(abs(t-tFrame(2)));
-
-t = t(tStart:tEnd);
-t = t - t(1);
-yLin = yLin(:,tStart:tEnd);
-xLin = xLin(:,tStart:tEnd);
-uLin = uLin(:,tStart:tEnd);
-
-
-%% Estimate measurement noise properties
-% Calculate precision matrix of outputs (assuming a very high precision)
-zSigma = 1e-6;
-zPi = eye(ny)/zSigma^2;
-
-
 %% Estimate process noise properties
 % Discretize system
 sysC = ss(A6,B6,C6,D6);
@@ -322,72 +227,143 @@ wCov = cov(w(1,:),w(2,:));
 wPi  = inv(wCov);
 
 
-%% Estimate smoothness
+%% Select time frames
+tFrame1 = [9.8,13.15];
+[~,tStart1] = min(abs(t-tFrame1(1)));
+[~,tEnd1] = min(abs(t-tFrame1(2)));
+tS1 = t(tStart1:tEnd1);
+tS1 = tS1 - tS1(1);
+wS1 = w(:,tStart1:tEnd1);
+
+tFrame2 = [17.8,19.125];
+[~,tStart2] = min(abs(t-tFrame2(1)));
+[~,tEnd2] = min(abs(t-tFrame2(2)));
+tS2 = t(tStart2:tEnd2);
+tS2 = tS2 - tS2(1);
+wS2 = w(:,tStart2:tEnd2);
+
+
+%% Estimate smoothness for unshifted input
 % TODO Assume:
 % - Gaussian filter validity
 % - Same s for each state and output
+wCovS1   = cov(wS1(1,:),wS1(2,:));
+wPiS1    = inv(wCovS1);
+s = sqrt(wPiS1(2,2)/(2*wPiS1(1,1)));
 
-[sigmaEst,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
+[~,sEst1] = estimateNoiseCharacteristics(tS1,wS1,1,1);
+
+
+wCovS2   = cov(wS2(1,:),wS2(2,:));
+wPiS2    = inv(wCovS2);
+s = sqrt(wPiS2(2,2)/(2*wPiS2(1,1)));
+
+[~,sEst2] = estimateNoiseCharacteristics(tS2,wS2,1,1);
+
+% sEst2 = estimateSmoothness(t(1:end-1),w);
+
+% wS      = [w(1,:);w(3,:);w(2,:);w(4,:)];
+% wCovTS = getCov4x4(wS);
+% wPiTS  = inv(wCovTS);
+
+% s1 = sqrt(wPiTS(3,3)/(2*wPiS(1,1)));
+% s2 = sqrt(wPiTS(3,4)/(2*wPiS(1,2)));
+% s3 = sqrt(wPiTS(4,3)/(2*wPiS(2,1)));
+% s4 = sqrt(wPiTS(4,4)/(2*wPiS(2,2)));
+
+
+%% Estimate smoothness for forward shifted input
+% TODO Assume:
+% - Gaussian filter validity
+% - Same s for each state and output
+% Shift input sequence
+[~,sStart] = min(abs(t-10.65));
+[~,sEnd] = min(abs(t-10.8917));
+nShift = sEnd - sStart;
+tShift = t(nShift+1:end);
+tShift = tShift - tShift(1);
+xLinShift = xLin(:,nShift+1:end);
+uLinShift = uLin(:,1:end-nShift);
+
+% Calculate process noise
+wShift = zeros(nx,length(tShift)-1);
+for i = 1:length(tShift)-1
+    wShift(:,i) = xLinShift(:,i+1) - sysD.A*xLinShift(:,i) - ...
+                  sysD.B*uLinShift(:,i);
+end
+
+tFrame1 = [9.8,13.25];
+[~,tSStart1] = min(abs(tShift-tFrame1(1)));
+[~,tSEnd1] = min(abs(t-tFrame1(2)));
+tSS1 = t(tSStart1:tSEnd1);
+tSS1 = tSS1 - tSS1(1);
+wSS1 = w(:,tSStart1:tSEnd1);
+wShiftCovS1   = cov(wSS1(1,:),wSS1(2,:));
+wShiftPiS1    = inv(wShiftCovS1);
+[~,sEstShift1] = estimateNoiseCharacteristics(tSS1,wSS1,1,1);
+
+tFrame2 = [17.8,19.2];
+[~,tSStart2] = min(abs(tShift-tFrame2(1)));
+[~,tSEnd2] = min(abs(t-tFrame2(2)));
+tSS2 = t(tSStart2:tSEnd2);
+tSS2 = tSS2 - tSS2(1);
+wSS2 = w(:,tSStart2:tSEnd2);
+wShiftCovS2   = cov(wSS2(1,:),wSS2(2,:));
+wShiftPiS2    = inv(wShiftCovS2);
+[~,sEstShift2] = estimateNoiseCharacteristics(tSS2,wSS2,1,1);
 % sEst2 = estimateSmoothness(t(1:end-1),w);
 
 
 %% Plot data
-% Plot state/output data
-% figure('Name','y and derivatives');
-% subplot(3,1,1);
-% plot(t,yLin(1,:));
-% subplot(3,1,2);
-% plot(t,yLin(2,:));
-% subplot(3,1,3);
-% plot(t,imuALinI(2,:));
-
-% figure('Name','phi and derivative');
-% subplot(2,1,1);
-% plot(t,yLin(3,:));
-% subplot(2,1,2);
-% plot(t,yLin(4,:));
-% subplot(2,1,1);
-
-% figure('Name','phi and velocity mismatch');
-% subplot(2,1,1);
-% plot(t,xLin(2,:));
-% subplot(2,1,2);
-% plot(t,xLin(3,:));
-
-% figure('Name','phiDot and model input');
-% subplot(2,1,1);
-% plot(t,yLin(4,:));
-% subplot(2,1,2);
-% plot(t,sysD.B(4,:)*uLin);
-% plot(t,sysD.B(4,:)*uLin);
-
-
-% Plot process noise data
-% figure('Name','Process noise');
-% for i = 1:nx
-%     subplot(nx,1,i);
-%     plot(t,xLin(i,:));
-%     hold on;
-%     plot(t(1:end-1),w(i,:));
-% end
-
-figure('Name','Process noise roll rate');
+figure('Name','Compare shifted input');
+subplot(2,1,1);
 hold on;
 plot(t,xLin(2,:));
 plot(t,sysD.B(2,:)*uLin);
 plot(t(1:end-1),w(2,:));
+subplot(2,1,2);
+hold on;
+plot(tShift,xLinShift(2,:));
+plot(tShift,sysD.B(2,:)*uLinShift);
+plot(tShift(1:end-1),wShift(2,:));
+
+figure('Name','Process noise roll rate');
+hold on;
+subplot(2,1,1);
+plot(t(1:end-1),w(1,:));
+subplot(2,1,2);
+% plot(t,xLin(2,:));
+% plot(t,sysD.B(2,:)*uLin);
+plot(t(1:end-1),w(2,:));
 yline(0);
 
+figure('Name','Process noises in time frames');
+subplot(2,2,1);
+plot(tS1,wS1(1,:));
+subplot(2,2,3);
+plot(tS1,wS1(2,:));
+subplot(2,2,2);
+plot(tS2,wS2(1,:));
+subplot(2,2,4);
+plot(tS2,wS2(2,:));
 
-%% Save data
-filename = sprintf('demCode/ardrone2FlightData6_%s',...
-                   datestr(now,'dd-mm-yyyy_HH-MM'));
 
-A = A6;
-B = B6;
-C = C6;
+figure('Name','Shifted process noise roll rate');
+hold on;
+subplot(2,1,1);
+plot(tShift(1:end-1),wShift(1,:));
+subplot(2,1,2);
+% plot(tShift,xLinShift(2,:));
+% plot(tShift,sysD.B(2,:)*uLinShift);
+plot(tShift(1:end-1),wShift(2,:));
+yline(0);
 
-save(filename,...
-     't','ts',...
-     'uLin','xLin','yLin','wPi','zPi','s',...
-     'A','B','C');
+figure('Name','Shifted process noises in time frames');
+subplot(2,2,1);
+plot(tSS1,wSS1(1,:));
+subplot(2,2,3);
+plot(tSS1,wSS1(2,:));
+subplot(2,2,2);
+plot(tSS2,wSS2(1,:));
+subplot(2,2,4);
+plot(tSS2,wSS2(2,:));

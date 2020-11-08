@@ -66,7 +66,7 @@ brain.s = model.s;
 % Dataset, so model.p and model.d can be ignored
 model.p = 6; %embedding order states in model
 model.d = 2; %embedding order inputs in model
-brain.p = 2; %embedding order states; orig:6
+brain.p = 1; %embedding order states; orig:6
 brain.d = 1; %embedding order inputs; orig:2
 
 % TODO Standard deviations - probably tune

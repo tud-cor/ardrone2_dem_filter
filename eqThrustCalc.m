@@ -124,8 +124,8 @@ cTPEs2 = [cT1*cA1^2;
 
 
 %% Adjustable coefficients for tests
-cTTest = [1.28e-05;
-          -1.68e-3;
+cTTest = [1.281e-05;
+          -1.677e-3;
           0];
 
 cTPTest = [cTTest(1)*cA1^2;
