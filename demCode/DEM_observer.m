@@ -6,12 +6,12 @@ clc;
 % Choose whether inputs should also be estimated or not
 % 0: inputs should be estimated
 % 1: inputs are known
-if_cause = 1;
+if_cause = 0;
 
 % Set the index of the hidden state that is compared with an external
 % reference
 % 0 means no hidden state
-xh = 0;
+xh = 2;
 
 % Necessary intitialization without meaning when comparing DEM and Kalman,
 % based on drone flight data
@@ -33,7 +33,7 @@ UIO_gains = [1200 1200 1200 1400 1500];
 % model.C           C matrix
 if if_dataset
     [Tt,model.sam_time,model.real_cause,model.process_x,model.process_y,...
-     model.s,model.A,model.B,model.C] = ardrone2_flight_data;
+     model.Pz,model.Pw,model.s,model.A,model.B,model.C] = ardrone2_flight_data;
 
     model.ideal_x = model.process_x;
     model.t       = Tt + model.sam_time;
@@ -66,8 +66,8 @@ brain.s = model.s;
 % Dataset, so model.p and model.d can be ignored
 model.p = 6; %embedding order states in model
 model.d = 2; %embedding order inputs in model
-brain.p = 1; %embedding order states; orig:6
-brain.d = 1; %embedding order inputs; orig:2
+brain.p = 0; %embedding order states; orig:6
+brain.d = 0; %embedding order inputs; orig:2
 
 % TODO Standard deviations - probably tune
 % Pz and Pw are defined in generative_process.m
@@ -105,18 +105,18 @@ else
     t_trim = 1:brain.nt;
 end
 
-% SSE.DEM.x	 = sum(sum((output.DEM_x(t_trim,1:brain.nx)-...
-%                         model.ideal_x(t_trim,:)).^2));
-% SSE.kalman.x = sum(sum((output.kalman_x(:,t_trim)'-...
-%                         model.ideal_x(t_trim,:)).^2));
-% SSE.DEM.v    = sum(sum((output.DEM_x(t_trim,brain.nx*(brain.p+1)+1)-...
-%                         model.real_cause(:,t_trim)').^2));
-% if xh
-%     SSE.DEM.xh	  = sum(sum((output.DEM_x(t_trim,xh)-...
-%                              model.ideal_x(t_trim,xh)).^2));
-%     SSE.kalman.xh = sum(sum((output.kalman_x(xh,t_trim)'-...
-%                              model.ideal_x(t_trim,xh)).^2));
-% end
+SSE.DEM.x	 = sum(sum((output.DEM_x(t_trim,1:brain.nx)-...
+                        model.ideal_x(t_trim,:)).^2));
+SSE.kalman.x = sum(sum((output.kalman_x(:,t_trim)'-...
+                        model.ideal_x(t_trim,:)).^2));
+SSE.DEM.v    = sum(sum((output.DEM_x(t_trim,brain.nx*(brain.p+1)+1)-...
+                        model.real_cause(:,t_trim)').^2));
+if xh
+    SSE.DEM.xh	  = sum(sum((output.DEM_x(t_trim,xh)-...
+                             model.ideal_x(t_trim,xh)).^2));
+    SSE.kalman.xh = sum(sum((output.kalman_x(xh,t_trim)'-...
+                             model.ideal_x(t_trim,xh)).^2));
+end
 
 if if_cause == 1
     SSE.DEMv.x	  = sum(sum((output.DEMv_x(t_trim,1:brain.nx)-...

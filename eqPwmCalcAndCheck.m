@@ -32,10 +32,24 @@ roots(p)
 
 %% Experimentally obtain PWM at equilibrium
 % Name of rosbag in ./ros
-bagname = 'ardrone2_exp_2020-11-02_hover_batA1.bag';
+bagname = 'ardrone2_exp_hoverP2_10.bag';
 
 % Time interval with respect to start of rosbag recording
-time = [8,52];
+% time = [10,32]; %hoverP1_1
+% time = [21,27]; %hoverP1_2
+% time = [16,33]; %hoverP1_4
+% time = [13,40]; %hoverP2_6
+% time = [14,40]; %hoverP2_7
+% time = [15,29]; %hoverP2_9
+time = [11,32]; %hoverP2_10
+
+% time = [17,35]; %hoverA1_1
+% time = [14,28]; %hoverA1_2
+% time = [10,24]; %hoverA1_3
+% time = [17,40]; %hoverA1_4
+% time = [13,31]; %hoverA1_6
+% time = [16,30]; %hoverA1_8
+% time = [18,32]; %hoverA1_10
 
 % Topic selection
 topics.cmdVel = 0;
@@ -80,7 +94,7 @@ prompt      = {'Enter time of 1st data sample:',...
                'Enter time of last data sample:'};
 dlgtitle    = 'Data selection';
 dims        = [1 35];
-definput    = {num2str(1),num2str(t(end))};
+definput    = {num2str(t(1)),num2str(t(end))};
 answer      = inputdlg(prompt,dlgtitle,dims,definput);
 startTime   = round(str2double(answer{1}));
 endTime     = round(str2double(answer{2}));
@@ -99,12 +113,15 @@ endTime     = round(str2double(answer{2}));
 
 
 % Calculate average PWM
-pwmAvgs = mean(ardroneNavMotor(:,navStart:navEnd),2);
-pwmAvg = mean(pwmAvgs)
+pwmAvgs10 = mean(ardroneNavMotor(:,navStart:navEnd),2);
+pwmAvg10 = mean(pwmAvgs10)
 
 
 %% Save data
-filename = 'hoverBatP1.mat';
-% save(filename,'t','ardroneNavAltd','ardroneNavMotor','navStart','navEnd');
-% save(filename,'t','ardroneNavAltd','ardroneNavMotor',...
+filename = 'hoverBatP.mat';
+% save(filename,'pwmAvgs1','pwmAvg1');
+save(filename,'pwmAvgs10','pwmAvg10','-append');
+% save(filename,'time','t','ardroneNavAltd','ardroneNavMotor',...
+%               'navStart','navEnd');
+% save(filename,'time,','t','ardroneNavAltd','ardroneNavMotor',...
 %               'navStart','navEnd','-append');

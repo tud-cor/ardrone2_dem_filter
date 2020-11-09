@@ -5,7 +5,8 @@ clc;
 
 % Parameters
 degToRad = 2*pi/180; %conversion from degrees to radians
-pwmEq    = 169.5916; %Parrot battery PWM equilibrium
+% pwmEq    = 169.5916; %Parrot battery PWM equilibrium (from tests at home)
+pwmEq    = 169.0612; %Parrot battery PWM equilibrium (from tests in lab)
 % pwmEq    = 171.4937; %Akku-King battery PWM equilibrium
 
 % Changeable
@@ -28,8 +29,8 @@ g      = 9.81;     %m/s^2
 % Inertia matrix:   |iyx = ixy  iyy         iyz         |
 %                   |izx = ixz  izy = iyz   izz         |
 % Rotor inertia only has izz component
-m      = 0.481;	%kg
-ixx    = 3.4e-3;	%kgm^2
+m      = 0.481;    %kg
+ixx    = 3.4e-3;   %kgm^2
 ixy    = 0;        %kgm^2
 ixz    = 0;        %kgm^2
 iyy    = 4.0e-3;   %kgm^2
@@ -48,7 +49,8 @@ cA = [cM(1)/2.55,cM(2)];
 
 % cT(1)*omegaR^2 + cT(2)*omegaR
 cTO = [8.6e-6,-3.2e-4]; %Own work
-cTEs = [1.281e-05,-1.677e-3]; %Estimated
+% cTEs = [1.281e-05,-1.677e-3]; %Estimated from tests at home
+cTEs = [1.275e-05;-1.670e-3]; %Estimated from tests in lab
 
 % cQ(1)*omegaR^2 + cQ(2)*omegaR
 cQ = [2.4e-7,-9.9e-6];
@@ -288,6 +290,7 @@ xLin = yLin;
 
 %% Select time frames
 tFrame = [9.8,13.15];
+% tFrame = [17.8,19.125];
 [~,tStart] = min(abs(t-tFrame(1)));
 [~,tEnd] = min(abs(t-tFrame(2)));
 
@@ -327,7 +330,7 @@ wPi  = inv(wCov);
 % - Gaussian filter validity
 % - Same s for each state and output
 
-[sigmaEst,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
+[~,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
 % sEst2 = estimateSmoothness(t(1:end-1),w);
 
 

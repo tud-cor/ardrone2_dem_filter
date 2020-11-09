@@ -6,10 +6,12 @@ clc;
 
 %% Set average PWM at equilibrium
 % Parrot battery
-pwmEqBatP = 169.5916;
+% pwmEqBatP = 169.5916; %exp at home
+pwmEqBatP = 169.0612; %exp in the lab
 
 % Akku-King battery
-pwmEqBatA = 171.4937;
+% pwmEqBatA = 171.4937; %exp at home
+pwmEqBatA = 172.9070; %exp in the lab
 
 
 %% Set constant coefficients
