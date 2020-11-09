@@ -25,13 +25,28 @@ function [t,ts,u,x,y,Pz,Pw,s,A,B,C] = ardrone2_flight_data
 % s = 0.01;
 
 
-load ardrone2FlightData7 t ts uLin xLin yLin zPi wPi s A B C;
+% load ardrone2FlightData7_wind2_hPhi t ts uLin xLin yLin zPi wPi s A B C;
+load ardrone2FlightData7_wind2_hPhiDot t ts uLin xLin yLin zPi wPi s A B C;
+% load ardrone2FlightData7_hover t ts uLin xLin yLin zPi wPi s A B C;
 u = uLin;
 x = xLin';
 y = yLin';
 Pz = zPi;
-% Pw = wPi;
-Pw = eye(3);
-s = mean(s);
-s = 1e-16;
+% Pz = eye(2);
+% Pz = [1e6,0;0,1e6];
+Pw = wPi;
+% Pw = eye(3);
+% Pw = [1e8,0,0;0,1e8,0;0,0,1e8];
+% s = mean(s);
+% s = ts;
+% s = 2;
+
+% For DEM approximating Kalman with a lot of generalized coordinates
+% (p=6,d=6)
+% u = uLin;
+% x = xLin';
+% y = yLin';
+% Pz = zPi;
+% Pw = eye(3);
+% s = 0.0008;
 end

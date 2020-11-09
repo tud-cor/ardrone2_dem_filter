@@ -9,16 +9,16 @@ if if_UIO
         if_dataset,UIO_gamma);
 end
 
-% DEM with unknown causes
-[output.DEM_t,output.DEM_x] = D_step(model.A,model.B,model.C,...
-    brain.Y_embed,brain.V0,brain.W0,...
-    brain.At,brain.Bt,brain.Da,brain.Dv,brain.nv,brain.nx,brain.ny,brain.nt,...
-                       brain.p,brain.d,model.t,model.sam_time,if_predict_y);
-
-% Kalman Filter with unknown causes
-if_causes = 0;
-output.kalman_x = kalman_discrete(model.A,model.B,model.C,model.process_y,...
-    brain.Pz,brain.Pw,model.sam_time,model.t,model.real_cause,if_causes);
+% % DEM with unknown causes
+% [output.DEM_t,output.DEM_x] = D_step(model.A,model.B,model.C,...
+%     brain.Y_embed,brain.V0,brain.W0,...
+%     brain.At,brain.Bt,brain.Da,brain.Dv,brain.nv,brain.nx,brain.ny,brain.nt,...
+%                        brain.p,brain.d,model.t,model.sam_time,if_predict_y);
+% 
+% % Kalman Filter with unknown causes
+% if_causes = 0;
+% output.kalman_x = kalman_discrete(model.A,model.B,model.C,model.process_y,...
+%     brain.Pz,brain.Pw,model.sam_time,model.t,model.real_cause,if_causes);
 
 if if_cause
     % D step with known causes

@@ -90,6 +90,7 @@ bPsiDot   = 1/izz*cTPsiDer;
 
 %% Load experiment data
 load expData10_29_25_mod6.mat;
+% load expData10_29_25_mod7_hover.mat; %hovering just before applying wind
 
 t    = expData.output.time;
 ts   = expData.sampleTime;
@@ -171,7 +172,7 @@ ny = 2;
 A7 = A(xSel,xSel);
 B7 = B(xSel,uSel);
 C7 = [1,0,0;
-      0,0,1];
+      0,1,0];
 D7 = zeros(ny,nu);
 
 % Linearized system analysis
@@ -281,7 +282,8 @@ xOp = [0;0;0];
 xLin = x - xOp;
 
 % Only measure yDot and phiDot
-y = [yDot;phiDot];
+% y = [yDot;phiDot];
+y = [yDot;phi];
 
 % Convert to output around operating point
 yOp = [0;0];
@@ -330,26 +332,25 @@ wPi  = inv(wCov);
 % - Gaussian filter validity
 % - Same s for each state and output
 
-[~,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
+% [~,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
 % sEst2 = estimateSmoothness(t(1:end-1),w);
 
 
 %% Plot data
 % Plot state/output data
-% figure('Name','y and derivatives');
-% subplot(3,1,1);
-% plot(t,yLin(1,:));
+figure('Name','y and derivatives');
+subplot(3,1,1);
+plot(t,xLin(1,:));
 % subplot(3,1,2);
-% plot(t,yLin(2,:));
+% plot(t,xLin(2,:));
 % subplot(3,1,3);
 % plot(t,imuALinI(2,:));
 
-% figure('Name','phi and derivative');
-% subplot(2,1,1);
-% plot(t,yLin(3,:));
-% subplot(2,1,2);
-% plot(t,yLin(4,:));
-% subplot(2,1,1);
+figure('Name','phi and derivative');
+subplot(2,1,1);
+plot(t,xLin(2,:));
+subplot(2,1,2);
+plot(t,xLin(3,:));
 
 % figure('Name','phi and velocity mismatch');
 % subplot(2,1,1);
@@ -380,6 +381,14 @@ plot(t,xLin(3,:));
 plot(t,sysD.B(3,:)*uLin);
 plot(t(1:end-1),w(3,:));
 yline(0);
+
+% figure;
+% subplot(3,1,1);
+% plot(t(1:end-1),w(1,:));
+% subplot(3,1,2);
+% plot(t(1:end-1),w(2,:));
+% subplot(3,1,3);
+% plot(t(1:end-1),w(3,:));
 
 
 %% Save data
