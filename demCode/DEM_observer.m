@@ -11,7 +11,7 @@ if_cause = 1;
 % Set the index of the hidden state that is compared with an external
 % reference
 % 0 means no hidden state
-xh = 3;
+xh = 2;
 
 % Necessary intitialization without meaning when comparing DEM and Kalman,
 % based on drone flight data
@@ -22,6 +22,23 @@ UIO_gamma = 125;
 UIO_gains = [1200 1200 1200 1400 1500];
 
 
+%% Test filter results for ranges in p, d and s values
+s_range = [0.001:0.001:0.015];
+p_range = 0:1:6;
+d_range = 0:1:6;
+
+n_p = length(p_range);
+n_d = length(d_range);
+n_s = length(s_range);
+
+SSE.DEMv_x = zeros(n_p,n_d,n_s);
+SSE.kalmanv_x = zeros(n_p,n_d,n_s);
+SSE.DEMv_xh = zeros(n_p,n_d,n_s);
+SSE.kalmanv_xh = zeros(n_p,n_d,n_s);
+
+for i = 1:n_p
+    for j = 1:n_d
+        for k = 1:n_s
 %% Get model and corresponding flight data
 % Tt                Time vector (starting from 0)
 % model.real_cause  System input (measured)
@@ -60,14 +77,17 @@ brain.nt = size(model.t,2);
 %% Set noise properties
 % TODO Kernel width - probably tune
 % model.s is estimated from data; orig:0.5
+model.s = s_range(k);
 brain.s = model.s;
 
 % TODO Embedding orders - probably tune
 % Dataset, so model.p and model.d can be ignored
 model.p = 6; %embedding order states in model
 model.d = 2; %embedding order inputs in model
-brain.p = 2; %embedding order states; orig:6
-brain.d = 2; %embedding order inputs; orig:2
+brain.p = p_range(i); %embedding order states; orig:6
+brain.d = d_range(j); %embedding order inputs; orig:2
+% brain.p = 1; %embedding order states; orig:6
+% brain.d = 1; %embedding order inputs; orig:2
 
 % TODO Standard deviations - probably tune
 % Pz and Pw are defined in generative_process.m
@@ -128,6 +148,12 @@ if if_cause == 1
                                   model.ideal_x(t_trim,xh)).^2));
         SSE.kalmanv.xh = sum(sum((output.kalmfv_x(xh,t_trim)'-...
                                   model.ideal_x(t_trim,xh)).^2));
+        xobs = 1:brain.nx;
+        xobs(xh) = [];
+        SSE.DEMv.xobs    = sum(sum((output.DEMv_x(t_trim,xobs)-...
+                                    model.ideal_x(t_trim,xobs)).^2));
+        SSE.kalmanv.xobs = sum(sum((output.kalmfv_x(xobs,t_trim)'-...
+                                    model.ideal_x(t_trim,xobs)).^2));
     end
 end
 
@@ -151,10 +177,29 @@ end
 % SSE_std_v(i,:)  = std(SSE.DEM.v,0,2)';
 
 
-%% Plot data
-print_results(SSE,if_UIO,if_cause,xh);
-if xh
-    plot_results_xh(output,model,brain,if_UIO,if_cause,xh);
-else
-    plot_results(output,model,brain,if_UIO,if_cause);
+SSE.DEMv_x(i,j,k) = sum(sum((output.DEMv_x(t_trim,1:brain.nx)-...
+                             model.ideal_x(t_trim,:)).^2));
+SSE.kalmanv_x(i,j,k) = sum(sum((output.kalmfv_x(:,t_trim)'-...
+                                model.ideal_x(t_trim,:)).^2));
+SSE.DEMv_xh(i,j,k) = sum(sum((output.DEMv_x(t_trim,xh)-...
+                              model.ideal_x(t_trim,xh)).^2));
+SSE.kalmanv_xh(i,j,k) = sum(sum((output.kalmfv_x(xh,t_trim)'-...
+                                 model.ideal_x(t_trim,xh)).^2));
+SSE.DEMv_xobs(i,j,k) = sum(sum((output.DEMv_x(t_trim,xobs)-...
+                                model.ideal_x(t_trim,xobs)).^2));
+SSE.kalmanv_xobs(i,j,k) = sum(sum((output.kalmfv_x(xobs,t_trim)'-...
+                                   model.ideal_x(t_trim,xobs)).^2));
+% Weighted error of observable and hidden state (893 = 4.2/0.0047)
+SSE.DEMv_xw(i,j,k) = SSE.DEMv_xobs(i,j,k)*893 + SSE.DEMv_xh(i,j,k);
+        end
+    end
 end
+
+
+%% Plot data
+% print_results(SSE,if_UIO,if_cause,xh);
+% if xh
+%     plot_results_xh(output,model,brain,if_UIO,if_cause,xh);
+% else
+%     plot_results(output,model,brain,if_UIO,if_cause);
+% end

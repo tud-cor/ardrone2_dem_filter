@@ -20,9 +20,12 @@ function print_results(SSE,if_UIO,if_cause,xh)
 
 if xh
     if if_cause
-        fprintf('Sum of Squared Errors (SSE) - known input\n');
-        fprintf('DEM all states   : %9.4f        DEM hidden state(s)   : %9.4f\n',SSE.DEMv.x,SSE.DEMv.xh);
-        fprintf('Kalman all states: %9.4f        Kalman hidden state(s): %9.4f\n',SSE.kalmanv.x,SSE.kalmanv.xh);
+        fprintf('\nSum of Squared Errors (SSE) - known input\n');
+        fprintf('State  |     Hidden | Observable |        All\n');
+        fprintf('---------------------------------------------\n');
+%         fprintf('_____________________________________________\n');
+        fprintf('DEM    | %10.4f | %10.4f | %10.4f\n',SSE.DEMv.xh,SSE.DEMv.xobs,SSE.DEMv.x);
+        fprintf('Kalman | %10.4f | %10.4f | %10.4f\n',SSE.kalmanv.xh,SSE.kalmanv.xobs,SSE.kalmanv.x);
 
         fprintf('\n');
     end

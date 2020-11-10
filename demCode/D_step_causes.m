@@ -21,26 +21,26 @@ end
 
 DEM_t = t;
 
-% Plot generalized states
-figure('Name','Generalized states');
-nx = size(D_A,1)/(p_brain+1);
-for i = 1:p_brain+1
-    subplot(p_brain+1,1,i);
-    plot(DEM_t,DEMv_x(:,(i-1)*nx+1:i*nx));
-end
-
-% Plot generalized outputs
-figure('Name','Generalized outputs');
-for i = 1:p_brain+1
-    subplot(p_brain+1,1,i);
-    plot(DEM_t,Y_embed((i-1)*ny+1:i*ny,:));
-end
-
-% Plot generalized inputs
-figure('Name','Generalized inputs');
-for i = 1:d_brain+1
-    subplot(d_brain+1,1,i);
-    plot(DEM_t,Y_embed(ny*(p_brain+1)+(i-1)*nv+1:ny*(p_brain+1)+i*nv,:));
-end
+% % Plot generalized states
+% figure('Name','Generalized states');
+% nx = size(D_A,1)/(p_brain+1);
+% for i = 1:p_brain+1
+%     subplot(p_brain+1,1,i);
+%     plot(DEM_t,DEMv_x(:,(i-1)*nx+1:i*nx));
+% end
+% 
+% % Plot generalized outputs
+% figure('Name','Generalized outputs');
+% for i = 1:p_brain+1
+%     subplot(p_brain+1,1,i);
+%     plot(DEM_t,Y_embed((i-1)*ny+1:i*ny,:));
+% end
+% 
+% % Plot generalized inputs
+% figure('Name','Generalized inputs');
+% for i = 1:d_brain+1
+%     subplot(d_brain+1,1,i);
+%     plot(DEM_t,Y_embed(ny*(p_brain+1)+(i-1)*nv+1:ny*(p_brain+1)+i*nv,:));
+% end
 
 end
