@@ -23,9 +23,14 @@ UIO_gains = [1200 1200 1200 1400 1500];
 
 
 %% Test filter results for ranges in p, d and s values
-s_range = [0.001:0.001:0.015];
-p_range = 0:1:6;
-d_range = 0:1:6;
+% s_range = [0.001:0.001:0.015];
+% p_range = 0:1:6;
+% d_range = 0:1:6;
+
+ts = 1/120;
+s_range = [1e-3:1e-3:0.02];
+p_range = 1;
+d_range = 1;
 
 n_p = length(p_range);
 n_d = length(d_range);
@@ -36,9 +41,9 @@ SSE.kalmanv_x = zeros(n_p,n_d,n_s);
 SSE.DEMv_xh = zeros(n_p,n_d,n_s);
 SSE.kalmanv_xh = zeros(n_p,n_d,n_s);
 
-for i = 1:n_p
-    for j = 1:n_d
-        for k = 1:n_s
+% for i = 1:n_p
+%     for j = 1:n_d
+%         for k = 1:n_s
 %% Get model and corresponding flight data
 % Tt                Time vector (starting from 0)
 % model.real_cause  System input (measured)
@@ -77,17 +82,17 @@ brain.nt = size(model.t,2);
 %% Set noise properties
 % TODO Kernel width - probably tune
 % model.s is estimated from data; orig:0.5
-model.s = s_range(k);
+% model.s = s_range(k);
 brain.s = model.s;
 
 % TODO Embedding orders - probably tune
 % Dataset, so model.p and model.d can be ignored
 model.p = 6; %embedding order states in model
 model.d = 2; %embedding order inputs in model
-brain.p = p_range(i); %embedding order states; orig:6
-brain.d = d_range(j); %embedding order inputs; orig:2
-% brain.p = 1; %embedding order states; orig:6
-% brain.d = 1; %embedding order inputs; orig:2
+% brain.p = p_range(i); %embedding order states; orig:6
+% brain.d = d_range(j); %embedding order inputs; orig:2
+brain.p = 2; %embedding order states; orig:6
+brain.d = 5; %embedding order inputs; orig:2
 
 % TODO Standard deviations - probably tune
 % Pz and Pw are defined in generative_process.m
@@ -112,31 +117,24 @@ brain.Y_embed = generalized_process(model.process_y,model.prior_cause,...
                                     model.t,model.sam_time,...
                                     brain.nv,brain.ny,brain.p,brain.d);
 
+
 %% Run filters
 output = observer(model,brain,if_UIO,UIO_gamma,if_cause,if_dataset,...
                   if_predict_y);
 
 
 %% Get estimation error
-if_t_trim = 0;% 1: trim out estimates at both ends (inaccurate derivatives)
+% t_trim:
+% 1: trim out estimates at both ends (inaccurate derivatives)
+% 2: trim out estimates only at end
+if_t_trim = 2;
 if if_t_trim == 1
     t_trim = brain.p+2:brain.nt-brain.p-2;
+elseif if_t_trim == 2
+    t_trim = 1:brain.nt-brain.p-2;
 else
     t_trim = 1:brain.nt;
 end
-
-% SSE.DEM.x	 = sum(sum((output.DEM_x(t_trim,1:brain.nx)-...
-%                         model.ideal_x(t_trim,:)).^2));
-% SSE.kalman.x = sum(sum((output.kalman_x(:,t_trim)'-...
-%                         model.ideal_x(t_trim,:)).^2));
-% SSE.DEM.v    = sum(sum((output.DEM_x(t_trim,brain.nx*(brain.p+1)+1)-...
-%                         model.real_cause(:,t_trim)').^2));
-% if xh
-%     SSE.DEM.xh	  = sum(sum((output.DEM_x(t_trim,xh)-...
-%                              model.ideal_x(t_trim,xh)).^2));
-%     SSE.kalman.xh = sum(sum((output.kalman_x(xh,t_trim)'-...
-%                              model.ideal_x(t_trim,xh)).^2));
-% end
 
 if if_cause == 1
     SSE.DEMv.x	  = sum(sum((output.DEMv_x(t_trim,1:brain.nx)-...
@@ -154,6 +152,19 @@ if if_cause == 1
                                     model.ideal_x(t_trim,xobs)).^2));
         SSE.kalmanv.xobs = sum(sum((output.kalmfv_x(xobs,t_trim)'-...
                                     model.ideal_x(t_trim,xobs)).^2));
+    end
+else
+    SSE.DEM.x	 = sum(sum((output.DEM_x(t_trim,1:brain.nx)-...
+                        model.ideal_x(t_trim,:)).^2));
+    SSE.kalman.x = sum(sum((output.kalman_x(:,t_trim)'-...
+                            model.ideal_x(t_trim,:)).^2));
+    SSE.DEM.v    = sum(sum((output.DEM_x(t_trim,brain.nx*(brain.p+1)+1)-...
+                            model.real_cause(:,t_trim)').^2));
+    if xh
+        SSE.DEM.xh	  = sum(sum((output.DEM_x(t_trim,xh)-...
+                                 model.ideal_x(t_trim,xh)).^2));
+        SSE.kalman.xh = sum(sum((output.kalman_x(xh,t_trim)'-...
+                                 model.ideal_x(t_trim,xh)).^2));
     end
 end
 
@@ -177,29 +188,32 @@ end
 % SSE_std_v(i,:)  = std(SSE.DEM.v,0,2)';
 
 
-SSE.DEMv_x(i,j,k) = sum(sum((output.DEMv_x(t_trim,1:brain.nx)-...
-                             model.ideal_x(t_trim,:)).^2));
-SSE.kalmanv_x(i,j,k) = sum(sum((output.kalmfv_x(:,t_trim)'-...
-                                model.ideal_x(t_trim,:)).^2));
-SSE.DEMv_xh(i,j,k) = sum(sum((output.DEMv_x(t_trim,xh)-...
-                              model.ideal_x(t_trim,xh)).^2));
-SSE.kalmanv_xh(i,j,k) = sum(sum((output.kalmfv_x(xh,t_trim)'-...
-                                 model.ideal_x(t_trim,xh)).^2));
-SSE.DEMv_xobs(i,j,k) = sum(sum((output.DEMv_x(t_trim,xobs)-...
-                                model.ideal_x(t_trim,xobs)).^2));
-SSE.kalmanv_xobs(i,j,k) = sum(sum((output.kalmfv_x(xobs,t_trim)'-...
-                                   model.ideal_x(t_trim,xobs)).^2));
-% Weighted error of observable and hidden state (893 = 4.2/0.0047)
-SSE.DEMv_xw(i,j,k) = SSE.DEMv_xobs(i,j,k)*893 + SSE.DEMv_xh(i,j,k);
-        end
-    end
-end
+% SSE.DEMv_x(i,j,k) = sum(sum((output.DEMv_x(t_trim,1:brain.nx)-...
+%                              model.ideal_x(t_trim,:)).^2));
+% SSE.kalmanv_x(i,j,k) = sum(sum((output.kalmfv_x(:,t_trim)'-...
+%                                 model.ideal_x(t_trim,:)).^2));
+% SSE.DEMv_xh(i,j,k) = sum(sum((output.DEMv_x(t_trim,xh)-...
+%                               model.ideal_x(t_trim,xh)).^2));
+% SSE.kalmanv_xh(i,j,k) = sum(sum((output.kalmfv_x(xh,t_trim)'-...
+%                                  model.ideal_x(t_trim,xh)).^2));
+% SSE.DEMv_xobs(i,j,k) = sum(sum((output.DEMv_x(t_trim,xobs)-...
+%                                 model.ideal_x(t_trim,xobs)).^2));
+% SSE.kalmanv_xobs(i,j,k) = sum(sum((output.kalmfv_x(xobs,t_trim)'-...
+%                                    model.ideal_x(t_trim,xobs)).^2));
+% % Weighted error of observable and hidden state (893 = 4.2/0.0047)
+% % SSE.DEMv_xw(i,j,k) = SSE.DEMv_xobs(i,j,k)*893 + SSE.DEMv_xh(i,j,k);
+% % fprintf('s: %9.4f\n',model.s);
+% % fprintf('SSE: %9.4f\n\n',SSE.DEMv_x(i,j,k));
+% fprintf('(%d,%d,%5.4f)\n',brain.p,brain.d,brain.s);
+%         end
+%     end
+% end
 
 
 %% Plot data
-% print_results(SSE,if_UIO,if_cause,xh);
-% if xh
-%     plot_results_xh(output,model,brain,if_UIO,if_cause,xh);
-% else
-%     plot_results(output,model,brain,if_UIO,if_cause);
-% end
+print_results(SSE,if_UIO,if_cause,xh);
+if xh
+    plot_results_xh(output,SSE,model,brain,if_UIO,if_cause,xh,t_trim);
+else
+    plot_results(output,model,brain,if_UIO,if_cause);
+end

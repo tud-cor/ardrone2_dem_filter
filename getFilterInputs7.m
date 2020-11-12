@@ -289,8 +289,11 @@ yLin = y - yOp;
 
 
 %% Select time frames
-tFrame = [9.8,13.15];
-% tFrame = [17.8,19.125];
+tFrame1 = [9.8,13.15];
+tFrame2 = [17.8,19.125];
+tFrame3 = [5.7,7.95];
+tFrame4 = [9.7667,13.25];
+tFrame = tFrame4;
 [~,tStart] = min(abs(t-tFrame(1)));
 [~,tEnd] = min(abs(t-tFrame(2)));
 
@@ -330,63 +333,123 @@ wPi  = inv(wCov);
 % - Gaussian filter validity
 % - Same s for each state and output
 
-[~,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
+% [~,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
 % sEst2 = estimateSmoothness(t(1:end-1),w);
 
 
 %% Plot data
-% Plot state/output data
-% figure('Name','y and derivatives');
-% subplot(3,1,1);
-% plot(t,xLin(1,:));
-% subplot(3,1,2);
-% plot(t,xLin(2,:));
-% subplot(3,1,3);
-% plot(t,imuALinI(2,:));
-
-figure('Name','phi and derivative');
-subplot(2,1,1);
-plot(t,xLin(1,:));
-subplot(2,1,2);
-plot(t,xLin(2,:));
-
-% figure('Name','phi and velocity mismatch');
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+% figure('Name','States');
 % subplot(2,1,1);
 % plot(t,xLin(1,:));
 % subplot(2,1,2);
 % plot(t,xLin(2,:));
-
-% figure('Name','phiDot and model input');
-% subplot(2,1,1);
-% plot(t,yLin(4,:));
-% subplot(2,1,2);
-% plot(t,sysD.B(4,:)*uLin);
-% plot(t,sysD.B(4,:)*uLin);
-
-
-% Plot process noise data
-% figure('Name','Process noise');
-% for i = 1:nx
-%     subplot(nx,1,i);
-%     plot(t,xLin(i,:));
-%     hold on;
-%     plot(t(1:end-1),w(i,:));
-% end
-
-figure('Name','Process noise roll rate');
-hold on;
-plot(t,xLin(2,:));
-plot(t,sysD.B(2,:)*uLin);
-plot(t(1:end-1),w(2,:));
-yline(0);
-
-% figure;
-% subplot(3,1,1);
+% 
+% figure('Name','Roll rate and input');
+% hold on;
+% plot(t,xLin(2,:));
+% plot(t,uLin);
+% yline(0);
+% 
+% figure('Name','Process noise roll angle');
+% hold on;
+% plot(t,xLin(1,:));
+% plot(t,sysD.B(1,:)*uLin);
 % plot(t(1:end-1),w(1,:));
-% subplot(3,1,2);
+% yline(0);
+
+% figure('Name','Process noise roll rate');
+% hold on;
+% plot(t,xLin(2,:));
+% plot(t,sysD.B(2,:)*uLin);
 % plot(t(1:end-1),w(2,:));
-% subplot(3,1,3);
-% plot(t(1:end-1),w(3,:));
+% yline(0);
+
+% Generate fourier fit to process noise of roll rate
+tW = t(2:end);
+[wFit,fGof,fitOut] = fit(tW',w(2,:)','fourier7');
+
+% Generate derivative of process noise data
+n = length(tW);
+wDer = zeros(1,n-1);
+for i = 1:n-1
+    wDer(i) = w(2,i+1) - w(2,i);
+end
+
+gausFitW = fitdist(fitOut.residuals,'Normal');
+gausFitWDot = fitdist(wDer','Normal');
+
+figure('Name','Process noise vs white noise');
+box on;
+subplot(3,1,1);
+plot(tW,w(2,:));
+hold on;
+plot(wFit);
+ax = gca;
+ax.FontSize = axFontSize;
+legend('Process noise of roll rate','Fitted Fourier series');
+title('Process noise or roll rate and fitted Fourier series',...
+      'FontSize',titleFontSize);
+subplot(3,1,2);
+plot(tW,fitOut.residuals);
+title('Residuals after fit','FontSize',titleFontSize);
+ax = gca;
+xLim = ax.XLim;
+yLim = ax.YLim;
+ax.FontSize = axFontSize;
+subplot(3,1,3);
+plot(t(1:end-1),normrnd(gausFitW.mu,gausFitW.sigma,[1,length(t)-1]));
+xlim(xLim);
+ylim(yLim);
+ax = gca;
+ax.FontSize = axFontSize;
+title('White noise with Guassian distribution',...
+      'FontSize',titleFontSize);
+
+figure('Name','Gaussian distribution of process noise and derivative');
+box on;
+xLim = [-0.17,0.17];
+subplot(2,1,1);
+histfit(fitOut.residuals,100,'normal');
+xlim(xLim);
+ax = gca;
+ax.FontSize = axFontSize;
+legend('Histogram of residuals','Gaussian fit');
+title('Process noise','FontSize',titleFontSize);
+subplot(2,1,2);
+histfit(wDer,100,'normal');
+xlim(xLim);
+ax = gca;
+ax.FontSize = axFontSize;
+legend('Histogram of derivative of process noise','Gaussian fit',...
+       'FontSize',labelFontSize);
+title('Derivative of process noise','FontSize',titleFontSize);
+
+% % TODO maybe conclude something about the DEM noise estimates
+% load demNoiseEst.mat;
+% figure('Name','Process noise of roll rate and estimate process noise by DEM');
+% box on;
+% hold on;
+% plot(tW,fitOut.residuals);
+% plot(tDash,wDash(2,:)*(ts*2));
+% legend('Process noise of roll rate',...
+%        'Process noise of roll rate, estimated by DEM');
+% ax = gca;
+% ax.FontSize = axFontSize;
+% 
+% % TODO maybe generate FFT of process noise and see what we can derive from
+% % it frequencies
+% [fW,pW] = getFFT(tW,w(2,:));
+% figure;
+% box on;
+% plot(fW,pW);
+% 
+% [fR,pR] = getFFT(tW,fitOut.residuals');
+% figure;
+% box on;
+% plot(fR,pR);
 
 
 %% Save data

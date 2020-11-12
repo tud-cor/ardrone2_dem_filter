@@ -1,4 +1,4 @@
-function [DEM_t,DEMv_x] = D_step_causes(A,D_A,B,Da,Bt,Ct,V0y,W0,Y_embed,real_cause,...
+function [DEM_t,DEMv_x,Y_embed] = D_step_causes(A,D_A,B,Da,Bt,Ct,V0y,W0,Y_embed,real_cause,...
     t,sam_time,nt,nv,ny,p_brain,d_brain)
 
 state_sp_v = ss(Da - Ct'*V0y*Ct - D_A'*W0*D_A, ...
@@ -12,6 +12,7 @@ for i = 1:nt
     V_embed(:,i) = embed_Y(real_cause,d_brain+1,t(i),sam_time);
 end
 Y_embed(ny*(p_brain+1)+1:end,:) = V_embed;
+% Y_embed(ny+1:ny*(p_brain+1),:) = zeros(ny*p_brain,nt);
 
 % Perform state estimation
 DEMv_x = zeros(nt,size(state_sp_v.C,2));
@@ -20,27 +21,4 @@ for i = 2:nt
 end
 
 DEM_t = t;
-
-% % Plot generalized states
-% figure('Name','Generalized states');
-% nx = size(D_A,1)/(p_brain+1);
-% for i = 1:p_brain+1
-%     subplot(p_brain+1,1,i);
-%     plot(DEM_t,DEMv_x(:,(i-1)*nx+1:i*nx));
-% end
-% 
-% % Plot generalized outputs
-% figure('Name','Generalized outputs');
-% for i = 1:p_brain+1
-%     subplot(p_brain+1,1,i);
-%     plot(DEM_t,Y_embed((i-1)*ny+1:i*ny,:));
-% end
-% 
-% % Plot generalized inputs
-% figure('Name','Generalized inputs');
-% for i = 1:d_brain+1
-%     subplot(d_brain+1,1,i);
-%     plot(DEM_t,Y_embed(ny*(p_brain+1)+(i-1)*nv+1:ny*(p_brain+1)+i*nv,:));
-% end
-
 end
