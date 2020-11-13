@@ -44,8 +44,8 @@ Pw = wPi;
 % Pw = eye(3);
 % Pw = [1e8,0,0;0,1e8,0;0,0,1e8];
 % s = mean(s);
-% s = ts;
-s = 0.004;
+% s = 0.004; % AI meeting presentation result 1
+s = 0.01; % AI meeting presentation result 2
 
 % For DEM approximating Kalman with a lot of generalized coordinates
 % (p=6,d=6)

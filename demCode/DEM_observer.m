@@ -91,8 +91,8 @@ model.p = 6; %embedding order states in model
 model.d = 2; %embedding order inputs in model
 % brain.p = p_range(i); %embedding order states; orig:6
 % brain.d = d_range(j); %embedding order inputs; orig:2
-brain.p = 1; %embedding order states; orig:6
-brain.d = 2; %embedding order inputs; orig:2
+brain.p = 2; %embedding order states; orig:6
+brain.d = 5; %embedding order inputs; orig:2
 
 % TODO Standard deviations - probably tune
 % Pz and Pw are defined in generative_process.m

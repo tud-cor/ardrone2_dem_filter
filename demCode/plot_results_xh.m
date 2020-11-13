@@ -12,8 +12,8 @@ color = [ 0         0.4470    0.7410;    0.8500    0.3250    0.0980;
           0.6350    0.0780    0.1840];
 
 % Make difference in directly observable states and hidden states
-x_obs = 1:brain.nx;
-x_obs(xh) = [];
+xobs = 1:brain.nx;
+xobs(xh) = [];
 
 % Define variables for quick plotting
 output.DEM_t = output.DEM_t(t_trim);
@@ -65,6 +65,22 @@ if if_cause == 1
 %     ylabel('State amplitude (-)');
 
     figure('Name','Hidden state estimate');
+%     subplot(2,1,1);
+%     box on;
+%     hold on;
+%     plot(t,x(t_trim,xobs),'Color',color(1,:));
+%     plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:));
+%     plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:));
+%     ax = gca;
+%     ax.FontSize = ax_font_size;
+%     legend('Measured',['DEM estimate (SSE = ' ...
+%                        num2str(SSE.DEMv.xobs) ')'],...
+%            ['Kalman estimate (SSE = ' num2str(SSE.kalmanv.xobs) ')']);
+%     xlabel('Time (s)','FontSize',label_font_size);
+%     ylabel('$\phi$ (rad/s)','FontSize',label_font_size,...
+%                             'Interpreter','latex');
+%     title('DEM vs Kalman: roll angle','FontSize',title_font_size);
+%     subplot(2,1,2);
     box on;
     hold on;
     plot(t,x(t_trim,xh),'Color',color(1,:));
@@ -77,7 +93,7 @@ if if_cause == 1
     xlabel('Time (s)','FontSize',label_font_size);
     ylabel('$\dot{\phi}$ (rad/s)','FontSize',label_font_size,...
                                   'Interpreter','latex');
-    title('DEM vs Kalman','FontSize',title_font_size);
+    title('DEM vs Kalman: roll rate','FontSize',title_font_size);
 
 %     % Plot generalized states
 %     figure('Name','Generalized states');
@@ -123,10 +139,10 @@ else
     % Plot state estimates with unknown input
     figure('Name','State estimates with unknown input');
     subplot(3,1,1);
-    fig1 = plot(model.t,x(:,x_obs),'Color',color(1,:));
+    fig1 = plot(model.t,x(:,xobs),'Color',color(1,:));
     hold on;
-    fig2 = plot(t,DEMx(:,x_obs),'--','Color',color(2,:));
-    fig3 = plot(model.t,kalmx(x_obs,:)','-.','Color',color(3,:));
+    fig2 = plot(t,DEMx(:,xobs),'--','Color',color(2,:));
+    fig3 = plot(model.t,kalmx(xobs,:)','-.','Color',color(3,:));
 %     if if_UIO == 1
 %         fig4 = plot(model.t,output.UIO_x_est,'-.','Color',color(4,:));
 %         legend([fig1(1),fig2(1),fig3(1),fig4(1)],{'Ideal states (outputs with noise)','DEM states',...
