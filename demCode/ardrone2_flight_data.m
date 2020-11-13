@@ -45,7 +45,7 @@ Pw = wPi;
 % Pw = [1e8,0,0;0,1e8,0;0,0,1e8];
 % s = mean(s);
 % s = ts;
-s = ts;
+s = 0.004;
 
 % For DEM approximating Kalman with a lot of generalized coordinates
 % (p=6,d=6)

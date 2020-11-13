@@ -338,9 +338,9 @@ wPi  = inv(wCov);
 
 
 %% Plot data
-axFontSize = 30;
-labelFontSize = 35;
-titleFontSize = 40;
+axFontSize = 15;
+labelFontSize = 20;
+titleFontSize = 25;
 % figure('Name','States');
 % subplot(2,1,1);
 % plot(t,xLin(1,:));
@@ -370,62 +370,91 @@ titleFontSize = 40;
 % Generate fourier fit to process noise of roll rate
 tW = t(2:end);
 [wFit,fGof,fitOut] = fit(tW',w(2,:)','fourier7');
+gausFitW = fitdist(fitOut.residuals,'Normal');
+
+% Generate coloured noise signal
+rng(3);
+nW = length(tW);
+wW = normrnd(gausFitW.mu,gausFitW.sigma,[1,nW]);
+T = 1;
+tau = linspace(-T,T,2*nW-1);
+sC = ts/2;
+h = sqrt(ts/(sC*sqrt(pi)))*exp(-tau.^2/(2*sC^2));
+wC = conv(h,wW,'valid');
 
 % Generate derivative of process noise data
-n = length(tW);
-wDer = zeros(1,n-1);
-for i = 1:n-1
+nW = length(tW);
+wDer = zeros(1,nW-1);
+for i = 1:nW-1
     wDer(i) = w(2,i+1) - w(2,i);
 end
-
-gausFitW = fitdist(fitOut.residuals,'Normal');
 gausFitWDot = fitdist(wDer','Normal');
 
 figure('Name','Process noise vs white noise');
 box on;
-subplot(3,1,1);
+subplot(4,1,1);
 plot(tW,w(2,:));
 hold on;
 plot(wFit);
+legend('Process noise of roll rate','Fitted Fourier series');
+xlabel('Time (s)','FontSize',labelFontSize);
+ylabel('$w_{\dot{\phi}}$ (rad/s)','FontSize',labelFontSize,...
+       'Interpreter','latex');
+title('Process noise of roll rate and fitted Fourier series',
+      'FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
-legend('Process noise of roll rate','Fitted Fourier series');
-title('Process noise or roll rate and fitted Fourier series',...
-      'FontSize',titleFontSize);
-subplot(3,1,2);
+subplot(4,1,2);
 plot(tW,fitOut.residuals);
+xlabel('Time (s)','FontSize',labelFontSize);
+ylabel('$w_{\dot{\phi},res}$ (rad/s)','FontSize',labelFontSize,
+       'Interpreter','latex');
 title('Residuals after fit','FontSize',titleFontSize);
 ax = gca;
 xLim = ax.XLim;
 yLim = ax.YLim;
 ax.FontSize = axFontSize;
-subplot(3,1,3);
-plot(t(1:end-1),normrnd(gausFitW.mu,gausFitW.sigma,[1,length(t)-1]));
+subplot(4,1,3);
+plot(tW,wC);
 xlim(xLim);
-ylim(yLim);
+xlabel('Time (s)','FontSize',labelFontSize);
+ylabel('Amplitude (-)','FontSize',labelFontSize);
+title('Coloured noise, generated using white noise below and Gaussian filter',...
+      'FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
+subplot(4,1,4);
+plot(tW,wW);
+xlim(xLim);
+ylim(yLim);
+xlabel('Time (s)','FontSize',labelFontSize);
+ylabel('Amplitude (-)','FontSize',labelFontSize);
 title('White noise with Guassian distribution',...
       'FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
 
 figure('Name','Gaussian distribution of process noise and derivative');
 box on;
 xLim = [-0.17,0.17];
 subplot(2,1,1);
-histfit(fitOut.residuals,100,'normal');
+histfit(fitOut.residuals,50,'normal');
 xlim(xLim);
-ax = gca;
-ax.FontSize = axFontSize;
 legend('Histogram of residuals','Gaussian fit');
+xlabel('Time (s)','FontSize',labelFontSize);
+ylabel('# occurences (probability)','FontSize',labelFontSize);
 title('Process noise','FontSize',titleFontSize);
-subplot(2,1,2);
-histfit(wDer,100,'normal');
-xlim(xLim);
 ax = gca;
 ax.FontSize = axFontSize;
-legend('Histogram of derivative of process noise','Gaussian fit',...
-       'FontSize',labelFontSize);
+subplot(2,1,2);
+histfit(wDer,50,'normal');
+xlim(xLim);
+legend('Histogram of derivative','Gaussian fit');
+xlabel('Time (s)','FontSize',labelFontSize);
+ylabel('# occurences (probability)','FontSize',labelFontSize);
 title('Derivative of process noise','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
 
 % % TODO maybe conclude something about the DEM noise estimates
 % load demNoiseEst.mat;

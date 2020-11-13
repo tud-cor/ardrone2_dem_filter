@@ -65,6 +65,7 @@ if if_cause == 1
 %     ylabel('State amplitude (-)');
 
     figure('Name','Hidden state estimate');
+    box on;
     hold on;
     plot(t,x(t_trim,xh),'Color',color(1,:));
     plot(t,DEMv_x(t_trim,xh),'Color',color(2,:));
