@@ -93,7 +93,7 @@ if if_cause == 1
     xlabel('Time (s)','FontSize',label_font_size);
     ylabel('$\dot{\phi}$ (rad/s)','FontSize',label_font_size,...
                                   'Interpreter','latex');
-    title('DEM vs Kalman: roll rate','FontSize',title_font_size);
+    title('DEM vs Kalman','FontSize',title_font_size);
 
 %     % Plot generalized states
 %     figure('Name','Generalized states');

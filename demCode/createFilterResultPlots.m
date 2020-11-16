@@ -4,7 +4,7 @@ close all;
 clc;
 
 
-%% Set fontsizes
+%% Set font sizes
 axFontSize = 30;
 labelFontSize = 35;
 titleFontSize = 40;

@@ -6,17 +6,11 @@ clc;
 % For OptiTrack noise:
 % - optitrackNoiseTest (from ardrone2_exp_2020-07-24_4.bag)
 
-% For gyro noise:
-% - gyroNoiseTest (from ardrone2DroneSensorNoise.bag)
-
-% Parameters
-eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
-
 
 %% Set variables
 % % Retrieve bag file
 % cd ~/.ros;
-% bag = rosbag("ardrone2DroneSensorNoise2.bag");
+% bag = rosbag("ardrone2_exp_2020-10-29_25_batP1.bag");
 % cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 % 
 % % Select topics that need to be stored
@@ -26,14 +20,14 @@ eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
 % % Simulation/flight data topics
 % topics.modelInput = 0;
 % topics.gazeboModelStates = 0;
-% topics.optitrack = 0;
-% topics.ardroneImu = 1;
+% topics.optitrack = 1;
+% topics.ardroneImu = 0;
 % topics.ardroneNav = 0;
 % topics.ardroneOdom = 0;
 % topics.rotorsMotorSpeed = 0;
 % 
 % % Set time interval with respect to start of rosbag recording
-% time = [0,40];
+% time = [0,10];
 % 
 % 
 % %% Get data
@@ -76,85 +70,59 @@ eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
 %     ardroneOdomVLin = topicsOut.ardroneOdom.vLin;
 %     ardroneOdomVAng = topicsOut.ardroneOdom.vAng;
 % end
-
-
+% 
+% 
 % %% Select suitable time frames
 % % Plot data to search for time where quantities are constant
+% optitrackPlotTime = optitrackStampTime - optitrackStampTime(1);
 % figure('Name','OptiTrack position data');
 % hold on;
-% plot(optitrackStampTime,optitrackPos(1,:),'-o');
-% plot(optitrackStampTime,optitrackPos(2,:),'-o');
-% plot(optitrackStampTime,optitrackPos(3,:),'-o');
+% plot(optitrackPlotTime,optitrackPos(1,:),'-o');
+% plot(optitrackPlotTime,optitrackPos(2,:),'-o');
+% plot(optitrackPlotTime,optitrackPos(3,:),'-o');
+% keyboard;
 % 
 % % Select data samples to use
-% prompt = {'Enter index of 1st data sample:',...
-%           'Enter index of last data sample:'};
-% dlgtitle = 'Data selection';
-% dims = [1 35];
-% definput = {'1',num2str(length(optitrackStampTime))};
-% answer = inputdlg(prompt,dlgtitle,dims,definput);
-% otStart = round(str2double(answer{1}));
-% otEnd = round(str2double(answer{2}));
+% prompt      = {'Enter time of 1st data sample:',...
+%                'Enter time of last data sample:'};
+% dlgtitle    = 'Data selection';
+% dims        = [1 35];
+% definput    = {num2str(optitrackPlotTime(1)),...
+%                num2str(optitrackPlotTime(end))};
+% answer      = inputdlg(prompt,dlgtitle,dims,definput);
+% startTime   = str2double(answer{1}) + optitrackStampTime(1);
+% endTime     = str2double(answer{2}) + optitrackStampTime(1);
+% [~,otStart] = min(abs(optitrackStampTime-startTime));
+% [~,otEnd]   = min(abs(optitrackStampTime-endTime));
 % 
 % % Select proper OptiTrack data
 % optitrackStampTime = optitrackStampTime(otStart:otEnd);
+% optitrackStampTime = optitrackStampTime - optitrackStampTime(1);
 % optitrackPos = optitrackPos(:,otStart:otEnd);
 % optitrackOrientQuat = optitrackOrientQuat(:,otStart:otEnd);
 % 
 % 
-% %% Convert OptiTrack quaternions to ZYX Euler angles
-% % Convert quaternions to Euler angles
-% optitrackOrientQuat = optitrackOrientQuat';
-% orient = zeros(size(optitrackOrientQuat,1),3);
-% for i = 1:size(optitrackOrientQuat,1)
-%     orient(i,:) = quat2eul(optitrackOrientQuat(i,:));
-% end
-% orient = orient';
+% %% Ensure that all orientations are given in ZYX Euler angles, start at 0
+% %  and are given in [rad]
 % 
-% % Remove jumps of 2*pi in angle data and ensure the angles are centered
-% % around 0 rad
-% optitrackOrient = unwrap(orient,eulThres,2);
-% for i = 1:3
-%     if mean(optitrackOrient(i,:)) > eulThres/2
-%         optitrackOrient(i,:) = optitrackOrient(i,:) - pi;
-%     elseif mean(optitrackOrient(i,:)) < -eulThres/2
-%         optitrackOrient(i,:) = optitrackOrient(i,:) + pi;
-%     end
-% end
+% % Convert quaternion from ROS convention (x,y,z,w)
+% %                    to MATLAB convention (w,x,y,z)
+% optitrackOrientQuat = [optitrackOrientQuat(4,:);...
+%                        optitrackOrientQuat(1:3,:)];
+% 
+% % Convert quaternions to ZYX Euler angles: [Z;Y;X] ([psi;theta;phi])
+% optitrackOrient = quat2eul(optitrackOrientQuat','ZYX')';
 % 
 % figure('Name','OptiTrack orientation data');
 % subplot(3,1,1);
 % plot(optitrackStampTime,optitrackOrient(1,:),'-o');
-% title('\phi');
+% title('\psi');
 % subplot(3,1,2);
 % plot(optitrackStampTime,optitrackOrient(2,:),'-o');
 % title('\theta');
 % subplot(3,1,3);
 % plot(optitrackStampTime,optitrackOrient(3,:),'-o');
-% title('\psi');
-
-
-% %% Select suitable time frames
-% % Plot data to search for time where quantities are constant
-% figure('Name','AR.Drone 2.0 IMU angular velocity');
-% hold on;
-% plot(ardroneImuStampTime,ardroneImuVAng(1,:),'-o');
-% plot(ardroneImuStampTime,ardroneImuVAng(2,:),'-o');
-% plot(ardroneImuStampTime,ardroneImuVAng(3,:),'-o');
-% 
-% % Select data samples to use
-% prompt = {'Enter index of 1st data sample:',...
-%           'Enter index of last data sample:'};
-% dlgtitle = 'Data selection';
-% dims = [1 35];
-% definput = {'1',num2str(length(ardroneImuStampTime))};
-% answer = inputdlg(prompt,dlgtitle,dims,definput);
-% imuStart = round(str2double(answer{1}));
-% imuEnd = round(str2double(answer{2}));
-% 
-% % Select proper OptiTrack data
-% ardroneImuStampTime = ardroneImuStampTime(imuStart:imuEnd);
-% ardroneImuVAng = ardroneImuVAng(:,imuStart:imuEnd);
+% title('\phi');
 % 
 % 
 % %% Interpolate data
@@ -162,16 +130,9 @@ eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
 % fs = 120;
 % measNoiseData.sampleTime = 1/fs;
 % 
-% % % OptiTrack data
-% % data.time = optitrackStampTime;
-% % data.value = [optitrackPos;optitrackOrient];
-% % tmp = interpolate(measNoiseData.sampleTime,data);
-% % time = tmp.time;
-% % z = tmp.value;
-% 
-% % AR.Drone 2.0 IMU data
-% data.time = ardroneImuStampTime;
-% data.value = ardroneImuVAng;
+% % OptiTrack data
+% data.time = optitrackStampTime;
+% data.value = optitrackOrient(3,:);
 % tmp = interpolate(measNoiseData.sampleTime,data);
 % time = tmp.time;
 % z = tmp.value;
@@ -179,36 +140,20 @@ eulThres = 6;   %minimum difference in Euler angle to compensate for jumps
 % 
 % %% Ensure data start at time 0 and data is zeroed
 % time = time - time(1);
-% z = z - z(:,1);
-% 
-% % OptiTrack data
-% % figure('Name','Position');
-% % plot(time,z(1:3,:)');
-% % figure('Name','Orientation');
-% % plot(time,z(4:6,:)');
-% 
-% % AR.Drone 2.0 IMU data
-% figure('Name','Angular velocity');
-% plot(time,z(1:3,:)');
+% z = z - z(1);
 % 
 % 
 % %% Save data to speed up
 % % OptiTrack data
-% % save('optiTrackNoiseTest.mat','time','z');
+% save('optiTrackNoiseTest.mat','time','z');
 % 
-% % AR.Drone 2.0 IMU data
-% save('ardroneImuNoiseTest.mat','time','z');
-
-
+% 
 %% Load data to speed up
 % OptiTrack data
-% load optiTrackNoiseTest.mat;
-
-% AR.Drone 2.0 IMU data
-load ardroneImuNoiseTest.mat;
+load optiTrackNoiseTest.mat;
 
 
-%% Calculate noise characteristics of OptiTrack position and orientation
+%% Calculate noise characteristics of OptiTrack roll angle
 %  states
 % [f,pZ1] = getFFT(time,z);
 % plot(f,pZ1);
@@ -220,21 +165,105 @@ load ardroneImuNoiseTest.mat;
 %     plot(f,pZ1(i,:));
 % end
 
-time = time(1:1000);
-z = z(2,1:1000);
+z = z - mean(z);
+std(z)
+std(z)^2
 
-[SigmaZEst1,sZEstGaussian] = estimateNoiseCharacteristics(time,z,1,1);
+% [SigmaZEst1,sZEstGaussian] = estimateNoiseCharacteristics(time,z,1,1);
+% [sZEstFriston] = estimateSmoothness(time,z);
 
-[sZEstFriston] = estimateSmoothness(time,z);
+
+%% Calculate higher-order derivatives of measurement noise
+nZ = length(time);
+
+zDer        = diff(z,1,2);
+zDer        = zDer - mean(zDer,2);
+gausFitZDot = fitdist(zDer','Normal');
+
+zDDer        = diff(zDer,1,2);
+zDDer        = zDDer - mean(zDDer,2);
+gausFitZDDot = fitdist(zDDer','Normal');
 
 
-%% Save expData data
-measNoiseData.time      = time;
-measNoiseData.z         = z;
-measNoiseData.nSamples  = 1000;
-measNoiseData.dataName  = 'ardrone2DroneSensorNoise';
-measNoiseData.SigmaEst1 = SigmaZEst1;
-measNoiseData.sEst1     = sZEstGaussian;
-measNoiseData.sEst2     = sZEstFriston;
-filename = sprintf('measNoiseData_%s',datestr(now,'dd-mm-yyyy_HH-MM'));
-save(filename,'measNoiseData');
+%% Plot data
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+
+% OptiTrack data
+figure('Name','Measurement noise');
+box on;
+% subplot(2,1,1);
+plot(time,z);
+xlabel('Time (s)','FontSize',labelFontSize);
+ylabel('\phi (rad)','FontSize',labelFontSize);
+title('Measurement noise','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+% subplot(2,1,2);
+% plot(time,normrnd(0,std(z),[1,length(time)]));
+
+
+axFontSize = 15;
+labelFontSize = 20;
+titleFontSize = 25;
+figure('Name','Gaussian distribution of measurement noise and derivative');
+box on;
+xLim = [-4e-4,4e-4];
+subplot(3,1,1);
+histfit(z,50,'normal');
+xlim(xLim);
+legend('Histogram of measurement noise','Gaussian fit');
+xlabel('Noise value (rad)','FontSize',labelFontSize);
+ylabel('# occurences & probability','FontSize',labelFontSize);
+title('Measurement noise','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(3,1,2);
+histfit(zDer,57,'normal');
+xlim(xLim);
+legend('Histogram of 1st-order derivative','Gaussian fit');
+xlabel('1st-order derivative noise value (rad/s)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences & probability','FontSize',labelFontSize);
+title('1st-order derivative of measurement noise','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(3,1,3);
+histfit(zDDer,88,'normal');
+xlim(xLim);
+legend('Histogram of 2nd-order derivative','Gaussian fit');
+xlabel('2nd-order derivative value (rad/s^2)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences & probability','FontSize',labelFontSize);
+title('2nd-order derivative of measurement noise','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+% 
+% 
+% %% Autocorrelation test
+% white = normrnd(0,std(z),[1,length(time)]);
+% ts = 1/120;
+% n = length(time);
+% tau = linspace(-time(end),time(end),2*n-1);
+% s = 0.01;
+% h = sqrt(1/ts*s*sqrt(pi))*exp(-tau.^2/(2*s^2));
+% col = conv(h,white,'valid');
+% figure;
+% autocorr(white);
+% figure;
+% autocorr(h);
+% figure;
+% autocorr(col);
+% 
+% 
+% %% Save expData data
+% measNoiseData.time      = time;
+% measNoiseData.z         = z;
+% measNoiseData.nSamples  = 1000;
+% measNoiseData.dataName  = 'ardrone2DroneSensorNoise';
+% measNoiseData.SigmaEst1 = SigmaZEst1;
+% measNoiseData.sEst1     = sZEstGaussian;
+% measNoiseData.sEst2     = sZEstFriston;
+% filename = sprintf('measNoiseData_%s',datestr(now,'dd-mm-yyyy_HH-MM'));
+% save(filename,'measNoiseData');

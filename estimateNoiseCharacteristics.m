@@ -1,4 +1,9 @@
-function [Sigma,s] = estimateNoiseCharacteristics(t,x,plotAc,plotSMSE)
+function [Sigma,s] = estimateNoiseCharacteristics(t,x,plotAc,plotSSSE)
+% Set plot settings
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+
 % Get noise dimensions
 nx = size(x,1);
 n  = size(x,2);
@@ -10,20 +15,30 @@ for i = 1:n-1
 end
 ts = mean(ts);
 
-% Zero the data if necessary
-% for i = 1:nx
-%     if mean(x(i,:)) ~= 0
-%         x(i,:) = x(i,:) - mean(x(i,:));
-%     end
-% end
+% Zero the data
+for i = 1:nx
+    if mean(x(i,:)) ~= 0
+        x(i,:) = x(i,:) - mean(x(i,:));
+    end
+end
 
 
 % Calculate covariance matrix Sigma
-% (assuming independent measurement signals)
+% (assuming independent measurement signals only for nx >= 5)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-mu       = mean(x,2);
-sigma    = std(x,1,2);
-Sigma    = diag(sigma);
+mu = mean(x,2);
+if nx == 1
+    Sigma = std(x);
+elseif nx == 2
+    Sigma = cov(x(1,:),x(2,:));
+elseif nx == 3
+    Sigma = getCov3x3(x);
+elseif nx == 4
+    Sigma = getCov4x4(x);
+else
+    sigma = std(x,0,2);
+    Sigma = diag(sigma);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -32,15 +47,14 @@ Sigma    = diag(sigma);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize dimensions
 nLags    = 100;
-nStdFilt = 1;
 sMin     = 1e-16;
 sStep    = 1e-4;
-sMax     = 100*ts;
+sMax     = 0.05;
 acX      = zeros(nx,nLags+1);
 lagsX    = zeros(nx,nLags+1);
 boundsX  = zeros(nx,2);
 
-% Compute autocorrelation of z
+% Compute autocorrelation of x
 for i = 1:nx
     [acX(i,:),lagsX(i,:),boundsX(i,:)] = ...
         autocorr(x(i,:),'NumLags',nLags,'NumSTD',1);
@@ -57,8 +71,8 @@ for i = 1:nx
 end
 
 
-% Compute autocorrelation of white noise signal filtered with a Gaussian
-% filter with different kernel widths
+% Compute autocorrelation of a Gaussian filter and fit on autocorrelation
+% of x
 
 % Determine amount of lags to fit autocorrelation function on:
 % only take the lags into account until the autocorrelation goes below 0,
@@ -74,61 +88,68 @@ nLagsFit = zeros(nx,1);
 % end
 keyboard;
 
-% Select random number generation (rng)
-rng(1);
-
 % Create time sequence for Gaussian filter
 tau = linspace(-t(end),t(end),2*n-1);
 
-% Initialize coloured noise signal properties
-omegaRef = zeros(nx,n);
-for i = 1:nx
-    omegaRef(i,:) = normrnd(mu(i),sigma(i),[1,n]);
-end
-mseResult.sRef = sMin:sStep:sMax;
-mseResult.mseRef = zeros(nx,length(mseResult.sRef));
-
-% Create coloured noise signal by convoluting a white noise signal with a
-% Gaussian filter
-for i = 1:length(mseResult.sRef)
-    s = mseResult.sRef(i);
-    h = sqrt(1/ts*s*sqrt(pi))*exp(-tau.^2/(2*s^2));
-    ref = zeros(nx,n);
-    acRef = zeros(nx,nLags+1);
-    lagsRef = zeros(nx,nLags+1);
-    boundsRef = zeros(nx,2);
+% Calculate SSE for a range of Gaussian filter kernel widths
+sseResult.sRef = sMin:sStep:sMax;
+sseResult.sseRef = zeros(nx,length(sseResult.sRef));
+for i = 1:length(sseResult.sRef)
+    s = sseResult.sRef(i);
+    hA = exp(-tau.^2/(4*s^2));
 
     for j = 1:nx
-        ref(j,:) = conv(h,omegaRef(j,:),'valid');
-        [acRef(j,:),lagsRef(j,:),boundsRef(j,:)] = ...
-            autocorr(ref(j,:),'NumLags',nLags,'NumSTD',nStdFilt);
-        mseResult.mseRef(j,i) = ...
-            mean((acX(j,1:nLagsFit(j))-acRef(j,1:nLagsFit(j))).^2);
+        sseResult.sseRef(j,i) = ...
+            sum((acX(j,1:nLagsFit(j))-hA(n:n+nLagsFit(j)-1)).^2);
     end
 end
 
-% Plot estimation of kernel width
-if plotSMSE
-    for i = 1:nx
-        figure('Name',['Estimated kernel width for x' num2str(i), ...
-                       ' using LS']);
-        plot(mseResult.sRef,mseResult.mseRef(i,:),'-o');
-        hold on;
-        [~,idx] = min(mseResult.mseRef(i,:));
-        xline(mseResult.sRef(idx),'Color',[0 0.4470 0.7410]);
-        xlabel('s (s)');
-        ylabel('MSE value');
-        legend(['MSE for s in range ' num2str(sMin) ':' num2str(sStep) ...
-                ':' num2str(sMax) ':'],'Estimated s');
-    end
-end
-
-% Calculate smoothness/kernel width of every input signal
+% Calculate and plot smoothness/kernel width of every input signal, based
+% on minimal SSE
 s    = zeros(nx,1);
 sMSE = zeros(nx,1);
 for i = 1:nx
-    [sMSE(i),idx] = min(mseResult.mseRef(i,:));
-    s(i) = mseResult.sRef(idx);
+    [sMSE(i),idx] = min(sseResult.sseRef(i,:));
+    s(i) = sseResult.sRef(idx);
+
+    if plotSSSE
+        figure('Name',['Estimated kernel width for x' num2str(i), ...
+                       ' using LS']);
+        plot(sseResult.sRef,sseResult.sseRef(i,:),'-o');
+        hold on;
+        xline(s(i),'Color',[0.8500 0.3250 0.0980],'LineWidth',3);
+        legend(['SSE for s in range ' num2str(sMin) ':' num2str(sStep) ...
+                ':' num2str(sMax)],['Estimated s: ' num2str(s(i))],...
+                'Location','southeast');
+        xlabel('s (s)','FontSize',labelFontSize);
+        ylabel('SSE','FontSize',labelFontSize);
+        title('SSE for different smoothness values');
+        ax = gca;
+        ax.FontSize = axFontSize;
+    end
+end
+
+% Plot autocorrelation with fitted autocorrelation of Gaussian filter
+% Create autocorrelation of Gaussian filter
+lags = linspace(1,2*n-1,2*n-1) - n;
+lags = lags(n-nLags:n+nLags);
+for i = 1:nx
+    h = exp(-tau.^2/(4*s(i)^2));
+    h = h(n-nLags:n+nLags);
+    figure('Name',['Autocorrelation of x' num2str(i) ' and fitted '...
+                   'autocorrelation of Gaussian filter']);
+    stem([-lagsX(i,2:end),lagsX(i,:)],[acX(i,2:end),acX(i,:)],'filled');
+    hold on;
+    plot(lags,h,'LineWidth',3);
+    legend('Autocorrelation of measurement noise',...
+           'Fitted autocorrelation of Gaussian filter');
+    xlabel('Number of lags','FontSize',labelFontSize);
+    ylabel('Autocorrelation','FontSize',labelFontSize);
+    title(['Gaussian filter autocorrelation fitted on autocorrelation ',...
+           'of measurement noise'],...
+          'FontSize',titleFontSize);
+    ax = gca;
+    ax.FontSize = axFontSize;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end
