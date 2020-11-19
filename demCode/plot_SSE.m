@@ -11,6 +11,7 @@ clc;
 load SSE_0-6_0-6_1e-3-1.5e-2.mat;
 % load SSE_wind2_tFrame2_0-6_0-6_1e-3-1e-3-1.5e-2.mat;
 % load SSE_wind2_tFrame3_0-6_0-6_1e-3-1e-3-1.5e-2.mat;
+% load SSE_VAF_0-7_0-7_1e-4-1e-4-1e-3_2e-3-1e-3-1.5e-2.mat;
 
 % Ignore no generalized state (this always gives the same error)
 dem_xt = SSE.DEMv_x(2:end,:,:);
@@ -36,20 +37,25 @@ dMin = ceil(sMinIdxVec(sMin)/n_p)-1;
 %% Generate data to plot
 % sSel = 0 plots the SSE for every combination of p, d and s
 % sSel = 1 plots the SSE for every combination of p, d for the optimal s
-sSel = 1;
+sSel = 0;
 
 x = kron(ones(n_p,1),0:1:6);
 y = kron(ones(1,n_d),(1:1:6)');
 
 if sSel
-    surf(x,y,dem_xt(:,:,sMin));
+    c = dem_xt(:,:,sMin);
+    surf(x,y,dem_xt(:,:,sMin),c,'EdgeColor','interp','FaceColor','interp');
+    colorbar;
     xlabel('x (d)');
     ylabel('y (p)');
     zlabel('z (SSE)');
 else
     for k = 1:n_s
         figure;
-        surf(x,y,dem_xt(:,:,k));
+        c = dem_xt(:,:,k);
+        surf(x,y,dem_xt(:,:,k),c,'FaceColor','interp');
+        colorbar;
+        caxis([0,150]);
         xlabel('x (d)');
         ylabel('y (p)');
         zlabel('z (SSE)');

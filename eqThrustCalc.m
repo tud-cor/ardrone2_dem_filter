@@ -126,8 +126,8 @@ cTPEs2 = [cT1*cA1^2;
 
 
 %% Adjustable coefficients for tests
-cTTest = [1.281e-05;
-          -1.677e-3;
+cTTest = [1.021e-5;
+          -7.037e-4;
           0];
 
 cTPTest = [cTTest(1)*cA1^2;
@@ -136,7 +136,8 @@ cTPTest = [cTTest(1)*cA1^2;
 
 
 %% Create coefficients vectors
-%  [Own work, Eindhoven thesis, Delft thesis]
+%  [Own work, Eindhoven thesis, Delft thesis, Estimated using ground and
+%   hovering constraint, Estimated using 2 hovering constraints, test]
 cT  = [cTO,cTE,cTD,cTEs,cTEs2,cTTest];
 cTP = [cTPO,cTPE,cTPD,cTPEs,cTPEs2,cTPTest];
 

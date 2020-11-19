@@ -7,7 +7,8 @@ clc;
 degToRad = 2*pi/180; %conversion from degrees to radians
 % pwmEq    = 169.5916; %Parrot battery PWM equilibrium (from tests at home)
 pwmEq    = 169.0612; %Parrot battery PWM equilibrium (from tests in lab)
-% pwmEq    = 171.4937; %Akku-King battery PWM equilibrium
+% pwmEq    = 171.4937; %Akku-King battery PWM equilibrium (from tests at
+%                       home)
 
 % Changeable
 % PWM-thrust coefficients selection, see below
@@ -52,16 +53,20 @@ cM = [3.7,130.9];
 cA = [cM(1)/2.55,cM(2)];
 
 % cT(1)*omegaR^2 + cT(2)*omegaR
-cTO = [8.6e-6,-3.2e-4]; %Own work
-% cTEs = [1.281e-05,-1.677e-3]; %Estimated from tests at home
-cTEs = [1.275e-05;-1.670e-3]; %Estimated from tests in lab
+cTO   = [8.6e-6,-3.2e-4]; %Own work
+% cTEs = [1.281e-5,-1.677e-3]; %Estimated from tests at home
+                               %(ground and average hovering constraint)
+cTEs  = [1.275e-5;-1.670e-3]; %Estimated from tests in lab
+                              %(ground and average hovering constraint)
+cTEs2 = [1.021e-5;-7.037e-4]; %Estimated from tests in lab
+                              %(2 hovering constraints)
 
 % cQ(1)*omegaR^2 + cQ(2)*omegaR
 cQ = [2.4e-7,-9.9e-6];
 
 
 % Choose coefficients
-cT = cTEs;
+cT = cTEs2;
 
 % Determine derivative terms for thrust and torque w.r.t. PWM
 cTDer      = 2*cT(1)*cA(1)^2*pwmEq + 2*cT(1)*cA(1)*cA(2) + cT(2)*cA(1);
@@ -161,7 +166,7 @@ nUnobs = size(obs,2) - rank(obs);
 
 %% LTI state-space description and discretize - option 7
 % Construct continuous-time linearised state space system
-% (option 7 in notes: only yDot,phi,phiDot)
+% (option 7 in notes: only phi,phiDot)
 xSel = [7,10];
 if ~uSelect
     uSel = 1:4;
@@ -309,9 +314,13 @@ uLin = uLin(:,tStart:tEnd);
 
 
 %% Estimate measurement noise properties
-% Calculate precision matrix of outputs (assuming a very high precision)
+% OptiTrack precision of marker position [mm]
 % zSigma = 4.5e-4;
+
+% OptiTrack roll angle standard deviation by standing on the ground
 zSigma = 9.92e-5;
+
+% Calculate precision matrix of outputs (assuming a very high precision)
 zPi = eye(ny)/zSigma^2;
 
 
@@ -321,6 +330,7 @@ sysC = ss(A7,B7,C7,D7);
 sysD = c2d(sysC,ts);
 
 % Calculate process noise
+tW = t(2:end);
 w = zeros(nx,length(t)-1);
 for i = 1:length(t)-1
     w(:,i) = xLin(:,i+1) - sysD.A*xLin(:,i) - sysD.B*uLin(:,i);
@@ -333,19 +343,20 @@ wCov = cov(w(1,:),w(2,:));
 wPi  = inv(wCov);
 
 
-%% Estimate smoothness
-% TODO Assume:
-% - Gaussian filter validity
-% - Same s for each state and output
+%% Estimate smoothness using fitted w2
+% Generate fourier fit to process noise of roll rate
+[w2Fit,w2FitGof,w2FitOut] = fit(tW',w(2,:)','fourier8');
+w2FitRes = w2FitOut.residuals';
 
-[~,sEst1] = estimateNoiseCharacteristics(t,w,1,1);
+% [~,sEst1] = estimateProcessNoiseCharacteristics(t,[w(1,:);w2FitRes],1,1);
 % sEst2 = estimateSmoothness(t(1:end-1),w);
 
 
-%% Plot data
-axFontSize = 15;
-labelFontSize = 20;
-titleFontSize = 25;
+%% Plot data of states, inputs and process noise
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+
 % figure('Name','States');
 % subplot(2,1,1);
 % plot(t,xLin(1,:));
@@ -372,23 +383,26 @@ titleFontSize = 25;
 % plot(t(1:end-1),w(2,:));
 % yline(0);
 
-% % Generate fourier fit to process noise of roll rate
-% tW = t(2:end);
-% [wFit,fGof,fitOut] = fit(tW',w(2,:)','fourier7');
-% gausFitW = fitdist(fitOut.residuals,'Normal');
-% 
-% % Generate coloured noise signal
-% rng(3);
-% nW = length(tW);
-% wW = normrnd(gausFitW.mu,gausFitW.sigma,[1,nW]);
-% T = 1;
-% tau = linspace(-T,T,2*nW-1);
-% sC = ts/2;
-% h = sqrt(ts/(sC*sqrt(pi)))*exp(-tau.^2/(2*sC^2));
-% wC = conv(h,wW,'valid');
-% 
+% figure('Name','Process noise');
+% box on;
+% subplot(2,1,1);
+% plot(tW,w(1,:));
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('w_1 (rad)','FontSize',labelFontSize);
+% title('Process noise','FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+% box on;
+% subplot(2,1,2);
+% plot(tW,w(2,:));
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('w_2 (rad/s)','FontSize',labelFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+
+
+%% Plot data of edited process noise
 % % Generate derivatives of process noise data
-% nW = length(tW);
 % wDer = diff(w,1,2);
 % wDer = wDer - mean(wDer,2);
 % gausFitWDot = fitdist(wDer(2,:)','Normal');
@@ -396,57 +410,97 @@ titleFontSize = 25;
 % wDDer = wDDer - mean(wDDer,2);
 % gausFitWDDot = fitdist(wDDer(2,:)','Normal');
 % 
-% figure('Name','Process noise vs white noise');
+% axFontSize = 15;
+% labelFontSize = 20;
+% titleFontSize = 25;
+% figure('Name','Distribution of w1 and derivatives');
+% subplot(3,1,1);
 % box on;
-% subplot(4,1,1);
-% plot(tW,w(2,:));
-% hold on;
-% plot(wFit);
-% legend('Process noise of roll rate','Fitted Fourier series');
-% xlabel('Time (s)','FontSize',labelFontSize);
-% ylabel('$w_{\dot{\phi}}$ (rad/s)','FontSize',labelFontSize,...
-%        'Interpreter','latex');
-% title('Process noise of roll rate and fitted Fourier series',...
-%       'FontSize',titleFontSize);
+% histfit(w(1,:),50,'normal');
+% legend('Histogram of w_1','Gaussian fit');
+% xlabel('Noise value (rad)','FontSize',labelFontSize);
+% ylabel('# occurences','FontSize',labelFontSize);
+% title('w_1','FontSize',titleFontSize);
 % ax = gca;
 % ax.FontSize = axFontSize;
-% subplot(4,1,2);
-% plot(tW,fitOut.residuals);
-% xlabel('Time (s)','FontSize',labelFontSize);
-% ylabel('$w_{\dot{\phi},res}$ (rad/s)','FontSize',labelFontSize,...
-%        'Interpreter','latex');
-% title('Residuals after fit','FontSize',titleFontSize);
-% ax = gca;
-% xLim = ax.XLim;
-% yLim = ax.YLim;
-% ax.FontSize = axFontSize;
-% subplot(4,1,3);
-% plot(tW,wC);
-% xlim(xLim);
-% xlabel('Time (s)','FontSize',labelFontSize);
-% ylabel('Amplitude (-)','FontSize',labelFontSize);
-% title(['Coloured noise, generated using white noise below and Gaussian '...
-%        'filter'],...
-%       'FontSize',titleFontSize);
+% subplot(3,1,2);
+% histfit(wDer(1,:),50,'normal');
+% legend('Histogram of 1st-order derivative of w_1','Gaussian fit');
+% xlabel('1st-order derivative noise value (rad/s)',...
+%        'FontSize',labelFontSize);
+% ylabel('# occurences','FontSize',labelFontSize);
+% title('1st-order derivative of w_1','FontSize',titleFontSize);
 % ax = gca;
 % ax.FontSize = axFontSize;
-% subplot(4,1,4);
-% plot(tW,wW);
-% xlim(xLim);
-% ylim(yLim);
-% xlabel('Time (s)','FontSize',labelFontSize);
-% ylabel('Amplitude (-)','FontSize',labelFontSize);
-% title('White noise with Guassian distribution',...
-%       'FontSize',titleFontSize);
+% subplot(3,1,3);
+% histfit(wDDer(1,:),50,'normal');
+% legend('Histogram of 2nd-order derivative of w_1','Gaussian fit');
+% xlabel('2nd-order derivative noise value (rad/s^2)',...
+%        'FontSize',labelFontSize);
+% ylabel('# occurences','FontSize',labelFontSize);
+% title('2nd-order derivative of w_1','FontSize',titleFontSize);
 % ax = gca;
 % ax.FontSize = axFontSize;
 % 
+% figure('Name','Distribution of w2 and derivatives');
+% subplot(3,1,1);
+% box on;
+% histfit(w(2,:),50,'normal');
+% legend('Histogram of w_2','Gaussian fit');
+% xlabel('Noise value (rad/s)','FontSize',labelFontSize);
+% ylabel('# occurences','FontSize',labelFontSize);
+% title('w_2','FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+% subplot(3,1,2);
+% histfit(wDer(2,:),50,'normal');
+% legend('Histogram of 1st-order derivative of w_2','Gaussian fit');
+% xlabel('1st-order derivative noise value (rad/s^2)',...
+%        'FontSize',labelFontSize);
+% ylabel('# occurences','FontSize',labelFontSize);
+% title('1st-order derivative of w_2','FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+% subplot(3,1,3);
+% histfit(wDDer(2,:),50,'normal');
+% legend('Histogram of 2nd-order derivative of w_2','Gaussian fit');
+% xlabel('2nd-order derivative noise value (rad/s^3)',...
+%        'FontSize',labelFontSize);
+% ylabel('# occurences','FontSize',labelFontSize);
+% title('2nd-order derivative of w_2','FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+% 
+% axFontSize = 30;
+% labelFontSize = 35;
+% titleFontSize = 40;
+% figure('Name','Process noise and Fourier fit');
+% subplot(2,1,1);
+% box on;
+% hold on;
+% plot(tW,w(2,:));
+% plot(w2Fit);
+% legend('w_2','Fitted Fourier series','FontSize',25);
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('w_2 (rad/s)','FontSize',labelFontSize);
+% title('w_2 and fitted Fourier series','FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+% subplot(2,1,2);
+% box on;
+% plot(tW,w2FitRes);
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('w_{2,res} (rad/s)','FontSize',labelFontSize);
+% title('Residuals after fit','FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+
 % figure('Name','Gaussian distribution of process noise and derivative');
 % box on;
 % xLim = [-0.17,0.17];
 % xLim2 = [-0.32,0.32];
 % subplot(3,1,1);
-% histfit(fitOut.residuals,50,'normal');
+% histfit(w2FitRes,50,'normal');
 % xlim(xLim);
 % legend('Histogram of residuals after Fourier series fit','Gaussian fit');
 % xlabel('Process noise value','FontSize',labelFontSize);
@@ -476,12 +530,72 @@ titleFontSize = 25;
 % ax = gca;
 % ax.FontSize = axFontSize;
 
+% % Generate coloured noise signal
+% rng(3);
+% nW = length(tW);
+% gausFitW = fitdist(w2FitRes,'Normal');
+% wW = normrnd(gausFitW.mu,gausFitW.sigma,[1,nW]);
+% T = 1;
+% tau = linspace(-T,T,2*nW-1);
+% sC = ts/2;
+% h = sqrt(ts/(sC*sqrt(pi)))*exp(-tau.^2/(2*sC^2));
+% wC = conv(h,wW,'valid');
+% 
+% axFontSize = 15;
+% labelFontSize = 20;
+% titleFontSize = 25;
+% 
+% figure('Name','Process noise vs white noise');
+% box on;
+% subplot(4,1,1);
+% plot(tW,w(2,:));
+% hold on;
+% plot(wFit);
+% legend('Process noise of roll rate','Fitted Fourier series');
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('$w_{\dot{\phi}}$ (rad/s)','FontSize',labelFontSize,...
+%        'Interpreter','latex');
+% title('Process noise of roll rate and fitted Fourier series',...
+%       'FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+% subplot(4,1,2);
+% plot(tW,w2FitRes);
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('$w_{\dot{\phi},res}$ (rad/s)','FontSize',labelFontSize,...
+%        'Interpreter','latex');
+% title('Residuals after fit','FontSize',titleFontSize);
+% ax = gca;
+% xLim = ax.XLim;
+% yLim = ax.YLim;
+% ax.FontSize = axFontSize;
+% subplot(4,1,3);
+% plot(tW,wC);
+% xlim(xLim);
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('Amplitude (-)','FontSize',labelFontSize);
+% title(['Coloured noise, generated using white noise below and Gaussian '...
+%        'filter'],...
+%       'FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+% subplot(4,1,4);
+% plot(tW,wW);
+% xlim(xLim);
+% ylim(yLim);
+% xlabel('Time (s)','FontSize',labelFontSize);
+% ylabel('Amplitude (-)','FontSize',labelFontSize);
+% title('White noise with Guassian distribution',...
+%       'FontSize',titleFontSize);
+% ax = gca;
+% ax.FontSize = axFontSize;
+
 % % TODO maybe conclude something about the DEM noise estimates
 % load demNoiseEst.mat;
 % figure('Name','Process noise of roll rate and estimate process noise by DEM');
 % box on;
 % hold on;
-% plot(tW,fitOut.residuals);
+% plot(tW,w2FitRes);
 % plot(tDash,wDash(2,:)*(ts*2));
 % legend('Process noise of roll rate',...
 %        'Process noise of roll rate, estimated by DEM');
@@ -495,7 +609,7 @@ titleFontSize = 25;
 % box on;
 % plot(fW,pW);
 % 
-% [fR,pR] = getFFT(tW,fitOut.residuals');
+% [fR,pR] = getFFT(tW,w2FitRes);
 % figure;
 % box on;
 % plot(fR,pR);

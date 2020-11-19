@@ -64,7 +64,7 @@ if if_cause == 1
 %     xlabel('Time (s)');
 %     ylabel('State amplitude (-)');
 
-    figure('Name','Hidden state estimate');
+%     figure('Name','Hidden state estimate');
 %     subplot(2,1,1);
 %     box on;
 %     hold on;

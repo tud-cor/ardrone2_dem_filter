@@ -168,10 +168,9 @@ clc;
 load ardroneImuNoiseTest.mat;
 
 
-%% Calculate noise characteristics of AR.Drone 2.0 gyro roll rate
+%% Calculate standard deviation characteristics of AR.Drone 2.0 gyro roll
+%  rate
 std(x)
-
-% [SigmaZEst1,sZEstGaussian] = estimateNoiseCharacteristics(time,z,1,1);
 
 
 %% Plot data

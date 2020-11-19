@@ -1,4 +1,4 @@
-function [Sigma,s] = estimateNoiseCharacteristics(t,x,plotAc,plotSSSE)
+function [Sigma,s] = estimateMeasNoiseCharacteristics(t,x,plotAc,plotSSSE)
 % Set plot settings
 axFontSize = 30;
 labelFontSize = 35;
@@ -88,6 +88,9 @@ nLagsFit = zeros(nx,1);
 % end
 keyboard;
 
+% Close all figures drawn until now
+close all;
+
 % Create time sequence for Gaussian filter
 tau = linspace(-t(end),t(end),2*n-1);
 
@@ -117,13 +120,15 @@ for i = 1:nx
                        ' using LS']);
         plot(sseResult.sRef,sseResult.sseRef(i,:),'-o');
         hold on;
-        xline(s(i),'Color',[0.8500 0.3250 0.0980],'LineWidth',3);
+        xline(s(i),'label',['s = ' num2str(s(i))],...
+              'Color',[0.8500 0.3250 0.0980],'FontSize',axFontSize,...
+              'LineWidth',3);
         legend(['SSE for s in range ' num2str(sMin) ':' num2str(sStep) ...
                 ':' num2str(sMax)],['Estimated s: ' num2str(s(i))],...
                 'Location','southeast');
         xlabel('s (s)','FontSize',labelFontSize);
         ylabel('SSE','FontSize',labelFontSize);
-        title('SSE for different smoothness values');
+        title('SSE for different smoothness values of z');
         ax = gca;
         ax.FontSize = axFontSize;
     end
@@ -141,12 +146,12 @@ for i = 1:nx
     stem([-lagsX(i,2:end),lagsX(i,:)],[acX(i,2:end),acX(i,:)],'filled');
     hold on;
     plot(lags,h,'LineWidth',3);
-    legend('Autocorrelation of measurement noise',...
+    legend('Autocorrelation of z',...
            'Fitted autocorrelation of Gaussian filter');
     xlabel('Number of lags','FontSize',labelFontSize);
     ylabel('Autocorrelation','FontSize',labelFontSize);
     title(['Gaussian filter autocorrelation fitted on autocorrelation ',...
-           'of measurement noise'],...
+           'of z'],...
           'FontSize',titleFontSize);
     ax = gca;
     ax.FontSize = axFontSize;

@@ -165,11 +165,11 @@ load optiTrackNoiseTest.mat;
 %     plot(f,pZ1(i,:));
 % end
 
-z = z - mean(z);
+% z = z - mean(z);
 std(z)
 std(z)^2
 
-% [SigmaZEst1,sZEstGaussian] = estimateNoiseCharacteristics(time,z,1,1);
+[SigmaZEst1,sZEstGaussian] = estimateMeasNoiseCharacteristics(time,z,1,1);
 % [sZEstFriston] = estimateSmoothness(time,z);
 
 
@@ -177,11 +177,11 @@ std(z)^2
 nZ = length(time);
 
 zDer        = diff(z,1,2);
-zDer        = zDer - mean(zDer,2);
+% zDer        = zDer - mean(zDer,2);
 gausFitZDot = fitdist(zDer','Normal');
 
 zDDer        = diff(zDer,1,2);
-zDDer        = zDDer - mean(zDDer,2);
+% zDDer        = zDDer - mean(zDDer,2);
 gausFitZDDot = fitdist(zDDer','Normal');
 
 
@@ -207,36 +207,41 @@ ax.FontSize = axFontSize;
 axFontSize = 15;
 labelFontSize = 20;
 titleFontSize = 25;
-figure('Name','Gaussian distribution of measurement noise and derivative');
+figure('Name',['Gaussian distribution of measurement noise and '...
+               'derivatives']);
 box on;
-xLim = [-4e-4,4e-4];
+% xLim = [-4e-4,4e-4];
 subplot(3,1,1);
 histfit(z,50,'normal');
-xlim(xLim);
+% xlim(xLim);
 legend('Histogram of measurement noise','Gaussian fit');
 xlabel('Noise value (rad)','FontSize',labelFontSize);
-ylabel('# occurences & probability','FontSize',labelFontSize);
-title('Measurement noise','FontSize',titleFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('z','FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
 subplot(3,1,2);
-histfit(zDer,57,'normal');
-xlim(xLim);
+% histfit(zDer,57,'normal');
+histfit(zDer,50,'normal');
+% xlim(xLim);
 legend('Histogram of 1st-order derivative','Gaussian fit');
 xlabel('1st-order derivative noise value (rad/s)',...
        'FontSize',labelFontSize);
-ylabel('# occurences & probability','FontSize',labelFontSize);
-title('1st-order derivative of measurement noise','FontSize',titleFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('1st-order derivative of z',...
+      'FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
 subplot(3,1,3);
-histfit(zDDer,88,'normal');
-xlim(xLim);
+% histfit(zDDer,88,'normal');
+histfit(zDDer,50,'normal');
+% xlim(xLim);
 legend('Histogram of 2nd-order derivative','Gaussian fit');
-xlabel('2nd-order derivative value (rad/s^2)',...
+xlabel('2nd-order derivative noise value (rad/s^2)',...
        'FontSize',labelFontSize);
-ylabel('# occurences & probability','FontSize',labelFontSize);
-title('2nd-order derivative of measurement noise','FontSize',titleFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('2nd-order derivative of z',...
+      'FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
 % 
