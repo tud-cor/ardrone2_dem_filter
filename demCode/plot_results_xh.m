@@ -43,44 +43,24 @@ Ct = brain.Ct;
 
 % Plot state estimates with known input
 if if_cause == 1
-%     figure('Name','State estimates with known input');
-%     subplot(2,1,1);
-%     fig1 = plot(t,x(t_trim,x_obs),'Color',color(1,:));
-%     hold on;
-%     fig2 = plot(t,DEMv_x(t_trim,x_obs),'--','Color',color(2,:));
-%     fig3 = plot(t,kalmv_x(x_obs,t_trim),'-.','Color',color(3,:));
-%     legend([fig1(1),fig2(1),fig3(1)],...
-%            {'Measured observable states','DEM state estimate','KF state estimate'});
-%     xlabel('Time (s)');
-%     ylabel('State amplitude (-)');
-% 
-%     subplot(2,1,2);
-%     fig1 = plot(t,x(t_trim,xh),'Color',color(1,:));
-%     hold on;
-%     fig2 = plot(t,DEMv_x(t_trim,xh),'--','Color',color(2,:));
-%     fig3 = plot(t,kalmv_x(xh,t_trim),'-.','Color',color(3,:));
-%     legend([fig1(1),fig2(1),fig3(1)],...
-%            {'Measured hidden state','DEM hidden state estimate','KF hidden state estimate'});
-%     xlabel('Time (s)');
-%     ylabel('State amplitude (-)');
-
-%     figure('Name','Hidden state estimate');
-%     subplot(2,1,1);
-%     box on;
-%     hold on;
-%     plot(t,x(t_trim,xobs),'Color',color(1,:));
-%     plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:));
-%     plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:));
-%     ax = gca;
-%     ax.FontSize = ax_font_size;
-%     legend('Measured',['DEM estimate (SSE = ' ...
-%                        num2str(SSE.DEMv.xobs) ')'],...
-%            ['Kalman estimate (SSE = ' num2str(SSE.kalmanv.xobs) ')']);
-%     xlabel('Time (s)','FontSize',label_font_size);
-%     ylabel('$\phi$ (rad/s)','FontSize',label_font_size,...
-%                             'Interpreter','latex');
-%     title('DEM vs Kalman: roll angle','FontSize',title_font_size);
-%     subplot(2,1,2);
+    figure('Name','Observed state estimate');
+    box on;
+    hold on;
+    plot(t,x(t_trim,xobs),'Color',color(1,:));
+    plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:));
+    plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:));
+    ax = gca;
+    ax.FontSize = ax_font_size;
+    legend('Measured',['DEM estimate (SSE = ' ...
+                       num2str(SSE.DEMv.xobs,3) ')'],...
+           ['Kalman estimate (SSE = ' ...
+            num2str(SSE.kalmanv.xobs,3) ')']);
+    xlabel('Time (s)','FontSize',label_font_size);
+    ylabel('$\phi$ (rad/s)','FontSize',label_font_size,...
+                            'Interpreter','latex');
+    title('DEM vs Kalman: roll angle','FontSize',title_font_size);
+    
+    figure('Name','Hidden state estimate');
     box on;
     hold on;
     plot(t,x(t_trim,xh),'Color',color(1,:));
@@ -88,12 +68,48 @@ if if_cause == 1
     plot(t,kalmv_x(xh,t_trim),'Color',color(3,:));
     ax = gca;
     ax.FontSize = ax_font_size;
-    legend('Measured',['DEM estimate (SSE = ' num2str(SSE.DEMv.xh) ')'],...
-           ['Kalman estimate (SSE = ' num2str(SSE.kalmanv.xh) ')']);
+    legend('Measured',['DEM estimate (SSE = ' ...
+           num2str(SSE.DEMv.xh,3) ')'],...
+           ['Kalman estimate (SSE = ' ...
+            num2str(SSE.kalmanv.xh,3) ')']);
     xlabel('Time (s)','FontSize',label_font_size);
     ylabel('$\dot{\phi}$ (rad/s)','FontSize',label_font_size,...
                                   'Interpreter','latex');
-    title('DEM vs Kalman','FontSize',title_font_size);
+    title('DEM vs Kalman: roll rate','FontSize',title_font_size);
+
+    figure('Name','Observed and hidden state estimate');
+    subplot(2,1,1);
+    box on;
+    hold on;
+    plot(t,x(t_trim,xobs),'Color',color(1,:));
+    plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:));
+    plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:));
+    ax = gca;
+    ax.FontSize = ax_font_size;
+    legend('Measured',['DEM estimate (SSE = ' ...
+                       num2str(SSE.DEMv.xobs,3) ')'],...
+           ['Kalman estimate (SSE = ' ...
+            num2str(SSE.kalmanv.xobs,3) ')']);
+    xlabel('Time (s)','FontSize',label_font_size);
+    ylabel('$\phi$ (rad/s)','FontSize',label_font_size,...
+                            'Interpreter','latex');
+    title('DEM vs Kalman: roll angle','FontSize',title_font_size);
+    subplot(2,1,2);
+    box on;
+    hold on;
+    plot(t,x(t_trim,xh),'Color',color(1,:));
+    plot(t,DEMv_x(t_trim,xh),'Color',color(2,:));
+    plot(t,kalmv_x(xh,t_trim),'Color',color(3,:));
+    ax = gca;
+    ax.FontSize = ax_font_size;
+    legend('Measured',['DEM estimate (SSE = ' ...
+           num2str(SSE.DEMv.xh,3) ')'],...
+           ['Kalman estimate (SSE = ' ...
+            num2str(SSE.kalmanv.xh,3) ')']);
+    xlabel('Time (s)','FontSize',label_font_size);
+    ylabel('$\dot{\phi}$ (rad/s)','FontSize',label_font_size,...
+                                  'Interpreter','latex');
+    title('DEM vs Kalman: roll rate','FontSize',title_font_size);
 
 %     % Plot generalized states
 %     figure('Name','Generalized states');
