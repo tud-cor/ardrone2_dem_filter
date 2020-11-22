@@ -403,45 +403,107 @@ titleFontSize = 40;
 
 %% Plot data of edited process noise
 % % Generate derivatives of process noise data
-% wDer = diff(w,1,2);
-% wDer = wDer - mean(wDer,2);
-% gausFitWDot = fitdist(wDer(2,:)','Normal');
-% wDDer = diff(wDer,1,2);
-% wDDer = wDDer - mean(wDDer,2);
-% gausFitWDDot = fitdist(wDDer(2,:)','Normal');
-% 
+wDer        = diff(w,1,2);
+% wDer        = wDer - mean(wDer,2);
+gausFitWDot = fitdist(wDer(2,:)','Normal');
+
+wDDer        = diff(wDer,1,2);
+% wDDer        = wDDer - mean(wDDer,2);
+gausFitWDDot = fitdist(wDDer(2,:)','Normal');
+
+wDer3 = diff(wDDer,1,2);
+wDer3 = wDer3 - mean(wDer3,2);
+
+wDer4 = diff(wDer3,1,2);
+wDer4 = wDer4 - mean(wDer4,2);
+
+wDer5 = diff(wDer4,1,2);
+wDer5 = wDer5 - mean(wDer5,2);
+
+wDer6 = diff(wDer5,1,2);
+wDer6 = wDer6 - mean(wDer6,2);
+
+
+axFontSize = 15;
+labelFontSize = 20;
+titleFontSize = 25;
+figure('Name','Distribution of w1 and derivatives');
+subplot(3,1,1);
+box on;
+histfit(w(1,:),50,'normal');
+legend('Histogram of w_1','Gaussian fit');
+xlabel('Noise value (rad)','FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('w_1','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(3,1,2);
+histfit(wDer(1,:),50,'normal');
+legend('Histogram of 1st-order derivative of w_1','Gaussian fit');
+xlabel('1st-order derivative noise value (rad/s)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('1st-order derivative of w_1','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(3,1,3);
+histfit(wDDer(1,:),50,'normal');
+legend('Histogram of 2nd-order derivative of w_1','Gaussian fit');
+xlabel('2nd-order derivative noise value (rad/s^2)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('2nd-order derivative of w_1','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+figure('Name','Distribution of w1 derivatives 3 and 4');
+subplot(2,1,1);
+box on;
+histfit(wDer3(1,:),50,'normal');
+legend('Histogram of 3rd-order derivative of w_1','Gaussian fit');
+xlabel('3rd-order derivative noise value (rad/s^3)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('3rd-order derivative of w_1','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(2,1,2);
+histfit(wDer4(1,:),50,'normal');
+legend('Histogram of 4th-order derivative of w_1','Gaussian fit');
+xlabel('4th-order derivative noise value (rad/s^4)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('4th-order derivative of w_1','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+
+figure('Name','Distribution of w1 derivatives 5 and 6');
+subplot(2,1,1);
+box on;
+histfit(wDer5(1,:),50,'normal');
+legend('Histogram of 5th-order derivative of w_1','Gaussian fit');
+xlabel('5th-order derivative noise value (rad/s^5)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('5th-order derivative of w_1','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(2,1,2);
+histfit(wDer6(1,:),50,'normal');
+legend('Histogram of 6th-order derivative of w_1','Gaussian fit');
+xlabel('6th-order derivative noise value (rad/s^6)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('6th-order derivative of w_1','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+
 % axFontSize = 15;
 % labelFontSize = 20;
 % titleFontSize = 25;
-% figure('Name','Distribution of w1 and derivatives');
-% subplot(3,1,1);
-% box on;
-% histfit(w(1,:),50,'normal');
-% legend('Histogram of w_1','Gaussian fit');
-% xlabel('Noise value (rad)','FontSize',labelFontSize);
-% ylabel('# occurences','FontSize',labelFontSize);
-% title('w_1','FontSize',titleFontSize);
-% ax = gca;
-% ax.FontSize = axFontSize;
-% subplot(3,1,2);
-% histfit(wDer(1,:),50,'normal');
-% legend('Histogram of 1st-order derivative of w_1','Gaussian fit');
-% xlabel('1st-order derivative noise value (rad/s)',...
-%        'FontSize',labelFontSize);
-% ylabel('# occurences','FontSize',labelFontSize);
-% title('1st-order derivative of w_1','FontSize',titleFontSize);
-% ax = gca;
-% ax.FontSize = axFontSize;
-% subplot(3,1,3);
-% histfit(wDDer(1,:),50,'normal');
-% legend('Histogram of 2nd-order derivative of w_1','Gaussian fit');
-% xlabel('2nd-order derivative noise value (rad/s^2)',...
-%        'FontSize',labelFontSize);
-% ylabel('# occurences','FontSize',labelFontSize);
-% title('2nd-order derivative of w_1','FontSize',titleFontSize);
-% ax = gca;
-% ax.FontSize = axFontSize;
-% 
 % figure('Name','Distribution of w2 and derivatives');
 % subplot(3,1,1);
 % box on;
@@ -470,10 +532,53 @@ titleFontSize = 40;
 % title('2nd-order derivative of w_2','FontSize',titleFontSize);
 % ax = gca;
 % ax.FontSize = axFontSize;
+
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+figure('Name','Distribution of w2 derivatives 3 and 4');
+subplot(2,1,1);
+box on;
+histfit(wDer3(2,:),50,'normal');
+legend('Histogram of 3rd-order derivative of w_2','Gaussian fit');
+xlabel('3rd-order derivative noise value (rad/s^4)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('3rd-order derivative of w_2','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(2,1,2);
+histfit(wDer4(2,:),50,'normal');
+legend('Histogram of 4th-order derivative of w_2','Gaussian fit');
+xlabel('4th-order derivative noise value (rad/s^5)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('4th-order derivative of w_2','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+
+figure('Name','Distribution of w2 derivatives 5 and 6');
+subplot(2,1,1);
+box on;
+histfit(wDer5(2,:),50,'normal');
+legend('Histogram of 5th-order derivative of w_2','Gaussian fit');
+xlabel('5th-order derivative noise value (rad/s^6)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('5th-order derivative of w_2','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(2,1,2);
+histfit(wDer6(2,:),50,'normal');
+legend('Histogram of 6th-order derivative of w_2','Gaussian fit');
+xlabel('6th-order derivative noise value (rad/s^7)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('6th-order derivative of w_2','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
 % 
-% axFontSize = 30;
-% labelFontSize = 35;
-% titleFontSize = 40;
+% 
 % figure('Name','Process noise and Fourier fit');
 % subplot(2,1,1);
 % box on;

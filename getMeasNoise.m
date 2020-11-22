@@ -184,6 +184,22 @@ zDDer        = diff(zDer,1,2);
 % zDDer        = zDDer - mean(zDDer,2);
 gausFitZDDot = fitdist(zDDer','Normal');
 
+zDer3        = diff(zDDer,1,2);
+% zDer3        = zDer3 - mean(zDer3,2);
+gausFitZD3   = fitdist(zDer3','Normal');
+
+zDer4        = diff(zDer3,1,2);
+% zDer4        = zDer4 - mean(zDer4,2);
+gausFitZD4   = fitdist(zDer4','Normal');
+
+zDer5        = diff(zDer4,1,2);
+% zDer5        = zDer5 - mean(zDer5,2);
+gausFitZD5   = fitdist(zDer5','Normal');
+
+zDer6        = diff(zDer5,1,2);
+% zDer6        = zDer6 - mean(zDer6,2);
+gausFitZD6   = fitdist(zDer6','Normal');
+
 
 %% Plot data
 axFontSize = 30;
@@ -241,6 +257,59 @@ xlabel('2nd-order derivative noise value (rad/s^2)',...
        'FontSize',labelFontSize);
 ylabel('# occurences','FontSize',labelFontSize);
 title('2nd-order derivative of z',...
+      'FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+
+
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+figure('Name',['Gaussian distribution of derivatives 3 and 4']);
+subplot(2,1,1);
+box on;
+histfit(zDer3,50,'normal');
+legend('Histogram of 3rd-order derivative','Gaussian fit');
+xlabel('3rd-order derivative noise value (rad/s^3)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('3rd-order derivative of z',...
+      'FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(2,1,2);
+box on;
+histfit(zDer4,50,'normal');
+legend('Histogram of 4th-order derivative','Gaussian fit');
+xlabel('4th-order derivative noise value (rad/s^4)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('4th-order derivative of z',...
+      'FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+
+
+figure('Name',['Gaussian distribution of derivatives 5 and 6']);
+subplot(2,1,1);
+box on;
+histfit(zDer5,50,'normal');
+legend('Histogram of 5th-order derivative','Gaussian fit');
+xlabel('5th-order derivative noise value (rad/s^5)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('5th-order derivative of z',...
+      'FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;
+subplot(2,1,2);
+box on;
+histfit(zDer6,50,'normal');
+legend('Histogram of 6th-order derivative','Gaussian fit');
+xlabel('6th-order derivative noise value (rad/s^6)',...
+       'FontSize',labelFontSize);
+ylabel('# occurences','FontSize',labelFontSize);
+title('6th-order derivative of z',...
       'FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
