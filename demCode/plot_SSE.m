@@ -75,10 +75,10 @@ xline(sZ,'Color',cP(3,:),'FontSize',lineLabelFontSize,...
 xline(sW(1),'Color',cP(4,:),'FontSize',lineLabelFontSize,...
       'Label',['s_{w_1} = ' num2str(sW(1))],'LineWidth',2);
 xline(sW(2),'Color',cP(5,:),'FontSize',lineLabelFontSize,...
-      'Label',['s_{w_2} = ' num2str(sW(2))],'LineWidth',2);
+      'Label',['s_{w_{2,res}} = ' num2str(sW(2))],'LineWidth',2);
 xlim([0,0.0135]);
 ylim([0,40]);
-legend('DEM','Kalman','s_z','s_{w_1}','s_{w_2}');
+legend('DEM','Kalman','s_z','s_{w_1}','s_{w_{2,res}}');
 xlabel('Smoothness value','FontSize',labelFontSize);
 ylabel('SSE','FontSize',labelFontSize);
 title('DEM vs Kalman SSE','FontSize',titleFontSize);

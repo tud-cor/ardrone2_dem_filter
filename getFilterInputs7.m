@@ -584,7 +584,7 @@ ax.FontSize = axFontSize;
 % box on;
 % hold on;
 % plot(tW,w(2,:));
-% plot(w2Fit);
+% plot(w2Fit,'--');
 % legend('w_2','Fitted Fourier series','FontSize',25);
 % xlabel('Time (s)','FontSize',labelFontSize);
 % ylabel('w_2 (rad/s)','FontSize',labelFontSize);

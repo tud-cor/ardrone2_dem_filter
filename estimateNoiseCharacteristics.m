@@ -1,6 +1,6 @@
 function [Sigma,s] = estimateNoiseCharacteristics(t,x,plotAc,plotSSSE)
 % Set plot settings
-axFontSize = 30;
+axFontSize = 23;
 labelFontSize = 35;
 titleFontSize = 40;
 
@@ -46,7 +46,7 @@ end
 % coloured noise from white noise
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize dimensions
-nLags    = 100;
+nLags    = 60;
 sMin     = 1e-16;
 sStep    = 1e-4;
 sMax     = 0.25;

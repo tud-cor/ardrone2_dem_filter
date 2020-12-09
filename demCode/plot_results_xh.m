@@ -5,6 +5,9 @@ ax_font_size = 30;
 label_font_size = 35;
 title_font_size = 40;
 
+line_styles = {'-','--','-.',':'};
+line_width = 3;
+
 %
 color = [ 0         0.4470    0.7410;    0.8500    0.3250    0.0980;
           0.9290    0.6940    0.1250;    0.4940    0.1840    0.5560;
@@ -46,9 +49,12 @@ if if_cause == 1
     figure('Name','Observed state estimate');
     box on;
     hold on;
-    plot(t,x(t_trim,xobs),'Color',color(1,:));
-    plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:));
-    plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:));
+    plot(t,x(t_trim,xobs),'Color',color(1,:),'LineStyle',line_styles{1},...
+         'LineWidth',line_width);
+    plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:),...
+         'LineStyle',line_styles{2},'LineWidth',line_width);
+    plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:),...
+         'LineStyle',line_styles{3},'LineWidth',line_width);
     ax = gca;
     ax.FontSize = ax_font_size;
     legend('Measured',['DEM estimate (SSE = ' ...
@@ -63,9 +69,12 @@ if if_cause == 1
     figure('Name','Hidden state estimate');
     box on;
     hold on;
-    plot(t,x(t_trim,xh),'Color',color(1,:));
-    plot(t,DEMv_x(t_trim,xh),'Color',color(2,:));
-    plot(t,kalmv_x(xh,t_trim),'Color',color(3,:));
+    plot(t,x(t_trim,xh),'Color',color(1,:),'LineStyle',line_styles{1},...
+         'LineWidth',line_width);
+    plot(t,DEMv_x(t_trim,xh),'Color',color(2,:),...
+         'LineStyle',line_styles{2},'LineWidth',line_width);
+    plot(t,kalmv_x(xh,t_trim),'Color',color(3,:),...
+         'LineStyle',line_styles{3},'LineWidth',line_width);
     ax = gca;
     ax.FontSize = ax_font_size;
     legend('Measured',['DEM estimate (SSE = ' ...
@@ -81,9 +90,12 @@ if if_cause == 1
     subplot(2,1,1);
     box on;
     hold on;
-    plot(t,x(t_trim,xobs),'Color',color(1,:));
-    plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:));
-    plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:));
+    plot(t,x(t_trim,xobs),'Color',color(1,:),'LineStyle',line_styles{1},...
+         'LineWidth',line_width);
+    plot(t,DEMv_x(t_trim,xobs),'Color',color(2,:),...
+         'LineStyle',line_styles{2},'LineWidth',line_width);
+    plot(t,kalmv_x(xobs,t_trim),'Color',color(3,:),...
+         'LineStyle',line_styles{3},'LineWidth',line_width);
     ax = gca;
     ax.FontSize = ax_font_size;
     legend('Measured',['DEM estimate (SSE = ' ...
@@ -97,9 +109,12 @@ if if_cause == 1
     subplot(2,1,2);
     box on;
     hold on;
-    plot(t,x(t_trim,xh),'Color',color(1,:));
-    plot(t,DEMv_x(t_trim,xh),'Color',color(2,:));
-    plot(t,kalmv_x(xh,t_trim),'Color',color(3,:));
+    plot(t,x(t_trim,xh),'Color',color(1,:),'LineStyle',line_styles{1},...
+         'LineWidth',line_width);
+    plot(t,DEMv_x(t_trim,xh),'Color',color(2,:),...
+         'LineStyle',line_styles{2},'LineWidth',line_width);
+    plot(t,kalmv_x(xh,t_trim),'Color',color(3,:),...
+         'LineStyle',line_styles{3},'LineWidth',line_width);
     ax = gca;
     ax.FontSize = ax_font_size;
     legend('Measured',['DEM estimate (SSE = ' ...

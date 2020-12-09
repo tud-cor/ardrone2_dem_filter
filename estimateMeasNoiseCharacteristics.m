@@ -1,6 +1,6 @@
 function [Sigma,s] = estimateMeasNoiseCharacteristics(t,x,plotAc,plotSSSE)
 % Set plot settings
-axFontSize = 30;
+axFontSize = 23;
 labelFontSize = 35;
 titleFontSize = 40;
 
@@ -46,7 +46,7 @@ end
 % coloured noise from white noise
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize dimensions
-nLags    = 100;
+nLags    = 60;
 sMin     = 1e-16;
 sStep    = 1e-4;
 sMax     = 0.05;
@@ -147,11 +147,12 @@ for i = 1:nx
     hold on;
     plot(lags,h,'LineWidth',3);
     legend('Autocorrelation of z',...
-           'Fitted autocorrelation of Gaussian filter');
+           'Fitted autocorrelation of Gaussian filter',...
+           'Location','northeast');
     xlabel('Number of lags','FontSize',labelFontSize);
     ylabel('Autocorrelation','FontSize',labelFontSize);
     title(['Gaussian filter autocorrelation fitted on autocorrelation ',...
-           'of z'],...
+            'of z'],...
           'FontSize',titleFontSize);
     ax = gca;
     ax.FontSize = axFontSize;

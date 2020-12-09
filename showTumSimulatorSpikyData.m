@@ -44,6 +44,9 @@ axFontSize = 30;
 labelFontSize = 35;
 titleFontSize = 40;
 
+lineStyles = {'-','--','-.',':'};
+lineWidth = 3;
+
 figure('Name','Forces');
 hold on;
 plot(modelInputStampTime,force(1,:));
@@ -57,7 +60,10 @@ plot(modelInputStampTime,torque(2,:));
 plot(modelInputStampTime,torque(3,:));
 
 figure('Name','\tau_x');
-plot(modelInputStampTime,torque(1,:));
+plot(modelInputStampTime,torque(1,:),'LineStyle',lineStyles{1},...
+     'LineWidth',lineWidth);
 xlabel('Time (s)','FontSize',labelFontSize);
 ylabel('\tau_x','FontSize',labelFontSize);
 title('Spiky data in torque around x-axis','FontSize',titleFontSize);
+ax = gca;
+ax.FontSize = axFontSize;

@@ -21,10 +21,10 @@ cM2 = 130.9;
 cA1 = cM1/2.55;
 cA2 = cM2;
 
-% Parrot battery mass
+% Mass of quadrotor with Parrot battery
 mBatP = 0.481;
 
-% Akku-King battery mass
+% Mass of quadrotor with Akku-King battery
 mBatA = 0.497;
 
 
@@ -220,21 +220,21 @@ pTLinBatA = pwmLin*[2*pwmEqBatA,1]*cTP(1:2,:) + ...
          [-pwmEqBatA^2,1]*cTP([1,3],:);
 
 % Create PWM-thrust and linearization data for Eindhoven thesis
-% pwmE = pwm/2.55;
-% pwmLinE = pwmLin/2.55;
-% pTE = [pwmE.^2,pwmE,ones(length(pwmE),1)]*cTPE;
-% 
-% pTLinBatPE = pwmLinE*[2*pwmEqBatP/2.55,1]*cTPE(1:2) + ...
-%          [-(pwmEqBatP/2.55)^2,1]*cTPE([1,3]);
-% 
-% pTLinBatAE = pwmLinE*[2*pwmEqBatA/2.55,1]*cTPE(1:2) + ...
-%          [-(pwmEqBatA/2.55)^2,1]*cTPE([1,3]);
+pwmE = pwm/2.55;
+pwmLinE = pwmLin/2.55;
+pTE = [pwmE.^2,pwmE,ones(length(pwmE),1)]*cTPE;
+
+pTLinBatPE = pwmLinE*[2*pwmEqBatP/2.55,1]*cTPE(1:2) + ...
+         [-(pwmEqBatP/2.55)^2,1]*cTPE([1,3]);
+
+pTLinBatAE = pwmLinE*[2*pwmEqBatA/2.55,1]*cTPE(1:2) + ...
+         [-(pwmEqBatA/2.55)^2,1]*cTPE([1,3]);
 
 % Plot
 figure('Name','Nonlinear and linear thrust curves per PWM value');
 hold on;
 for i = 1:size(pT,2)
-    plot(pwm,pT(:,i),'-o','Color',cP(i,:));
+    plot(pwm,pT(:,i),'Color',cP(i,:));
     plot(pwmLin,pTLinBatP(:,i),'--','Color',cP(i,:));
     plot(pwmLin,pTLinBatA(:,i),'.-','Color',cP(i,:));
 end
@@ -254,4 +254,83 @@ ylabel('Thrust (N)');
 title('PWM-thrust relation');
 
 
-%% Shift up identified omegaR-thrust curve
+%% Report plots
+lineLabelFontSize = 25;
+axFontSize = 30;
+labelFontSize = 35;
+titleFontSize = 40;
+
+lineStyles = {'-','--','-.',':'};
+
+% Create PWM-thrust data for thesis report
+cTPReport = [cTPO,cTPE,cTPD,cTPEs];
+pTReport = [pwm.^2,pwm,ones(length(pwm),1)]*cTPReport;
+
+% Create linearized PWM polynomial data
+pwmLinMin = (omegaRLinMin - cA2)/cA1;
+pwmLinMax = (omegaRLinMax - cA2)/cA1;
+[~,startSample] = min(abs(pwm-pwmLinMin));
+[~,endSample] = min(abs(pwm-pwmLinMax));
+pwmLin = pwm(startSample:endSample);
+
+pTLinBatP = pwmLin*[2*pwmEqBatP,1]*cTPReport(1:2,:) + ...
+         [-pwmEqBatP^2,1]*cTPReport([1,3],:);
+
+pTLinBatA = pwmLin*[2*pwmEqBatA,1]*cTPReport(1:2,:) + ...
+         [-pwmEqBatA^2,1]*cTPReport([1,3],:);
+
+
+% Plot with only nonlinear curves
+figure('Name','Nonlinear and linear thrust curves per PWM value');
+box on;
+hold on;
+for i = 1:size(pTReport,2)
+    plot(pwm,pTReport(:,i),'Color',cP(i,:),'LineStyle',lineStyles{i},...
+         'LineWidth',3);
+end
+xline(pwmEqBatP,'FontSize',lineLabelFontSize,'Label','batP PWM',...
+      'LabelHorizontalAlignment','left','LineWidth',2);
+yline(mBatP*g/4,'FontSize',lineLabelFontSize,'Label','batP thrust',...
+      'LabelVerticalAlignment','bottom','LineWidth',2);
+xline(pwmEqBatA,'FontSize',lineLabelFontSize,'Label','batA PWM',...
+      'LineWidth',2);
+yline(mBatA*g/4,'FontSize',lineLabelFontSize,'Label','batA thrust',...
+      'LineWidth',2);
+legend('Own work','Eindhoven thesis','Delft thesis','Fit',...
+       'location','northwest');
+ax = gca;
+ax.FontSize = axFontSize;
+xlabel('AR.Drone 2.0 PWM (-)','FontSize',axFontSize);
+ylabel('Thrust (N)','FontSize',axFontSize);
+title('PWM-thrust relation','FontSize',titleFontSize);
+
+
+% Plot with linearizations per operating point
+figure('Name','Nonlinear and linear thrust curves per PWM value');
+box on;
+hold on;
+for i = 1:size(pTReport,2)
+    plot(pwm,pTReport(:,i),'Color',cP(i,:),'LineStyle',lineStyles{i},...
+         'LineWidth',3);
+    plot(pwmLin,pTLinBatP(:,i),'--','Color',cP(i,:));
+    plot(pwmLin,pTLinBatA(:,i),'.-','Color',cP(i,:));
+end
+xline(pwmEqBatP,'FontSize',lineLabelFontSize,'Label','batP PWM',...
+      'LabelHorizontalAlignment','left','LineWidth',2);
+yline(mBatP*g/4,'FontSize',lineLabelFontSize,'Label','batP thrust',...
+      'LabelVerticalAlignment','bottom','LineWidth',2);
+xline(pwmEqBatA,'FontSize',lineLabelFontSize,'Label','batA PWM',...
+      'LineWidth',2);
+yline(mBatA*g/4,'FontSize',lineLabelFontSize,'Label','batA thrust',...
+      'LineWidth',2);
+legend('Own work','Own work lin batP','Own work lin batP',...
+       'Eindhoven thesis','Eindhoven thesis lin batP',...
+       'Eindhoven thesis lin batA',...
+       'Delft thesis','Delft thesis lin batP','Delft thesis lin batA',...
+       'Fit','Fit lin batP','Fit lin batA',...
+       'location','northwest');
+ax = gca;
+ax.FontSize = axFontSize;
+xlabel('AR.Drone 2.0 PWM (-)','FontSize',axFontSize);
+ylabel('Thrust (N)','FontSize',axFontSize);
+title('PWM-thrust relation','FontSize',titleFontSize);
