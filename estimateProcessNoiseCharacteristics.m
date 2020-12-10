@@ -129,7 +129,12 @@ for i = 1:nx
                 'Location','southeast');
         xlabel('s (s)','FontSize',labelFontSize);
         ylabel('SSE','FontSize',labelFontSize);
-        title(['SSE for different smoothness values of w_' num2str(i)]);
+        if i == 2
+            title('SSE for different smoothness values of w_{2,res}');
+        else
+            title(['SSE for different smoothness values of w_' ...
+                   num2str(i)]);
+        end
         ax = gca;
         ax.FontSize = axFontSize;
     end
@@ -148,14 +153,23 @@ for i = 1:nx
     box on;
     hold on;
     plot(lags,h,'LineWidth',3);
-    legend(['Autocorrelation of w_' num2str(i)],...
-           'Fitted autocorrelation of Gaussian filter',...
-           'Location','northeast');
+    if i == 2
+        legend('Autocorrelation of w_{2,res}',...
+               'Fitted autocorrelation of Gaussian filter',...
+               'Location','northeast');
+        title(['Gaussian filter autocorrelation fitted on '...
+              'autocorrelation of w_{2,res}'],...
+              'FontSize',titleFontSize);
+    else
+        legend(['Autocorrelation of w_' num2str(i)],...
+               'Fitted autocorrelation of Gaussian filter',...
+               'Location','northeast');
+        title(['Gaussian filter autocorrelation fitted on '...
+              'autocorrelation of w_' num2str(i)],...
+              'FontSize',titleFontSize);
+    end
     xlabel('Number of lags','FontSize',labelFontSize);
     ylabel('Autocorrelation','FontSize',labelFontSize);
-    title(['Gaussian filter autocorrelation fitted on autocorrelation ',...
-           'of w_' num2str(i)],...
-          'FontSize',titleFontSize);
     ax = gca;
     ax.FontSize = axFontSize;
 end

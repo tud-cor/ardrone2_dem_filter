@@ -348,7 +348,7 @@ wPi  = inv(wCov);
 [w2Fit,w2FitGof,w2FitOut] = fit(tW',w(2,:)','fourier8');
 w2FitRes = w2FitOut.residuals';
 
-% [~,sEst1] = estimateProcessNoiseCharacteristics(t,[w(1,:);w2FitRes],1,1);
+[~,sEst1] = estimateProcessNoiseCharacteristics(t,[w(1,:);w2FitRes],1,1);
 % sEst2 = estimateSmoothness(t(1:end-1),w);
 
 
