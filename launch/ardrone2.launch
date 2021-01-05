@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Decide whether simulation or physical flight is executed -->
+  <arg name="sim" default="true"/>
+
+
+  <!-- Launch quadrotor in physical flight -->
+  <group unless="$(arg sim)">
+    <arg name="msg1" default="Physical flight is enabled -> using OptiTrack position and orientation data."/>
+    <!--arg name="msg1" default="Physical flight is currently disabled and not safe to use!"/-->
+    <node name="pub_text1" pkg="rostopic" type="rostopic" args="pub /msg1 std_msgs/String '$(arg msg1)'" output="screen"/>
+    <node name="print_text1" pkg="rostopic" type="rostopic" args="echo /msg1" output="screen"/>
+
+    <!-- In case physical flight is run just after simulation, ensure simulation time is not used -->
+    <param name="use_sim_time" value="false"/>
+
+    <!-- Launch ardrone ROS driver -->
+    <arg name="droneip" default="192.168.2.4"/>
+    <node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" clear_params="true" args="-ip $(arg droneip)" required="true">
+      <rosparam command="load" file="$(find ardrone2_dem_filter)/config/Ardrone2FlightParams.yaml"/>
+    </node>
+
+    <!-- Launch mocap_optitrack node -->
+    <include file="$(find mocap_optitrack)/launch/mocap_ardrone2.launch"/>
+  </group>
+
+
+  <!-- Launch quadrotor in simulation -->
+  <group if="$(arg sim)">
+    <arg name="msg2" default="Simulation is enabled -> using Gazebo position and orientation data."/>
+    <node name="pub_text2" pkg="rostopic" type="rostopic" args="pub /msg2 std_msgs/String '$(arg msg2)'" output="screen"/>
+    <node name="print_text2" pkg="rostopic" type="rostopic" args="echo /msg2" output="screen"/>
+
+    <arg name="enable_wind" default="false"/>
+
+    <!-- Launch empty world in Gazebo -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+
+    <!-- Spawn quadrotor -->
+    <group if="$(arg enable_wind)">
+      <arg name="msg3" default="Wind enabled -> using quadrotor_with_wind.urdf.xacro as quadrotor model."/>
+      <node name="pub_text3" pkg="rostopic" type="rostopic" args="pub /msg3 std_msgs/String '$(arg msg3)'" output="screen"/>
+      <node name="print_text3" pkg="rostopic" type="rostopic" args="echo /msg3" output="screen"/>
+      <include file="$(find cvg_sim_gazebo)/launch/spawn_quadrotor.launch">
+          <arg name="model" value="$(find cvg_sim_gazebo)/urdf/quadrotor_with_wind.urdf.xacro"/>
+      </include>
+    </group>
+
+    <group unless="$(arg enable_wind)">
+      <arg name="msg4" default="Wind disabled -> using quadrotor.urdf.xacro as quadrotor model."/>
+      <node name="pub_text4" pkg="rostopic" type="rostopic" args="pub /msg4 std_msgs/String '$(arg msg4)'" output="screen"/>
+      <node name="print_text4" pkg="rostopic" type="rostopic" args="echo /msg4" output="screen"/>
+      <include file="$(find cvg_sim_gazebo)/launch/spawn_quadrotor.launch">
+          <arg name="model" value="$(find cvg_sim_gazebo)/urdf/quadrotor_sensors.urdf.xacro"/>
+      </include>
+    </group>
+  </group>
+
+  <!-- Launch joystick node -->
+  <node name="joy_node" pkg="joy" type="joy_node" required="true"/>
+
+  <!-- Launch original tum_ardrone nodes -->
+  <node name="drone_statefeedback" pkg="tum_ardrone" type="drone_statefeedback" required="true">
+    <param name="sim" value="$(arg sim)"/>
+  </node>
+  <node name="drone_autopilot" pkg="tum_ardrone" type="drone_autopilot" required="true"/>
+  <node name="drone_gui" pkg="tum_ardrone" type="drone_gui" required="true"/>
+
+
+  <!-- Record data -->
+  <node pkg="rosbag" type="record" name="rosbag_record" args="record -o ardrone2.bag --duration 600 cmd_vel ardrone/imu ardrone/navdata ardrone/odometry gazebo/model_states ardrone2_dem/model_input ardrone2/pose ardrone2_dem/state tf drone_autopilot/parameter_descriptions ardrone/image_raw/theora/parameter_updates"/>
+</launch>

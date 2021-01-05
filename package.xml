@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ardrone2_dem_filter</name>
+  <version>0.0.0</version>
+  <description>ROS package for simulation and physical flight control of the Parrot AR.Drone 2.0 quadrotor and implementation of DEM state estimation</description>
+
+  <maintainer email="d.benders@tudelft.nl">Dennis Benders</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>joy</exec_depend>
+  <exec_depend>mocap_optitrack</exec_depend>
+  <exec_depend>tum_ardrone</exec_depend>
+  <exec_depend>tum_simulator</exec_depend>
+</package>

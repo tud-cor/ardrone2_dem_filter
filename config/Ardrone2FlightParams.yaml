@@ -1,0 +1,66 @@
+# AR.Drone 2.0 physical flight parameters
+
+# NOTE Commented parameters are either default or desired values that are important to consider (related to video may contain minimal rate settings to avoid communication overload over wifi) in order to keep update frequency as stable as possible
+
+
+################## GENERAL ##################         ################## COMMENTS ##################
+ardrone_name:           ARDrone2_DEM_research
+#navdata_demo:           0
+#navdata_options:        0                             # TODO maybe use only selective navdata of pwm values -> first determine mask value for PWM tag
+video_enable:           0                             # TAKE CARE SDK2.0.1 says for video_enable "setting it to FALSE (in this case 0) can lead to unexpected behaviour, but it is a non-persistent function according to https://ro.ecu.edu.au/cgi/viewcontent.cgi?referer=https://www.google.com/&httpsredir=1&article=1119&context=theses_hons. If not working, use settings listed above!
+#vision_enable:          1                             # Vision is not related to tag detection, probably for control, so keep it default. Disabling may lead to unexpected behaviour
+
+
+################## CONTROL ##################
+#altitude_max:           3000                          # 3m
+#altitude_min:           50                            # 5cm
+#control_level:          0
+#control_vz_max:         700                           # This value is always used in indoor and outdoor (no matter what indoor/outdoor_control_vz_max is)
+#control_yaw:            1.745329                      # This value is always used in indoor and outdoor (no matter what indoor/outdoor_control_yaw is)
+#euler_angle_max:        0.209440                      # TODO maybe adjust this default value + this value is always used in indoor and outdoor (no matter what indoor/outdoor_euler_angle_max is)
+#flight_anim:            13,5000                       # See config.h in ardronelib repo of AutonomyLab for possible flight animations, see MAYDAY_TIMEOUT array for corresponding default durations
+#flying_without_shell:   0
+#flying_mode:            0                             # TODO it is an assumption that free flight should be used, otherwise also take a look at the hovering_range parameter
+#outdoor:                0
+
+
+################## NETWORK ##################
+#owner_mac:              E8:B1:FC:DA:8D:F1             # MAC address of internal laptop network controller
+#owner_mac:              D0:37:45:69:C6:86             # MAC address of TP-LINK TL-WN725N-V3 network adapter
+ssid_single_player:     ardrone2_033809
+#wifi_mode:              0                             # Drone is access point of the network
+
+
+################## PIC     ##################
+#ultrasound_freq:        8                             # Ultrasound frequency used to determine altitude. If not working properly, use value 7)
+
+
+################## VIDEO   ##################
+bitrate:                250                           # Just take the minimum of what VBC_MODE_DYNAMIC would do
+bitrate_ctrl_mode:      2                             # VBC_MODE_DISABLED=0, VBC_MODE_DYNAMIC=1, VBC_MODE_MANUAL=2, see SDK2.0.1 and ardronelib repo
+max_bitrate:            250                           # In case another bitrate_ctrl_mode is taken by accident
+#video_codec:            128                           # Video format default setting is set at least to a format supported by the AR.Drone 2.0 (default value holds only for AR.Drone 1.0)
+
+
+################## LED     ##################
+#leds_anim:              0,5,10                        # Use this setting for LED animation to check communication with drone
+
+
+################## GPS     ##################
+latitude:               52.00184                      # Latitude corresponding to NERDlab
+longitude:              4.37155                       # Longitude corresponding to NERDlab
+
+
+################## UPDATE  ##################
+#enable_legacy_navdata:  true
+#enable_navdata_pwm:     true                         # Only motor data
+looprate:               200                           # We want to receive legacy navdata at a frequency equal to drone transmitting frequency
+realtime_navdata:       true
+#realtime_video:         false
+
+
+################## IMU ACC ##################
+# Covariance Values (3x3 matrices reshaped to 1x9)
+cov/imu_la:             [0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.1]
+cov/imu_av:             [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+cov/imu_or:             [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 100000.0]
