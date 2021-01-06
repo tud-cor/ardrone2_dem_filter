@@ -28,6 +28,15 @@ brain.Pw = model.Pw;
                  brain.Pz,brain.sigma_v,brain.p,brain.d,brain.nv,brain.nx,brain.ny);
 brain.V0 = blkdiag(brain.V0y,brain.V0v);
 
+% Implementation of s = 0
+% brain.W0 = zeros((brain.p+1)*brain.nx);
+% brain.W0(1:brain.nx,1:brain.nx) = model.Pw;
+% brain.V0y = zeros((brain.p+1)*brain.ny);
+% brain.V0y(1:brain.ny,1:brain.ny) = model.Pz;
+% brain.V0v = zeros((brain.d+1)*brain.nv);
+% brain.V0v(1:brain.nv,1:brain.nv) = 1/brain.sigma_v^2;
+% brain.V0 = blkdiag(brain.V0y,brain.V0v);
+
 if if_dataset==0
     % generate noise
     [noise_w, noise_z] = make_noise(model.s,model.Pw,model.Pz,Tt,...

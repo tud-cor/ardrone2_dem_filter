@@ -163,6 +163,95 @@ if if_cause == 1
 %         plot(t,z_dash((i-1)*ny+1:i*ny,t_trim));
 %     end
 
+%     figure('Name','Measured roll rate vs calculated roll rate');
+%     plot(t,x(t_trim,xh),'Color',color(1,:),'LineStyle',line_styles{1},...
+%          'LineWidth',line_width);
+%     hold on;
+%     plot(t,Y_embed(2,t_trim),'Color',color(2,:),...
+%          'LineStyle',line_styles{2},'LineWidth',line_width);
+%     legend('Measured','Taylor expansion');
+%     ax = gca;
+%     ax.FontSize = ax_font_size;
+%     xlabel('Time (s)','FontSize',label_font_size);
+%     ylabel('$\dot{\phi}$ (rad/s)','FontSize',label_font_size,...
+%                                   'Interpreter','latex');
+%     title('Measured vs calculated roll rate',...
+%           'FontSize',title_font_size);
+
+    sys_c = ss(model.A,model.B,model.C,0);
+    sys_d = c2d(sys_c,t(2)-t(1));
+    input = sys_d.B*model.real_cause(:,t_trim);
+    input = input(2,:);
+%     figure('Name','Input');
+%     box on;
+%     hold on;
+%     plot(t,input,'Color',color(1,:),'LineStyle',line_styles{1},...
+%          'LineWidth',line_width);
+%     ax = gca;
+%     ax.FontSize = ax_font_size;
+%     xlabel('Time (s)','FontSize',label_font_size);
+%     ylabel('B*u discretized','FontSize',label_font_size);
+%     title('System input corresponding to roll rate',...
+%           'FontSize',title_font_size);
+% 
+    figure('Name','Hidden state estimate with input');
+    subplot(3,1,1);
+    box on;
+    hold on;
+    plot(t,x(t_trim,xh),'Color',color(1,:),'LineStyle',line_styles{1},...
+         'LineWidth',line_width);
+    plot(t,DEMv_x(t_trim,xh),'Color',color(2,:),...
+         'LineStyle',line_styles{2},'LineWidth',line_width);
+    plot(t,kalmv_x(xh,t_trim),'Color',color(3,:),...
+         'LineStyle',line_styles{3},'LineWidth',line_width);
+    ax = gca;
+    ax.FontSize = ax_font_size;
+    legend('Measured',['DEM estimate (SSE = ' ...
+           num2str(SSE.DEMv.xh,3) ')'],...
+           ['Kalman estimate (SSE = ' ...
+            num2str(SSE.kalmanv.xh,3) ')']);
+    xlabel('Time (s)','FontSize',label_font_size);
+    ylabel('$\dot{\phi}$ (rad/s)','FontSize',label_font_size,...
+                                  'Interpreter','latex');
+    title('DEM vs Kalman: roll rate','FontSize',title_font_size);
+    subplot(3,1,2);
+    box on;
+    hold on;
+    plot(t,input,'Color',color(1,:),'LineStyle',line_styles{1},...
+         'LineWidth',line_width);
+    subplot(3,1,3);
+    box on;
+    hold on;
+    plot(t,Y_embed(2,t_trim),'Color',color(1,:),'LineStyle',line_styles{1},...
+         'LineWidth',line_width);
+% 
+%     
+%     figure('Name','Fluctuating state estimates explained');
+%     subplot(2,1,1);
+%     box on;
+%     hold on;
+%     plot(t,x(t_trim,xh),'Color',color(1,:),'LineStyle',line_styles{1},...
+%          'LineWidth',line_width);
+%     plot(t,DEMv_x(t_trim,xh),'Color',color(2,:),...
+%          'LineStyle',line_styles{2},'LineWidth',line_width);
+%     plot(t,kalmv_x(xh,t_trim),'Color',color(3,:),...
+%          'LineStyle',line_styles{3},'LineWidth',line_width);
+%     ax = gca;
+%     ax.FontSize = ax_font_size;
+%     legend('Measured','DEM estimate','Kalman estimate');
+%     xlabel('Time (s)','FontSize',label_font_size);
+%     ylabel('$\dot{\phi}$ (rad/s)','FontSize',label_font_size,...
+%                                   'Interpreter','latex');
+%     title('Fluctuating state estimates explained',...
+%           'FontSize',title_font_size);
+%     subplot(2,1,2);
+%     plot(t,Y_embed(2,t_trim),'Color',color(1,:),...
+%          'LineStyle',line_styles{1},'LineWidth',line_width);
+%     xlabel('Time (s)','FontSize',label_font_size);
+%     ylabel({'$\dot{\phi}$ (rad/s)';'via inverse Taylor expansion'},...
+%            'FontSize',label_font_size,'Interpreter','latex');
+%     ax = gca;
+%     ax.FontSize = ax_font_size;
 
 
 
