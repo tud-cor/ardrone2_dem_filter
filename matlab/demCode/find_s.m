@@ -1,4 +1,18 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Smoothness esimation objective function
+%
+% Objective function used to estimate the noise smoothness in
+% estimate_smoothness.m.
+% 
+% Code source:     https://github.com/ajitham123/DEM_observer
+% Original author: Ajith Anil Meera, TU Delft, CoR
+% Adjusted by:     Dennis Benders, TU Delft, CoR
+% Last modified:   09.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function f = find_s(s_real,noise_z,Tt)
+
 K  = toeplitz(exp(-Tt.^2/(2*s_real^2)));
 K  = diag(1./sqrt(diag(K*K')))*K;
 

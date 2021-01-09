@@ -1,14 +1,25 @@
-function plot_results_xh(output,SSE,model,brain,if_UIO,if_cause,xh,t_trim)
-%% Plot the results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Result plotting 2
+%
+% Function to plot the observer (hidden) state and input estimates results.
+% 
+% Code source:     https://github.com/ajitham123/DEM_observer
+% Original author: Ajith Anil Meera, TU Delft, CoR
+% Adjusted by:     Dennis Benders, TU Delft, CoR
+% Last modified:   09.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function plot_results_xh(output,SSE,model,brain,if_cause,xh,t_trim)
+
+% Define font sizes
 ax_font_size = 30;
 label_font_size = 35;
 title_font_size = 40;
 
+% Define plotting options
 line_styles = {'-','--','-.',':'};
 line_width = 3;
-
-%
 color = [ 0         0.4470    0.7410;    0.8500    0.3250    0.0980;
           0.9290    0.6940    0.1250;    0.4940    0.1840    0.5560;
           0.4660    0.6740    0.1880;    0.3010    0.7450    0.9330;
@@ -45,7 +56,7 @@ Ct = brain.Ct;
 
 
 % Plot state estimates with known input
-if if_cause == 1
+if if_cause
     figure('Name','Observed state estimate');
     box on;
     hold on;
@@ -222,8 +233,8 @@ if if_cause == 1
     subplot(3,1,3);
     box on;
     hold on;
-    plot(t,Y_embed(2,t_trim),'Color',color(1,:),'LineStyle',line_styles{1},...
-         'LineWidth',line_width);
+    plot(t,Y_embed(2,t_trim),'Color',color(1,:),...
+         'LineStyle',line_styles{1},'LineWidth',line_width);
 % 
 %     
 %     figure('Name','Fluctuating state estimates explained');
@@ -254,52 +265,38 @@ if if_cause == 1
 %     ax.FontSize = ax_font_size;
 
 
-
+% Plot state estimates with unknown input
 else
-    % Plot state estimates with unknown input
     figure('Name','State estimates with unknown input');
     subplot(3,1,1);
-    fig1 = plot(model.t,x(:,xobs),'Color',color(1,:));
+    fig1 = plot(t,x(t_trim,xobs),'Color',color(1,:));
     hold on;
-    fig2 = plot(t,DEMx(:,xobs),'--','Color',color(2,:));
-    fig3 = plot(model.t,kalmx(xobs,:)','-.','Color',color(3,:));
-%     if if_UIO == 1
-%         fig4 = plot(model.t,output.UIO_x_est,'-.','Color',color(4,:));
-%         legend([fig1(1),fig2(1),fig3(1),fig4(1)],{'Ideal states (outputs with noise)','DEM states',...
-%             'Kalman estimate','UIO estimate'});
-%     else
-    legend([fig1(1),fig2(1),fig3(1)],{'Measured states (with noise)','DEM state estimate','KF state estimate'});
-%     end
+    fig2 = plot(t,DEMx(t_trim,xobs),'--','Color',color(2,:));
+    fig3 = plot(t,kalmx(xobs,t_trim)','-.','Color',color(3,:));
+    legend([fig1(1),fig2(1),fig3(1)],...
+           {'Measured states (with noise)','DEM state estimate',...
+            'KF state estimate'});
     xlabel('Time (s)');
     ylabel('State amplitude (-)');
 
     subplot(3,1,2);
-    fig1 = plot(model.t,x(:,xh),'Color',color(1,:));
+    fig1 = plot(t,x(t_trim,xh),'Color',color(1,:));
     hold on;
-    fig2 = plot(t,DEMx(:,xh),'--','Color',color(2,:));
-    fig3 = plot(model.t,kalmx(xh,:)','-.','Color',color(3,:));
-%     if if_UIO == 1
-%         fig4 = plot(model.t,output.UIO_x_est,'-.','Color',color(4,:));
-%         legend([fig1(1),fig2(1),fig3(1),fig4(1)],{'Ideal states (outputs with noise)','DEM states',...
-%             'Kalman estimate','UIO estimate'});
-%     else
-    legend([fig1(1),fig2(1),fig3(1)],{'State reference','DEM state estimate','KF state estimate'});
-%     end
+    fig2 = plot(t,DEMx(t_trim,xh),'--','Color',color(2,:));
+    fig3 = plot(t,kalmx(xh,t_trim)','-.','Color',color(3,:));
+    legend([fig1(1),fig2(1),fig3(1)],...
+           {'State reference','DEM state estimate','KF state estimate'});
     xlabel('Time (s)');
     ylabel('State amplitude (-)');
 
     % Plot input estimates
     subplot(3,1,3);
-    plot(model.t,model.real_cause','LineWidth',1);
+    plot(t,model.real_cause(:,t_trim)','LineWidth',1);
     hold on;
-    plot(t,DEMx(:,brain.nx*(brain.p+1)+1),'--');
-%     if if_UIO == 1
-%         plot(model.t,output.UIO_v_est,'-.');
-%         legend('Ideal causal state','DEM cause estimate','UIO cause estimate');
-%     else
+    plot(t,DEMx(t_trim,brain.nx*(brain.p+1)+1),'--');
     legend('Measured input','DEM input estimate');
-%     end
     xlabel('Time (s)');
     ylabel('Input amplitude (-)');
 end
+
 end
