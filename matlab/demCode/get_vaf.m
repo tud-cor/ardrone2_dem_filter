@@ -4,11 +4,11 @@
 % Function to obtain the VAF values of state estimates.
 % 
 % Author:          Dennis Benders, TU Delft, CoR
-% Last modified:   09.01.2021
+% Last modified:   20.01.2021
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function vaf = getVaf(x,ref)
+function vaf = get_vaf(x,ref)
 
 % Determine amount of samples
 n = size(x,1);

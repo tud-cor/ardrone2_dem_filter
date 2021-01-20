@@ -1,4 +1,18 @@
-function [z_f, d_f] = UIO_estimator(sys,x_real,y_real,k,d,if_dataset,UIO_gamma)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Unknown Input Observer
+%
+% Function to obtain state and input estimates using an Unknown Input
+% Observer.
+% 
+% Code source:     https://github.com/ajitham123/DEM_observer
+% Original author: Ajith Anil Meera, TU Delft, CoR
+% Adjusted by:     Dennis Benders, TU Delft, CoR
+% Last modified:   20.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [z_f,d_f] = UIO_estimator(sys,x_real,y_real,k,d,if_dataset,...
+                                   UIO_gamma)
 
 A = sys.A; C = sys.C; D = sys.D;
 B1 = zeros(size(A,1),1); B2 = sys.B;
@@ -15,10 +29,14 @@ if if_dataset == 1
     G = sdpvar(nx,ny);
     % gamma = 100;
 
-    AA = [-P         zeros(nx,1)             (P*A-G*C)'     -(M*B2'*C'*C)'; ...
-        zeros(1,nx)   -Q                      B2'*(P*A-G*C)' Q-B2'*(M*B2'*C'*C)'; ...
-        (P*A-G*C)     (B2'*(P*A-G*C)')'       -P             zeros(nx,1); ...
-        -(M*B2'*C'*C) Q'-(B2'*(M*B2'*C'*C)')' zeros(1,nx)    -Q];
+    AA = [-P,           zeros(nx,1),              (P*A-G*C)',     ...
+          -(M*B2'*C'*C)';...
+          zeros(1,nx),  -Q,                       B2'*(P*A-G*C)', ...
+          Q-B2'*(M*B2'*C'*C)';...
+          (P*A-G*C),    (B2'*(P*A-G*C)')',        -P,             ...
+          zeros(nx,1);...
+          -(M*B2'*C'*C), Q'-(B2'*(M*B2'*C'*C)')', zeros(1,nx),    ...
+          -Q];
 
     F = [P>=0, Q>=0, M>=0, AA<=0];
     optimize(F);
@@ -28,7 +46,7 @@ if if_dataset == 1
     L = inv(P)*G
     gamma = M*inv(Q)
     L = value(L)
-    gamma = value(gamma)*1200000  % tune for best gamma; motor = gamma*1200000
+    gamma = value(gamma)*1200000 %tune for best gamma; motor=gamma*1200000
 
 else
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -74,4 +92,5 @@ z_f(:,k) = x_f(:,k) + B2*d_f(:,k-1);
 
 d_f(:,1:k-1) = d_f(:,2:k);
 z_f(:,1:k-1) = z_f(:,2:k);
+
 end

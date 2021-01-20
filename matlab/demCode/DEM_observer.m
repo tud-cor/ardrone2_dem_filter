@@ -15,7 +15,7 @@
 % Code source:     https://github.com/ajitham123/DEM_observer
 % Original author: Ajith Anil Meera, TU Delft, CoR
 % Adjusted by:     Dennis Benders, TU Delft, CoR
-% Last modified:   09.01.2021
+% Last modified:   20.01.2021
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -120,7 +120,7 @@ end
 %% Start - obtain filter results for ranges of p, d and s values
 % Uncomment this section and corresponding End section below to run the
 % filters for different combinations of p, d and s values.
-% TAKE CARE: uncommenting these sections only work for if_cause = 1 and
+% TAKE CARE: uncommenting these sections only works for if_cause = 1 and
 %            xh ~= 0.
 
 % if_print = 0;
@@ -232,6 +232,12 @@ else
                                  model.ideal_x(t_trim,xh)).^2));
         SSE.kalman.xh = sum(sum((output.kalman_x(xh,t_trim)'-...
                                  model.ideal_x(t_trim,xh)).^2));
+        xobs = 1:brain.nx;
+        xobs(xh) = [];
+        SSE.DEM.xobs    = sum(sum((output.DEM_x(t_trim,xobs)-...
+                                    model.ideal_x(t_trim,xobs)).^2));
+        SSE.kalman.xobs = sum(sum((output.kalman_x(xobs,t_trim)'-...
+                                    model.ideal_x(t_trim,xobs)).^2));
     end
 end
 
@@ -250,17 +256,17 @@ end
 % SSE.kalmanv_xobs(i,j,k) = sum(sum((output.kalmfv_x(xobs,t_trim)'-...
 %                                    model.ideal_x(t_trim,xobs)).^2));
 % 
-% VAF.DEMv_x(i,j,k)       = getVaf(output.DEMv_x(t_trim,1:brain.nx),...
+% VAF.DEMv_x(i,j,k)       = get_vaf(output.DEMv_x(t_trim,1:brain.nx),...
 %                                  model.ideal_x(t_trim,:));
-% VAF.kalmanv_x(i,j,k)    = getVaf(output.kalmfv_x(:,t_trim)',...
+% VAF.kalmanv_x(i,j,k)    = get_vaf(output.kalmfv_x(:,t_trim)',...
 %                                  model.ideal_x(t_trim,:));
-% VAF.DEMv_xh(i,j,k)      = getVaf(output.DEMv_x(t_trim,xh),...
+% VAF.DEMv_xh(i,j,k)      = get_vaf(output.DEMv_x(t_trim,xh),...
 %                                  model.ideal_x(t_trim,xh));
-% VAF.kalmanv_xh(i,j,k)   = getVaf(output.kalmfv_x(xh,t_trim)',...
+% VAF.kalmanv_xh(i,j,k)   = get_vaf(output.kalmfv_x(xh,t_trim)',...
 %                                  model.ideal_x(t_trim,xh));
-% VAF.DEMv_xobs(i,j,k)    = getVaf(output.DEMv_x(t_trim,xobs),...
+% VAF.DEMv_xobs(i,j,k)    = get_vaf(output.DEMv_x(t_trim,xobs),...
 %                                  model.ideal_x(t_trim,xobs));
-% VAF.kalmanv_xobs(i,j,k) = getVaf(output.kalmfv_x(xobs,t_trim)',...
+% VAF.kalmanv_xobs(i,j,k) = get_vaf(output.kalmfv_x(xobs,t_trim)',...
 %                                  model.ideal_x(t_trim,xobs));
 % 
 % fprintf('(%d,%d,%5.4f)\n',brain.p,brain.d,brain.s);
@@ -272,7 +278,7 @@ end
 %% Show results
 % Print
 if if_print
-    print_results(SSE,if_UIO,if_cause,xh);
+    print_results(SSE,if_cause,xh);
 end
 
 % Plot
