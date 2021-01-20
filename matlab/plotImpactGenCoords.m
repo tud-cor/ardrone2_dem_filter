@@ -1,14 +1,28 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot impact of generalized coordinates
+%
+% Script to compare the DEM filter results with and without generalized
+% states, outputs and inputs.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 20.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
 clc;
 
 
-%% Set font sizes
+%% Settings for plotting
+% Define font sizes
 axFontSize = 30;
 labelFontSize = 35;
 titleFontSize = 40;
 
+% Define plotting options
 lineStyles = {'-','--','-.',':'};
 lineWidth = 3;
 
@@ -165,16 +179,16 @@ ax.FontSize = axFontSize;
 %% Compare 1st-order generalized state (phi') with measured and estimated
 %  phiDot
 load GenCoordsResults.mat;
-% phiDot  = x(2,:);
+phiDot  = x(2,:);
 phiDotEst = xEst(4,:);
 phiDash = xEst(5,:);
 
 figure;
 box on;
 hold on;
-% plot(t,phiDot,'LineStyle',lineStyles{1},'LineWidth',lineWidth);
+plot(t,phiDot,'LineStyle',lineStyles{1},'LineWidth',lineWidth);
 plot(t,phiDotEst,'LineStyle',lineStyles{2},'LineWidth',lineWidth);
-plot(t,phiDotEst,'LineStyle',lineStyles{3},'LineWidth',lineWidth);
+plot(t,phiDash,'LineStyle',lineStyles{3},'LineWidth',lineWidth);
 ylim([-0.3,0.2]);
 legend('Measured','DEM estimate','DEM derivative estimate');
 xlabel('Time (s)','FontSize',labelFontSize);
