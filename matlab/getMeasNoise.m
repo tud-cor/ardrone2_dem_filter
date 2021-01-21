@@ -153,24 +153,13 @@ clc;
 load optiTrackNoiseTest.mat;
 
 
-%% Calculate noise characteristics of OptiTrack roll angle
-%  states
-% [f,pZ1] = getFFT(time,z);
-% plot(f,pZ1);
-% legend('x','y','z','\phi','\theta','\psi');
-% ylim([0,0.3e-3]);
-
-% for i = 1:ny
-%     figure('Name',['Frequency spectrum of z' num2str(i)]);
-%     plot(f,pZ1(i,:));
-% end
+%% Calculate noise characteristics of OptiTrack roll angle states
 
 % z = z - mean(z);
 std(z)
 std(z)^2
 
 [SigmaZEst1,sZEstGaussian] = estimateMeasNoiseCharacteristics(time,z,1,1);
-% [sZEstFriston] = estimateSmoothness(time,z);
 
 
 %% Calculate higher-order derivatives of measurement noise

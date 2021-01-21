@@ -1,3 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Generate simple flight trajectories
+%
+% Script to generate various trajectories (circle/inclined circle/
+% lemniscate/inclined lemniscate) that comply to the trajectory format
+% specified by the tum_ardrone package.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialisation
 clc;
 clear;

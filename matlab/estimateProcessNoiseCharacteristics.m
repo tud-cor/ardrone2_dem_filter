@@ -1,5 +1,18 @@
-function [Sigma,s] = estimateProcessNoiseCharacteristics(t,x,plotAc,plotSSSE)
-% Set plot settings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process noise properties estimation
+%
+% Function to estimate the process noise parameters: covariance matrix
+% and smoothness.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [Sigma,s] = estimateProcessNoiseCharacteristics(t,x,plotAc,...
+                                                         plotSSSE)
+
+% Define font sizes
 axFontSize = 23;
 labelFontSize = 35;
 titleFontSize = 40;
@@ -43,7 +56,7 @@ end
 
 
 % Calculate kernel width of Gaussian filter that is assumed to produce
-% coloured noise from white noise
+% coloured noise from white noise (noise smoothness)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize dimensions
 nLags    = 60;
@@ -74,18 +87,12 @@ end
 % Compute autocorrelation of a Gaussian filter and fit on autocorrelation
 % of x
 
-% Determine amount of lags to fit autocorrelation function on:
-% only take the lags into account until the autocorrelation goes below 0,
-% or goes up again
+% Determine amount of lags to fit autocorrelation function on
 nLagsFit = zeros(nx,1);
-% for i = 1:nx
-%     for j = 2:nLags+1
-%         if acX(i,j) - acX(i,j-1) > 0 || acX(i,j) < 0
-%             break;
-%         end
-%     end
-%     nLagsFit(i) = j-1;
-% end
+fprintf(['Fill in the amount of samples to take into account when ',...
+         'estimating the noise smoothness (e.g. "nLagsFit = 18" or ',...
+         '"nLagsFit(1) = 18" and "nLagsFit(2) = 20") and press enter ',...
+         'and F5 to continue.\n']);
 keyboard;
 
 % Close all figures drawn until now
@@ -174,4 +181,5 @@ for i = 1:nx
     ax.FontSize = axFontSize;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 end

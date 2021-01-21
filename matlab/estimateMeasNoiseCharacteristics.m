@@ -1,5 +1,17 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Measurement noise properties estimation
+%
+% Function to estimate the measurement noise parameters: covariance matrix
+% and smoothness.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [Sigma,s] = estimateMeasNoiseCharacteristics(t,x,plotAc,plotSSSE)
-% Set plot settings
+
+% Define font sizes
 axFontSize = 23;
 labelFontSize = 35;
 titleFontSize = 40;
@@ -43,7 +55,7 @@ end
 
 
 % Calculate kernel width of Gaussian filter that is assumed to produce
-% coloured noise from white noise
+% coloured noise from white noise (noise smoothness)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize dimensions
 nLags    = 60;
@@ -74,18 +86,12 @@ end
 % Compute autocorrelation of a Gaussian filter and fit on autocorrelation
 % of x
 
-% Determine amount of lags to fit autocorrelation function on:
-% only take the lags into account until the autocorrelation goes below 0,
-% or goes up again
+% Determine amount of lags to fit autocorrelation function on
 nLagsFit = zeros(nx,1);
-% for i = 1:nx
-%     for j = 2:nLags+1
-%         if acX(i,j) - acX(i,j-1) > 0 || acX(i,j) < 0
-%             break;
-%         end
-%     end
-%     nLagsFit(i) = j-1;
-% end
+fprintf(['Fill in the amount of samples to take into account when ',...
+         'estimating the noise smoothness (e.g. "nLagsFit = 18" or ',...
+         '"nLagsFit(1) = 18" and "nLagsFit(2) = 20") and press enter ',...
+         'and F5 to continue.\n']);
 keyboard;
 
 % Close all figures drawn until now
@@ -119,6 +125,7 @@ for i = 1:nx
         figure('Name',['Estimated kernel width for x' num2str(i), ...
                        ' using LS']);
         plot(sseResult.sRef,sseResult.sseRef(i,:),'-o');
+        box on;
         hold on;
         xline(s(i),'label',['s = ' num2str(s(i))],...
               'Color',[0.8500 0.3250 0.0980],'FontSize',axFontSize,...
@@ -144,6 +151,7 @@ for i = 1:nx
     figure('Name',['Autocorrelation of x' num2str(i) ' and fitted '...
                    'autocorrelation of Gaussian filter']);
     stem([-lagsX(i,2:end),lagsX(i,:)],[acX(i,2:end),acX(i,:)],'filled');
+    box on;
     hold on;
     plot(lags,h,'LineWidth',3);
     legend('Autocorrelation of z',...
@@ -158,4 +166,5 @@ for i = 1:nx
     ax.FontSize = axFontSize;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 end

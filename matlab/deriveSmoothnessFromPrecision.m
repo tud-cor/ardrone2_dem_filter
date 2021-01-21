@@ -1,3 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Derive smoothness value from output precision matrix
+%
+% Script to test the idea of deriving the noise smoothness, that is used in
+% the DEM filter, by calculating the smoothness value from each element in
+% the generalized output precision matrix.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
@@ -124,29 +137,3 @@ if p >= 3
         end
     end
 end
-
-
-% %% Calculate smoothness from covariance matrix generalized output,
-% %  assuming the calculated measurement standard deviation
-% % Using (2,2) element
-% sEst2(1) = sqrt(zSigmaEst/(2*zSigmaTildeEst(2,2)));
-% 
-% % Using (1,3) element
-% sEst2(2) = sqrt(-zSigmaEst/(2*zSigmaTildeEst(1,3)));
-% 
-% % Using (3,1) element
-% sEst2(3) = sqrt(-zSigmaEst/(2*zSigmaTildeEst(3,1)));
-% 
-% % Using (3,3) element
-% sEst2(4) = nthroot(3*zSigmaEst/(4*zSigmaTildeEst(3,3)),4);
-% 
-% if p >= 3
-%     % Using (2,4) element
-%     sEst2(5) = nthroot(-3*zSigmaEst/(4*zSigmaTildeEst(2,4)),4);
-% 
-%     % Using (4,2) element
-%     sEst2(6) = nthroot(-3*zSigmaEst/(4*zSigmaTildeEst(4,2)),4);
-% 
-%     % Using (4,4) element
-%     sEst2(7) = nthroot(15*zSigmaEst/(8*zSigmaTildeEst(4,4)),6);
-% end

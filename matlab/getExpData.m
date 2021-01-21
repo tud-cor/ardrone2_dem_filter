@@ -1,3 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Get recorded experiment data
+%
+% Script to read out a bag file with recorded flight experiment data,
+% process the data according to coordinate frame and angle conventions and
+% save original as well as interpolated data (120 Hz) in a .mat file.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
@@ -9,11 +22,6 @@ clc;
 bagname = 'ardrone2_exp_2020-10-29_25_batP1.bag';
 
 % Time interval with respect to start of rosbag recording
-% time = [140,180]; %exp7-24_3 -> use samples 1300-4500
-% time = [30,68]; %exp7-24_5
-% time = [0,15]; %exp7-24_7
-% time = [0,36]; %exp7-24_8
-% time = [28,50]; %exp10_29_2
 time = [0,80]; %exp10-29_25 - wind mode 2
 
 % Topic selection
@@ -37,8 +45,8 @@ floatTol = 1e-6;    %number with a smaller accuracy are treated as 0
 fs = 120;           %maximum sample frequency in Hz (limited by OptiTrack)
 g = 9.81;           %gravitational constant
 sampleThresOt = 10; %minimum amount of samples in the beginning and end of
-%                    Optitrack data that should be ignored in order to
-%                    successfully interpolate the data
+                    %Optitrack data that should be ignored in order to
+                    %successfully interpolate the data
 
 
 %% Get bag data
@@ -49,7 +57,6 @@ cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
 
 % topicsOut = storeBagdata(bag,topics,time);
 load getExpData10_29_25.mat;
-% load getExpData7_24_8.mat;
 
 if topics.cmdVel
     cmdVelTime = topicsOut.cmdVel.time;

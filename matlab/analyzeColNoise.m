@@ -1,3 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Analyze coloured noise properties
+%
+% Script to create coloured noise (by convoluting white noise with a
+% Gaussian filter) and estimate its properties (using the Gaussian filter
+% assumption).
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 20.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
@@ -17,7 +30,6 @@ end
 % Set Sigma and s
 nx    = 1;
 mu    = zeros(nx,1);
-% sigma = 1e-5;
 sigma = 2;
 s     = 5e-2;
 
@@ -36,8 +48,8 @@ xC = conv(h,xW,'valid');
 
 
 %% Print results
-% fprintf('Original s : %6.4f\n',s);
-% fprintf('Estimated s: %6.4f\n',sEst);
+fprintf('Original s : %6.4f\n',s);
+fprintf('Estimated s: %6.4f\n',sEst);
 
 
 %% Plot results

@@ -1,4 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Construct 4x4 covariance matrix
+%
+% Function to generate the values of each of the elements in the 4x4
+% covariance matrix belonging to the input x.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [xCov] = getCov4x4(x)
+
 c = cov(x(1,:),x(2,:));
 cX11 = c(1,1);
 cX12 = c(1,2);
@@ -31,4 +43,5 @@ xCov = [cX11,cX12,cX13,cX14;
         cX21,cX22,cX23,cX24;
         cX31,cX32,cX33,cX34;
         cX41,cX42,cX43,cX44;];
+
 end

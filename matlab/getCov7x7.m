@@ -1,4 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Construct 7x7 covariance matrix
+%
+% Function to generate the values of each of the elements in the 7x7
+% covariance matrix belonging to the input x.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [xCov] = getCov7x7(x)
+
 % Covariances related to x1
 c = cov(x(1,:),x(2,:));
 cX11 = c(1,1);
@@ -110,4 +122,5 @@ xCov = [cX11,cX12,cX13,cX14,cX15,cX16,cX17;
         cX51,cX52,cX53,cX54,cX55,cX56,cX57;
         cX61,cX62,cX63,cX64,cX65,cX66,cX67;
         cX71,cX72,cX73,cX74,cX75,cX76,cX77];
+
 end

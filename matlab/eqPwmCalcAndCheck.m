@@ -1,3 +1,15 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process hovering experiment data
+%
+% Script to read out hover experiment bag files and store this data in .mat
+% files to be used in eqPwmDisp.m.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
@@ -7,16 +19,21 @@ clc;
 %% Calculate PWM at equilibrium using determined coefficients
 % Parameters
 g = 9.81;
-m = 0.481;
-% m = 0.497;
+m = 0.481; %Mass of quadrotor with Parrot battery
+% m = 0.497; %Mass of quaddrotor with Akku-King battery
+
 cM = [3.7,130.9];
 cA = [cM(1)/2.55,130.9];
-cTO = [8.6e-06,-3.2e-4];
-cTEs = [1.28e-05,-1.68e-3];
+
+% See eqThrustCalc.m for a calculation of these omegaR-thrust coefficients
+cTO   = [8.6e-06,-3.2e-4];
+cTEs  = [1.28e-05,-1.68e-3];
+cTEs2 = [1.021e-5;-7.037e-4];
+
 cQ = [2.4e-7,-9.9e-6];
 
 % Select coefficients
-cT = cTEs;
+cT = cTEs2;
 
 % Solve quadratic formula
 a = 4*cT(1)*cA(1)^2;
@@ -61,8 +78,6 @@ topics.ardroneImu = 0;
 topics.ardroneNav = 1;
 topics.ardroneOdom = 0;
 
-
-% Get bag data
 % Retrieve bag file
 cd ~/.ros;
 bag = rosbag(bagname);
@@ -101,17 +116,6 @@ endTime     = round(str2double(answer{2}));
 [~,navStart] = min(abs(t-startTime));
 [~,navEnd]   = min(abs(t-endTime));
 
-% [~,navStart] = min(abs(t-17.4784));
-% [~,navEnd] = min(abs(t-46.8207));
-% 
-% [~,navStart] = min(abs(t-6.7616));
-% [~,navEnd] = min(abs(t-35.4924));
-
-
-% load hoverBatP1.mat;
-% load hoverBatA1.mat;
-
-
 % Calculate average PWM
 pwmAvgs10 = mean(ardroneNavMotor(:,navStart:navEnd),2);
 pwmAvg10 = mean(pwmAvgs10)
@@ -120,8 +124,4 @@ pwmAvg10 = mean(pwmAvgs10)
 %% Save data
 filename = 'hoverBatP.mat';
 % save(filename,'pwmAvgs1','pwmAvg1');
-save(filename,'pwmAvgs10','pwmAvg10','-append');
-% save(filename,'time','t','ardroneNavAltd','ardroneNavMotor',...
-%               'navStart','navEnd');
-% save(filename,'time,','t','ardroneNavAltd','ardroneNavMotor',...
-%               'navStart','navEnd','-append');
+% save(filename,'pwmAvgs10','pwmAvg10','-append');

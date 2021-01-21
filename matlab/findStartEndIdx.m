@@ -1,4 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Function to find start and end index
+%
+% Function to find the start and end array index of different recorded bag
+% data signals in getExpData.m.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [startIdx,endIdx] = findStartEndIdx(x,ref,floatTol)
+
 startTime = ref(1);
 endTime   = ref(end);
 
@@ -27,4 +39,5 @@ for i = 2:length(x)
 %         break;
     end
 end
+
 end
