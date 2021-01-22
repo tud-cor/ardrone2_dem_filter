@@ -79,9 +79,10 @@ topics.ardroneNav = 1;
 topics.ardroneOdom = 0;
 
 % Retrieve bag file
+defDir = pwd;
 cd ~/.ros;
 bag = rosbag(bagname);
-cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
+cd(defDir);
 
 topicsOut = storeBagdata(bag,topics,time);
 

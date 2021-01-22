@@ -189,7 +189,6 @@ hold on;
 plot(t,phiDot,'LineStyle',lineStyles{1},'LineWidth',lineWidth);
 plot(t,phiDotEst,'LineStyle',lineStyles{2},'LineWidth',lineWidth);
 plot(t,phiDash,'LineStyle',lineStyles{3},'LineWidth',lineWidth);
-ylim([-0.3,0.2]);
 legend('Measured','DEM estimate','DEM derivative estimate');
 xlabel('Time (s)','FontSize',labelFontSize);
 ylabel('$\dot{\phi}$ (rad/s)','FontSize',labelFontSize,...

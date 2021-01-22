@@ -2,7 +2,7 @@
 % Calculate thrust coefficients
 %
 % Script to calculate omegaR-thrust and corresponding PWM-thrust
-% coefficients, based on experiment data and plot to compare with results
+% coefficients, based on experiment data, and plot to compare with results
 % of various system identification experiments.
 % 
 % Author:        Dennis Benders, TU Delft, CoR

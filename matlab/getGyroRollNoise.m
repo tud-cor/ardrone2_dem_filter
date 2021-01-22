@@ -1,20 +1,27 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Analyze gyroscope roll rate noise
+%
+% Script to calculate standard deviation of gyroscope roll rate noise and
+% plot noise signal.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
 clc;
 
-% For OptiTrack noise:
-% - optitrackNoiseTest (from ardrone2_exp_2020-07-24_4.bag)
-
-% For gyro noise:
-% - gyroNoiseTest (from ardrone2DroneSensorNoise2.bag)
-
 
 %% Set variables
 % % Retrieve bag file
+% defDir = pwd;
 % cd ~/.ros;
 % bag = rosbag("ardrone2_exp_2020-10-29_25_batP1.bag");
-% cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
+% cd(defDir);
 % 
 % % Select topics that need to be stored
 % % Controller signal topics
@@ -36,19 +43,6 @@ clc;
 % %% Get data
 % topicsOut = storeBagdata(bag, topics, time);
 % 
-% if topics.cmdVel
-%     cmdVelTime = topicsOut.cmdVel.time;
-%     cmdVelLin = topicsOut.cmdVel.lin;
-%     cmdVelAng = topicsOut.cmdVel.ang;
-% end
-% 
-% if topics.optitrack
-%     optitrackStampTime = topicsOut.optitrack.stampTime;
-%     optitrackRecordTime = topicsOut.optitrack.recordTime;
-%     optitrackPos = topicsOut.optitrack.pos;
-%     optitrackOrientQuat = topicsOut.optitrack.orient;
-% end
-% 
 % if topics.ardroneImu
 %     ardroneImuStampTime  = topicsOut.ardroneImu.stampTime;
 %     ardroneImuRecordTime  = topicsOut.ardroneImu.recordTime;
@@ -56,25 +50,7 @@ clc;
 %     ardroneImuVAng       = topicsOut.ardroneImu.vAng;
 % end
 % 
-% if topics.ardroneNav
-%     ardroneNavStampTime = topicsOut.ardroneNav.stampTime;
-%     ardroneNavRecordTime = topicsOut.ardroneNav.recordTime;
-%     ardroneNavMotor = topicsOut.ardroneNav.motor;
-%     ardroneNavRot = topicsOut.ardroneNav.rot;
-%     ardroneNavVLin = topicsOut.ardroneNav.vLin;
-%     ardroneNavALin = topicsOut.ardroneNav.aLin;
-% end
 % 
-% if topics.ardroneOdom
-%     ardroneOdomStampTime = topicsOut.ardroneOdom.stampTime;
-%     ardroneOdomRecordTime = topicsOut.ardroneOdom.recordTime;
-%     ardroneOdomPos = topicsOut.ardroneOdom.pos;
-%     ardroneOdomOrientQuat = topicsOut.ardroneOdom.orient;
-%     ardroneOdomVLin = topicsOut.ardroneOdom.vLin;
-%     ardroneOdomVAng = topicsOut.ardroneOdom.vAng;
-% end
-% 
-% load tempGyroNoise.mat;
 % %% Select suitable time frames
 % % Plot data to search for time where quantities are constant
 % ardroneImuPlotTime = ardroneImuStampTime - ardroneImuStampTime(1);
@@ -174,6 +150,7 @@ std(x)
 
 
 %% Plot data
+% Define font sizes
 axFontSize = 30;
 labelFontSize = 35;
 titleFontSize = 40;

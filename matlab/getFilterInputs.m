@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Generate data file serving as input for the filters
 %
-% Script to generate a .mat file as input of the filters by reading out
+% Script to generate a .mat file as input for the filters by reading out
 % processed experiment data (output of getExpData.m), defining the
 % quadrotor model matrices, setting the measurement noise characteristics
 % and calculating the process noise characteristics.

@@ -1,17 +1,27 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Analyze measurement noise
+%
+% Script to calculate standard deviation of measurement noise and plot
+% noise signal and its derivatives.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
 clc;
 
-% For OptiTrack noise:
-% - optitrackNoiseTest (from ardrone2_exp_2020-07-24_4.bag)
-
 
 %% Set variables
 % % Retrieve bag file
+% defDir = pwd;
 % cd ~/.ros;
 % bag = rosbag("ardrone2_exp_2020-10-29_25_batP1.bag");
-% cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
+% cd(defDir);
 % 
 % % Select topics that need to be stored
 % % Controller signal topics
@@ -33,42 +43,11 @@ clc;
 % %% Get data
 % topicsOut = storeBagdata(bag, topics, time);
 % 
-% if topics.cmdVel
-%     cmdVelTime = topicsOut.cmdVel.time;
-%     cmdVelLin = topicsOut.cmdVel.lin;
-%     cmdVelAng = topicsOut.cmdVel.ang;
-% end
-% 
 % if topics.optitrack
 %     optitrackStampTime = topicsOut.optitrack.stampTime;
 %     optitrackRecordTime = topicsOut.optitrack.recordTime;
 %     optitrackPos = topicsOut.optitrack.pos;
 %     optitrackOrientQuat = topicsOut.optitrack.orient;
-% end
-% 
-% if topics.ardroneImu
-%     ardroneImuStampTime  = topicsOut.ardroneImu.stampTime;
-%     ardroneImuRecordTime  = topicsOut.ardroneImu.recordTime;
-%     ardroneImuOrientQuat = topicsOut.ardroneImu.orient;
-%     ardroneImuVAng       = topicsOut.ardroneImu.vAng;
-% end
-% 
-% if topics.ardroneNav
-%     ardroneNavStampTime = topicsOut.ardroneNav.stampTime;
-%     ardroneNavRecordTime = topicsOut.ardroneNav.recordTime;
-%     ardroneNavMotor = topicsOut.ardroneNav.motor;
-%     ardroneNavRot = topicsOut.ardroneNav.rot;
-%     ardroneNavVLin = topicsOut.ardroneNav.vLin;
-%     ardroneNavALin = topicsOut.ardroneNav.aLin;
-% end
-% 
-% if topics.ardroneOdom
-%     ardroneOdomStampTime = topicsOut.ardroneOdom.stampTime;
-%     ardroneOdomRecordTime = topicsOut.ardroneOdom.recordTime;
-%     ardroneOdomPos = topicsOut.ardroneOdom.pos;
-%     ardroneOdomOrientQuat = topicsOut.ardroneOdom.orient;
-%     ardroneOdomVLin = topicsOut.ardroneOdom.vLin;
-%     ardroneOdomVAng = topicsOut.ardroneOdom.vAng;
 % end
 % 
 % 
@@ -145,17 +124,15 @@ clc;
 % 
 % %% Save data to speed up
 % % OptiTrack data
-% save('optiTrackNoiseTest.mat','time','z');
+% save('optitrackNoiseTest.mat','time','z');
 % 
 % 
 %% Load data to speed up
 % OptiTrack data
-load optiTrackNoiseTest.mat;
+load optitrackNoiseTest.mat;
 
 
 %% Calculate noise characteristics of OptiTrack roll angle states
-
-% z = z - mean(z);
 std(z)
 std(z)^2
 
@@ -302,31 +279,3 @@ title('6th-order derivative of z',...
       'FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
-% 
-% 
-% %% Autocorrelation test
-% white = normrnd(0,std(z),[1,length(time)]);
-% ts = 1/120;
-% n = length(time);
-% tau = linspace(-time(end),time(end),2*n-1);
-% s = 0.01;
-% h = sqrt(1/ts*s*sqrt(pi))*exp(-tau.^2/(2*s^2));
-% col = conv(h,white,'valid');
-% figure;
-% autocorr(white);
-% figure;
-% autocorr(h);
-% figure;
-% autocorr(col);
-% 
-% 
-% %% Save expData data
-% measNoiseData.time      = time;
-% measNoiseData.z         = z;
-% measNoiseData.nSamples  = 1000;
-% measNoiseData.dataName  = 'ardrone2DroneSensorNoise';
-% measNoiseData.SigmaEst1 = SigmaZEst1;
-% measNoiseData.sEst1     = sZEstGaussian;
-% measNoiseData.sEst2     = sZEstFriston;
-% filename = sprintf('measNoiseData_%s',datestr(now,'dd-mm-yyyy_HH-MM'));
-% save(filename,'measNoiseData');

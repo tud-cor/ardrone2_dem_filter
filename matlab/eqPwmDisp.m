@@ -1,9 +1,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate equilibrium PWM values
 %
-% Script to read out hover experiment data per battery type
-% (Parrot=batP/Akku-King=batA) to obtain the average PWM value per rotor as
-% well as for all rotors together during hovering.
+% Script to read out hover experiment data per battery type to obtain the
+% average PWM value per rotor as well as for all rotors together during
+% hovering.
 % 
 % Author:        Dennis Benders, TU Delft, CoR
 % Last modified: 21.01.2021

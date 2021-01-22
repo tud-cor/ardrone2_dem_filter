@@ -20,6 +20,8 @@ nTests = 1;
 %--------------------------------------------------------------------------
 
 %----------- Run tests for different functions and store results ----------
+addpath('../');
+
 for testNr = 1:nTests
     results(1,testNr).test = runtests('countDupsTest.m');
     results(2,testNr).test = runtests('fixDupsTest.m');
@@ -51,4 +53,5 @@ else
             'Please take a look at the failure summaries above.');
 end
 %--------------------------------------------------------------------------
+
 end

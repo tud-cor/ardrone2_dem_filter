@@ -100,4 +100,3 @@ ylabel('SSE','FontSize',labelFontSize);
 title('DEM vs Kalman SSE','FontSize',titleFontSize);
 ax = gca;
 ax.FontSize = axFontSize;
-

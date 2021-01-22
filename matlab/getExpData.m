@@ -51,9 +51,10 @@ sampleThresOt = 10; %minimum amount of samples in the beginning and end of
 
 %% Get bag data
 % Retrieve bag file
+defDir = pwd;
 cd ~/.ros;
 bag = rosbag(bagname);
-cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
+cd(defDir);
 
 % topicsOut = storeBagdata(bag,topics,time);
 load getExpData10_29_25.mat;

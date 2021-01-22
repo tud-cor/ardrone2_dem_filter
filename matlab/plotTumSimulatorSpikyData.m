@@ -1,3 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot spiky force and torque data of tum_simulator
+%
+% Script to read out recorded force and torque data when simulating
+% AR.Drone 2.0 using tum_simulator package and plot the resulting spiky
+% data.
+% 
+% Author:        Dennis Benders, TU Delft, CoR
+% Last modified: 21.01.2021
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% Initialization
 clear;
 close all;
@@ -23,9 +36,10 @@ time = [28,29];
 
 %% Get bag data
 % Retrieve bag file
+defDir = pwd;
 cd ~/.ros;
 bag = rosbag(bagname);
-cd ~/ardrone2_ws/src/ardrone2_dem/dem/matlab;
+cd(defDir);
 
 topicsOut = storeBagdata(bag,topics,time);
 
