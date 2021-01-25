@@ -7,7 +7,6 @@
   <!-- Launch quadrotor in physical flight -->
   <group unless="$(arg sim)">
     <arg name="msg1" default="Physical flight is enabled -> using OptiTrack position and orientation data."/>
-    <!--arg name="msg1" default="Physical flight is currently disabled and not safe to use!"/-->
     <node name="pub_text1" pkg="rostopic" type="rostopic" args="pub /msg1 std_msgs/String '$(arg msg1)'" output="screen"/>
     <node name="print_text1" pkg="rostopic" type="rostopic" args="echo /msg1" output="screen"/>
 
@@ -15,7 +14,7 @@
     <param name="use_sim_time" value="false"/>
 
     <!-- Launch ardrone ROS driver -->
-    <arg name="droneip" default="192.168.2.4"/>
+    <arg name="droneip" default="192.168.1.1"/>
     <node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" clear_params="true" args="-ip $(arg droneip)" required="true">
       <rosparam command="load" file="$(find ardrone2_dem_filter)/config/Ardrone2FlightParams.yaml"/>
     </node>
