@@ -58,7 +58,7 @@ land
 This will set the reference frame, ensure drone takeoff, perform controlled drone flight in a square with sides of 2 meter and land the drone.
 
 ### Keyboard and joystick control
-It is also possible to control the drone using a keyboard and/or using a joystick (see tum\_ardrone/README.md). These control methods will be selected when pressing an arbitrary key or button, respectively.
+It is also possible to control the drone using a keyboard and/or using a joystick (see *README.md* in the tum\_ardrone package). These control methods will be selected when pressing an arbitrary key or button, respectively.
 The following keyboard commands apply:
 - **s** Takeoff
 - **d** Land
@@ -143,7 +143,7 @@ The data processing part contains scripts, functions and data storage files that
 - Create flight trajectories (using *createFlightplans.m*).
 - Show spiky data coming from tum\_simulator (using *plotTumSimulatorSpikyData.m*).
 
-The bag files required to run some of the MATLAB scripts are included in this repository in the directory *bagfiles*. Each bag file should be stored in the *~/.ros* directory on your PC in order for the MATLAB scripts to run without errors.
+The bag files required to run some of the MATLAB scripts are included in this repository in the directory *bagfiles*. Each (unzipped) bag file should be stored in the *~/.ros* directory on your PC in order for the MATLAB scripts to run without errors.
 
 ### Filter execution
 The filter execution part is mainly based on the code in the [DEM_observer repository](https://github.com/ajitham123/DEM_observer). All settings can be found in *DEM_observer.m*, except for the dataset (defined in *get_ardrone2_flight_data.m*). To execute the desired filters, run *DEM_observer.m*.
