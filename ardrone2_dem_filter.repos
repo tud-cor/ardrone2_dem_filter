@@ -2,4 +2,4 @@
 - git: {local-name: mocap_optitrack, uri: 'https://github.com/dbenders1/mocap_optitrack.git', version: ardrone2_dem_filter-comp}
 - git: {local-name: tum_ardrone, uri: 'https://github.com/dbenders1/tum_ardrone.git', version: ardrone2_dem_filter-comp}
 - git: {local-name: tum_simulator, uri: 'https://github.com/dbenders1/tum_simulator.git', version: ardrone2_dem_filter-comp}
-- git: {local-name: rotors_simulator_wind_plugin, uri: 'https://github.com/dbenders1/rotors_simulator_wind_plugin.git', version: master}
+- git: {local-name: rotors_simulator, uri: 'https://github.com/dbenders1/rotors_simulator.git', version: wind_plugin_only}
