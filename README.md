@@ -17,7 +17,7 @@ To use this repository, execute the following commands:
 ```
 $ mkdir -p ~/ardrone2_ws/src
 $ cd ~/ardrone2_ws/src
-$ vcs import --input https://raw.githubusercontent.com/dbenders1/ardrone2_dem_filter/master/ardrone2_dem_filter.repos
+$ vcs import --input https://raw.githubusercontent.com/tud-cor/ardrone2_dem_filter/master/ardrone2_dem_filter.repos
 $ cd ..
 $ rosdep install --from-paths src --ignore-src --rosdistro=kinetic
 $ catkin_make
